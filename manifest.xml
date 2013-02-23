@@ -1,0 +1,12 @@
+<package>
+    <description brief="Python library for interacting with HERB.">
+        Python library for interacting with HERB, a bimanual mobile manipulator
+        developed by the Personal Robotics Lab at Carnegie Mellon University.
+    </description>
+    <author>Michael Koval, Pras Velagapudi</author>
+    <license>BSD</license>
+    <depend package="rospy"/>
+    <depend package="openrave"/>
+    <depend package="openrave_exports"/>
+    <depend package="pr_ordata"/>
+</package>
