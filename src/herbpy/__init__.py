@@ -1,11 +1,31 @@
 import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
-import openravepy
-import or_multi_controller
+import logging, openravepy, or_multi_controller
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
 HEAD_DOFS = [ 22, 23 ]
+
+def look_at(robot, target, execute=True):
+    # Find an IK solution to look at the point.
+    ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
+    target_dof_values = robot.head.ik_database.manip.FindIKSolution(ik_params, 0)
+    if target_dof_values == None:
+        return None
+
+    # Create a two waypoint trajectory for the head.
+    current_dof_values = robot.GetDOFValues(robot.head.GetArmIndices())
+    config_spec = robot.head.GetArmConfigurationSpecification()
+    traj = openravepy.RaveCreateTrajectory(robot.GetEnv(), '')
+    traj.Init(config_spec)
+    traj.Insert(0, current_dof_values, config_spec)
+    traj.Insert(1, target_dof_values, config_spec)
+
+    # Optionally exeucute the trajectory.
+    if execute:
+        robot.head_controller.SetPath(traj)
+        robot.WaitForController(0)
+    return traj
 
 def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, simulation):
     if simulation:
@@ -42,6 +62,14 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
                           robot.left_hand_controller, robot.right_hand_controller, robot.segway_controller ]
     robot.multicontroller.finalize()
 
+    # Load the IK database for the head.
+    with robot.GetEnv():
+        robot.SetActiveManipulator('head_wam')
+        robot.head.ik_database = openravepy.databases.inversekinematics.InverseKinematicsModel(robot, iktype=openravepy.IkParameterizationType.Lookat3D)
+        if not robot.head.ik_database.load():
+            logging.info('Generating IK database for the head.')
+            robot.head.ik_database.autogenerate()
+
 def initialize_sensors(robot, moped_sim=True):
     moped_args = 'MOPEDSensorSystem {0:s} {1:s} {2:s}'.format(NODE_NAME, '/moped', OPENRAVE_FRAME_ID)
 
@@ -53,6 +81,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
                            head_sim=False, segway_sim=False, moped_sim=False):
     robot.left_arm = robot.GetManipulator('left_wam')
     robot.right_arm = robot.GetManipulator('right_wam')
+    robot.head = robot.GetManipulator('head_wam')
 
     # TODO: Bind methods to the robot.
     # TODO: Bind methods to the manipulators.
