@@ -1,12 +1,13 @@
 import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
-import logging, openravepy, or_multi_controller
+import logging, openravepy, or_multi_controller, types
+import cbirrt
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
 HEAD_DOFS = [ 22, 23 ]
 
-def look_at(robot, target, execute=True):
+def LookAt(robot, target, execute=True):
     # Find an IK solution to look at the point.
     ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
     target_dof_values = robot.head.ik_database.manip.FindIKSolution(ik_params, 0)
@@ -23,9 +24,21 @@ def look_at(robot, target, execute=True):
 
     # Optionally exeucute the trajectory.
     if execute:
-        robot.head_controller.SetPath(traj)
-        robot.WaitForController(0)
+        robot.head.arm_controller.SetPath(traj)
+        # TODO: Implement a more efficient way of waiting for a single
+        # controller to finish.
+        while not robot.head.arm_controller.IsDone():
+            pass
+
     return traj
+
+def SetStiffness(manipulator, stiffness):
+    try:
+        manipulator.arm_controller.SendCommand('SetStiffness {0:f}'.format(stiffness))
+        return True
+    except openravepy.openrave_exception, e:
+        logging.error(e)
+        return False
 
 def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, simulation):
     if simulation:
@@ -34,6 +47,9 @@ def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, si
     delegate_controller = openravepy.RaveCreateController(robot.GetEnv(), controller_args)
     robot.multicontroller.attach(name, delegate_controller, dof_indices, affine_dofs)
     return delegate_controller
+
+def initialize_manipulator(manipulator):
+    manipulator.SetStiffness = types.MethodType(SetStiffness, manipulator, type(manipulator))
 
 def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, right_hand_sim,
                                   head_sim, segway_sim):
@@ -52,14 +68,15 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
 
     # Controllers.
     robot.multicontroller = or_multi_controller.MultiControllerWrapper(robot)
-    robot.head_controller = attach_controller(robot, 'head', head_args, HEAD_DOFS, 0, head_sim)
-    robot.left_arm_controller = attach_controller(robot, 'left_arm', left_arm_args, left_arm_dofs, 0, left_arm_sim)
-    robot.right_arm_controller = attach_controller(robot, 'right_arm', right_arm_args, right_arm_dofs, 0, right_arm_sim)
-    robot.left_hand_controller = attach_controller(robot, 'left_hand', left_hand_args, left_hand_dofs, 0, left_hand_sim)
-    robot.right_hand_controller = attach_controller(robot, 'right_hand', right_hand_args, right_hand_dofs, 0, right_hand_sim)
+    robot.head.arm_controller = attach_controller(robot, 'head', head_args, HEAD_DOFS, 0, head_sim)
+    robot.left_arm.arm_controller = attach_controller(robot, 'left_arm', left_arm_args, left_arm_dofs, 0, left_arm_sim)
+    robot.right_arm.arm_controller = attach_controller(robot, 'right_arm', right_arm_args, right_arm_dofs, 0, right_arm_sim)
+    robot.left_arm.hand_controller = attach_controller(robot, 'left_hand', left_hand_args, left_hand_dofs, 0, left_hand_sim)
+    robot.right_arm.hand_controller = attach_controller(robot, 'right_hand', right_hand_args, right_hand_dofs, 0, right_hand_sim)
     robot.segway_controller = attach_controller(robot, 'base', base_args, [], openravepy.DOFAffine.Transform, segway_sim)
-    robot.controllers = [ robot.head_controller, robot.left_arm_controller, robot.right_arm_controller,
-                          robot.left_hand_controller, robot.right_hand_controller, robot.segway_controller ]
+    robot.controllers = [ robot.head.arm_controller, robot.segway_controller,
+                          robot.left_arm.arm_controller, robot.right_arm.arm_controller,
+                          robot.left_arm.hand_controller, robot.right_arm.hand_controller ]
     robot.multicontroller.finalize()
 
     # Load the IK database for the head.
@@ -69,6 +86,9 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
         if not robot.head.ik_database.load():
             logging.info('Generating IK database for the head.')
             robot.head.ik_database.autogenerate()
+
+    # Monkey patch the extra methods onto the OpenRAVE robot.
+    robot.LookAt = types.MethodType(LookAt, robot, type(robot))
 
 def initialize_sensors(robot, moped_sim=True):
     moped_args = 'MOPEDSensorSystem {0:s} {1:s} {2:s}'.format(NODE_NAME, '/moped', OPENRAVE_FRAME_ID)
@@ -92,6 +112,14 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
                                   head_sim=head_sim, segway_sim=segway_sim)
     initialize_sensors(robot, moped_sim=moped_sim)
 
+    # Monkey-patch the manipulators.
+    initialize_manipulator(robot.left_arm)
+    initialize_manipulator(robot.right_arm)
+    initialize_manipulator(robot.head)
+
+    # Monkey-patch the planners.
+    robot.cbirrt_planner = cbirrt.CBiRRTPlanner(robot)
+
     # Wait for the robot's state to update.
     for controller in robot.controllers:
         try:
@@ -101,7 +129,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
 
 def initialize(env_path='environments/pr_kitchen.robot.xml',
                robot_path='robots/herb2_padded.robot.xml',
-               robot_name='herb', attach_viewer=False,
+               robot_name='HERB2', attach_viewer=False,
                **kw_args):
     env = openravepy.Environment()
     env.Load(env_path)
@@ -115,3 +143,9 @@ def initialize(env_path='environments/pr_kitchen.robot.xml',
 
     initialize_herb(robot, **kw_args)
     return env, robot 
+
+def initialize_sim(**kw_args):
+    return initialize(left_arm_sim=True, right_arm_sim=True,
+                      left_hand_sim=True, right_hand_sim=True,
+                      head_sim=True, segway_sim=True, moped_sim=True,
+                      **kw_args)
