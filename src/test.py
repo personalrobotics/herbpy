@@ -29,7 +29,6 @@ with env:
 # TODO: Named configurations.
 # TODO: Finger control.
 # TODO: Executing trajectories through multicontroller is broken.
-# TODO: Executing blending trajectories is broken.
 # FIXME: CHOMP always returns success.
 traj = robot.cbirrt_planner.PlanToConfiguration(right_home_config)
 blended_traj = robot.BlendTrajectory(traj)

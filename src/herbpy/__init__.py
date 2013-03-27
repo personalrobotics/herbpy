@@ -42,8 +42,8 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
     # Create aliases for the manipulators.
     left_arm_dofs = robot.left_arm.GetArmIndices()
     right_arm_dofs = robot.right_arm.GetArmIndices()
-    left_hand_dofs = robot.left_arm.GetChildDOFIndices()
-    right_hand_dofs = robot.right_arm.GetChildDOFIndices()
+    left_hand_dofs = sorted(robot.left_arm.GetChildDOFIndices())
+    right_hand_dofs = sorted(robot.right_arm.GetChildDOFIndices())
     head_dofs = robot.head.GetArmIndices()
 
     # Controllers.
