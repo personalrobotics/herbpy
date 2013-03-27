@@ -98,10 +98,12 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
 
     # Bind extra methods onto the OpenRAVE robot.
-    robot.PlanToConfiguration = types.MethodType(herb.PlanToConfiguration, robot, type(robot))
-    robot.PlanToEndEffectorPose = types.MethodType(herb.PlanToEndEffectorPose, robot, type(robot))
-    robot.BlendTrajectory = types.MethodType(herb.BlendTrajectory, robot, type(robot))
-    robot.LookAt = types.MethodType(herb.LookAt, robot, type(robot))
+    t = type(robot)
+    robot.PlanToConfiguration = types.MethodType(herb.PlanToConfiguration, robot, t)
+    robot.PlanToEndEffectorPose = types.MethodType(herb.PlanToEndEffectorPose, robot, t)
+    robot.BlendTrajectory = types.MethodType(herb.BlendTrajectory, robot, t)
+    robot.ExecuteTrajectory = types.MethodType(herb.ExecuteTrajectory, robot, t)
+    robot.LookAt = types.MethodType(herb.LookAt, robot, t)
 
 def initialize(env_path='environments/pr_kitchen.robot.xml',
                robot_path='robots/herb2_padded.robot.xml',

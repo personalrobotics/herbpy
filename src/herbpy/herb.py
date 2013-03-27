@@ -29,6 +29,8 @@ def LookAt(robot, target, execute=True):
 def PlanGeneric(robot, command_name, execute=True, *args, **kw_args):
     traj = None
 
+    print kw_args
+
     # Sequentially try each planner until one succeeds.
     with robot.GetEnv():
         saver = robot.CreateRobotStateSaver()
@@ -65,3 +67,10 @@ def BlendTrajectory(robot, traj, **kw_args):
     with robot.GetEnv():
         saver = robot.CreateRobotStateSaver()
         return robot.trajectory_module.blendtrajectory(traj=traj, execute=False, **kw_args)
+
+def ExecuteTrajectory(robot, traj, timeout=None):
+    robot.GetController().SetPath(traj)
+    if timeout == None:
+        robot.WaitForController(0)
+    elif timeout > 0:
+        robot.WaitForController(timeout)
