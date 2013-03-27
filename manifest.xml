@@ -5,8 +5,15 @@
     </description>
     <author>Michael Koval, Pras Velagapudi</author>
     <license>BSD</license>
+
     <depend package="rospy"/>
     <depend package="openrave"/>
     <depend package="openrave_exports"/>
+
+    <depend package="or_multi_controller"/>
+    <depend package="or_owd_controller"/>
+    <depend package="or_moped_sensorsystem"/>
+    <depend package="or_segway_controller"/>
+
     <depend package="pr_ordata"/>
 </package>
