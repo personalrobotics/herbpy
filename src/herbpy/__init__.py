@@ -1,73 +1,11 @@
 import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
 import logging, openravepy, or_multi_controller, types
-import cbirrt, chomp
-from planner import PlanningError 
+import cbirrt, chomp, herb
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
 HEAD_DOFS = [ 22, 23 ]
-
-def LookAt(robot, target, execute=True):
-    # Find an IK solution to look at the point.
-    ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
-    target_dof_values = robot.head.ik_database.manip.FindIKSolution(ik_params, 0)
-    if target_dof_values == None:
-        return None
-
-    # Create a two waypoint trajectory for the head.
-    current_dof_values = robot.GetDOFValues(robot.head.GetArmIndices())
-    config_spec = robot.head.GetArmConfigurationSpecification()
-    traj = openravepy.RaveCreateTrajectory(robot.GetEnv(), '')
-    traj.Init(config_spec)
-    traj.Insert(0, current_dof_values, config_spec)
-    traj.Insert(1, target_dof_values, config_spec)
-
-    # Optionally exeucute the trajectory.
-    if execute:
-        robot.head.arm_controller.SetPath(traj)
-        # TODO: Implement a more efficient way of waiting for a single
-        # controller to finish.
-        while not robot.head.arm_controller.IsDone():
-            pass
-
-    return traj
-
-def PlanGeneric(robot, command_name, execute=True, *args, **kw_args):
-    # Sequentially try each planner until one succeeds.
-    traj = None
-    for planner in robot.planners:
-        try:
-            command = getattr(planner, command_name)
-            print command
-            traj = command(*args, **kw_args)
-            break
-        except NotImplementedError:
-            pass
-        except PlanningError, e:
-            logging.warning('Planning with {0:s} failed: {1:s}'.format(planner.GetName(), e))
-
-    if traj is None:
-        logging.error('Planning failed with all planners.')
-        return None
-
-    # TODO: Retime the trajectory.
-    # TODO: Optionally execute the trajectory.
-    return traj
-
-def PlanToConfiguration(robot, goal, **kw_args):
-    return PlanGeneric(robot, 'PlanToConfiguration', goal, **kw_args)
-
-def PlanToEndEffectorPose(robot, goal_pose, **kw_args):
-    return PlanGeneric(robot, 'PlanToEndEffectorPose', goal_pose, **kw_args)
-
-def SetStiffness(manipulator, stiffness):
-    try:
-        manipulator.arm_controller.SendCommand('SetStiffness {0:f}'.format(stiffness))
-        return True
-    except openravepy.openrave_exception, e:
-        logging.error(e)
-        return False
 
 def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, simulation):
     if simulation:
@@ -78,7 +16,7 @@ def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, si
     return delegate_controller
 
 def initialize_manipulator(manipulator):
-    manipulator.SetStiffness = types.MethodType(SetStiffness, manipulator, type(manipulator))
+    manipulator.SetStiffness = types.MethodType(herb.SetStiffness, manipulator, type(manipulator))
 
 def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, right_hand_sim,
                                   head_sim, segway_sim):
@@ -149,9 +87,9 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.planners = [ robot.cbirrt_planner, robot.chomp_planner ]
 
     # Bind extra methods onto the OpenRAVE robot.
-    robot.PlanToConfiguration = types.MethodType(PlanToConfiguration, robot, type(robot))
-    robot.PlanToEndEffectorPose = types.MethodType(PlanToEndEffectorPose, robot, type(robot))
-    robot.LookAt = types.MethodType(LookAt, robot, type(robot))
+    robot.PlanToConfiguration = types.MethodType(herb.PlanToConfiguration, robot, type(robot))
+    robot.PlanToEndEffectorPose = types.MethodType(herb.PlanToEndEffectorPose, robot, type(robot))
+    robot.LookAt = types.MethodType(herb.LookAt, robot, type(robot))
 
     # Bind extra methods to the manipulators.
     initialize_manipulator(robot.left_arm)
