@@ -60,7 +60,7 @@ def initialize_sensors(robot, moped_sim=True):
     moped_args = 'MOPEDSensorSystem {0:s} {1:s} {2:s}'.format(NODE_NAME, '/moped', OPENRAVE_FRAME_ID)
 
     if not moped_sim:
-        self.moped_sensorsystem = openravepy.RaveCreateSensorSystem(self.env, args)
+        self.moped_sensorsystem = openravepy.RaveCreateSensorSystem(robot.GetEnv(), args)
 
 def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
                            left_hand_sim=False, right_hand_sim=False,
@@ -87,15 +87,21 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.chomp_planner = chomp.CHOMPPlanner(robot)
     robot.planners = [ robot.cbirrt_planner, robot.chomp_planner ]
 
-    # Bind extra methods onto the OpenRAVE robot.
-    robot.PlanToConfiguration = types.MethodType(herb.PlanToConfiguration, robot, type(robot))
-    robot.PlanToEndEffectorPose = types.MethodType(herb.PlanToEndEffectorPose, robot, type(robot))
-    robot.LookAt = types.MethodType(herb.LookAt, robot, type(robot))
+    # Trajectory timing.
+    # TODO: Create a trajectory timing problem.
+    #robot.trajectory_problem = openravepy.RaveCreateProblem(robot.GetEnv(), 'Trajectory')
+    #robot.GetEnv().LoadProblem(robot.trajectory_problem, robot.GetName())
 
     # Bind extra methods to the manipulators.
     initialize_manipulator(robot, robot.left_arm, openravepy.IkParameterization.Type.Transform6D)
     initialize_manipulator(robot, robot.right_arm, openravepy.IkParameterization.Type.Transform6D)
     initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
+
+    # Bind extra methods onto the OpenRAVE robot.
+    robot.PlanToConfiguration = types.MethodType(herb.PlanToConfiguration, robot, type(robot))
+    robot.PlanToEndEffectorPose = types.MethodType(herb.PlanToEndEffectorPose, robot, type(robot))
+    robot.RetimeTrajectory = types.MethodType(herb.RetimeTrajectory, robot, type(robot))
+    robot.LookAt = types.MethodType(herb.LookAt, robot, type(robot))
 
 def initialize(env_path='environments/pr_kitchen.robot.xml',
                robot_path='robots/herb2_padded.robot.xml',

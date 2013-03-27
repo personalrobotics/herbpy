@@ -61,3 +61,35 @@ def PlanToConfiguration(robot, goal, **kw_args):
 def PlanToEndEffectorPose(robot, goal_pose, **kw_args):
     return PlanGeneric(robot, 'PlanToEndEffectorPose', robot, goal_pose, **kw_args)
 
+def RetimeTrajectory(robot, traj, maxsmoothiter=None, resolution=None, blend_radius=0.2,
+                     blend_attempts=4, blend_step_size=0.05, linearity_threshold=0.1, 
+                     ignore_collisions=None ):
+    args = [ 'ExecuteBlendedTrajectory' ]
+    args += [ 'execute', '0' ]
+    args += [ 'traj', traj.serialize(0) ]
+    
+    if maxsmoothiter is not None:
+        args += [ 'maxsmoothiter', str(maxsmoothiter) ]
+    if resolution is not None:
+        args += [ 'resolution', ' '.join([ '{0:.04f}'.format(r) for r in resolution ]) ]
+    if blend_radius is not None:
+        args += [ 'blend_radius', str(blend_radius) ]
+    if blend_attempts is not None:
+        args += [ 'blend_attempts', str(blend_attempts) ]
+    if blend_step_size is not None:
+        args += [ 'blend_step_size', str(blend_step_size) ]
+    if linearity_threshold is not None:
+        args += [ 'linearity_threshold', linearity_threshold ]
+    if ignore_collisions is not None:
+        args += [ 'ignore_collisions', str(int(ignore_collisions)) ]
+
+    args_str = ' '.join(args)
+    timed_traj_xml = self.trajectory_problem.SendCommand(args_str)
+
+    if not timed_traj_xml:
+        logger.warning('Trajectory retiming failed.')
+        return None
+
+    timed_traj = openravepy.RaveCreateTrajectory(robot.GetEnv(), '')
+    timed_traj.deserialize(timed_traj_xml)
+    return timed_traj 
