@@ -1,7 +1,7 @@
 import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
 import logging, openravepy, or_multi_controller, types
-import cbirrt, chomp, herb
+import cbirrt, chomp, herb, wam
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
@@ -15,8 +15,18 @@ def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, si
     robot.multicontroller.attach(name, delegate_controller, dof_indices, affine_dofs)
     return delegate_controller
 
-def initialize_manipulator(manipulator):
-    manipulator.SetStiffness = types.MethodType(herb.SetStiffness, manipulator, type(manipulator))
+def initialize_manipulator(robot, manipulator, ik_type):
+    # Load the IK database.
+    with robot.GetEnv():
+        robot.SetActiveManipulator(manipulator)
+        manipulator.ik_database = openravepy.databases.inversekinematics.InverseKinematicsModel(robot, iktype=ik_type)
+        if not manipulator.ik_database.load():
+            logging.info('Generating IK database for {0:s}.'.format(manipulator.GetName()))
+            manipulator.ik_database.autogenerate()
+
+    # Bind extra methods.
+    manipulator.parent = robot
+    manipulator.SetStiffness = types.MethodType(wam.SetStiffness, manipulator, type(manipulator))
 
 def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, right_hand_sim,
                                   head_sim, segway_sim):
@@ -65,15 +75,6 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
                                   head_sim=head_sim, segway_sim=segway_sim)
     initialize_sensors(robot, moped_sim=moped_sim)
 
-    # Load the IK database for the head.
-    with robot.GetEnv():
-        robot.SetActiveManipulator('head_wam')
-        robot.head.ik_database = openravepy.databases.inversekinematics.InverseKinematicsModel(
-            robot, iktype=openravepy.IkParameterizationType.Lookat3D)
-        if not robot.head.ik_database.load():
-            logging.info('Generating IK database for the head.')
-            robot.head.ik_database.autogenerate()
-
     # Wait for the robot's state to update.
     for controller in robot.controllers:
         try:
@@ -92,9 +93,9 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.LookAt = types.MethodType(herb.LookAt, robot, type(robot))
 
     # Bind extra methods to the manipulators.
-    initialize_manipulator(robot.left_arm)
-    initialize_manipulator(robot.right_arm)
-    initialize_manipulator(robot.head)
+    initialize_manipulator(robot, robot.left_arm, openravepy.IkParameterization.Type.Transform6D)
+    initialize_manipulator(robot, robot.right_arm, openravepy.IkParameterization.Type.Transform6D)
+    initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
 
 def initialize(env_path='environments/pr_kitchen.robot.xml',
                robot_path='robots/herb2_padded.robot.xml',

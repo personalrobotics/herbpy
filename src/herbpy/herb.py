@@ -61,11 +61,3 @@ def PlanToConfiguration(robot, goal, **kw_args):
 def PlanToEndEffectorPose(robot, goal_pose, **kw_args):
     return PlanGeneric(robot, 'PlanToEndEffectorPose', robot, goal_pose, **kw_args)
 
-def SetStiffness(manipulator, stiffness):
-    try:
-        manipulator.arm_controller.SendCommand('SetStiffness {0:f}'.format(stiffness))
-        return True
-    except openravepy.openrave_exception, e:
-        logging.error(e)
-        return False
-
