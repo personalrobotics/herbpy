@@ -20,6 +20,9 @@ robot.SetActiveDOFs(robot.right_arm.GetArmIndices())
 
 right_home_config = [ 3.68, -1.90,  0.00,  2.20,  0.00,  0.00, 0.00 ]
 
+# TODO: Trajectory retiming.
+# FIXME: Executing CHOMP trajectories through multicontroller fails.
+
 # test cbirrt
 '''
 robot.SetActiveDOFValues(right_home_config)

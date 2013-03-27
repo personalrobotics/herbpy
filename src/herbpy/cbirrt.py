@@ -1,16 +1,16 @@
 import cbirrt, logging, numpy, openravepy, os, tempfile
 import prrave.tsr
+from planner import Planner, PlanningError
 
-class PlanningError:
-    def __init__(self):
-        pass
-
-class CBiRRTPlanner:
+class CBiRRTPlanner(Planner):
     def __init__(self, robot):
         self.env = robot.GetEnv()
         self.robot = robot
         self.problem = openravepy.RaveCreateProblem(self.env, 'CBiRRT')
         self.env.LoadProblem(self.problem, robot.GetName())
+
+    def GetName(self):
+        return 'cbirrt'
 
     def Plan(self, smoothingitrs=None, timelimit=None, allowlimadj=None, extra_args=None):
         args = [ 'RunCBiRRT' ]

@@ -2,6 +2,7 @@ import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
 import logging, openravepy, or_multi_controller, types
 import cbirrt, chomp
+from planner import PlanningError 
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
@@ -31,6 +32,34 @@ def LookAt(robot, target, execute=True):
             pass
 
     return traj
+
+def PlanGeneric(robot, command_name, execute=True, *args, **kw_args):
+    # Sequentially try each planner until one succeeds.
+    traj = None
+    for planner in robot.planners:
+        try:
+            command = getattr(planner, command_name)
+            print command
+            traj = command(*args, **kw_args)
+            break
+        except NotImplementedError:
+            pass
+        except PlanningError, e:
+            logging.warning('Planning with {0:s} failed: {1:s}'.format(planner.GetName(), e))
+
+    if traj is None:
+        logging.error('Planning failed with all planners.')
+        return None
+
+    # TODO: Retime the trajectory.
+    # TODO: Optionally execute the trajectory.
+    return traj
+
+def PlanToConfiguration(robot, goal, **kw_args):
+    return PlanGeneric(robot, 'PlanToConfiguration', goal, **kw_args)
+
+def PlanToEndEffectorPose(robot, goal_pose, **kw_args):
+    return PlanGeneric(robot, 'PlanToEndEffectorPose', goal_pose, **kw_args)
 
 def SetStiffness(manipulator, stiffness):
     try:
@@ -79,17 +108,6 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
                           robot.left_arm.hand_controller, robot.right_arm.hand_controller ]
     robot.multicontroller.finalize()
 
-    # Load the IK database for the head.
-    with robot.GetEnv():
-        robot.SetActiveManipulator('head_wam')
-        robot.head.ik_database = openravepy.databases.inversekinematics.InverseKinematicsModel(robot, iktype=openravepy.IkParameterizationType.Lookat3D)
-        if not robot.head.ik_database.load():
-            logging.info('Generating IK database for the head.')
-            robot.head.ik_database.autogenerate()
-
-    # Monkey patch the extra methods onto the OpenRAVE robot.
-    robot.LookAt = types.MethodType(LookAt, robot, type(robot))
-
 def initialize_sensors(robot, moped_sim=True):
     moped_args = 'MOPEDSensorSystem {0:s} {1:s} {2:s}'.format(NODE_NAME, '/moped', OPENRAVE_FRAME_ID)
 
@@ -103,23 +121,20 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.right_arm = robot.GetManipulator('right_wam')
     robot.head = robot.GetManipulator('head_wam')
 
-    # TODO: Bind methods to the robot.
-    # TODO: Bind methods to the manipulators.
-
     # Initialize the OpenRAVE plugins.
     initialize_controllers(robot, left_arm_sim=left_arm_sim, right_arm_sim=right_arm_sim,
                                   left_hand_sim=left_hand_sim, right_hand_sim=right_hand_sim,
                                   head_sim=head_sim, segway_sim=segway_sim)
     initialize_sensors(robot, moped_sim=moped_sim)
 
-    # Monkey-patch the manipulators.
-    initialize_manipulator(robot.left_arm)
-    initialize_manipulator(robot.right_arm)
-    initialize_manipulator(robot.head)
-
-    # Monkey-patch the planners.
-    robot.cbirrt_planner = cbirrt.CBiRRTPlanner(robot)
-    robot.chomp_planner = chomp.CHOMPPlanner(robot)
+    # Load the IK database for the head.
+    with robot.GetEnv():
+        robot.SetActiveManipulator('head_wam')
+        robot.head.ik_database = openravepy.databases.inversekinematics.InverseKinematicsModel(
+            robot, iktype=openravepy.IkParameterizationType.Lookat3D)
+        if not robot.head.ik_database.load():
+            logging.info('Generating IK database for the head.')
+            robot.head.ik_database.autogenerate()
 
     # Wait for the robot's state to update.
     for controller in robot.controllers:
@@ -127,6 +142,21 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
             controller.SendCommand('WaitForUpdate')
         except openravepy.openrave_exception, e:
             pass
+
+    # Configure the planners.
+    robot.cbirrt_planner = cbirrt.CBiRRTPlanner(robot)
+    robot.chomp_planner = chomp.CHOMPPlanner(robot)
+    robot.planners = [ robot.cbirrt_planner, robot.chomp_planner ]
+
+    # Bind extra methods onto the OpenRAVE robot.
+    robot.PlanToConfiguration = types.MethodType(PlanToConfiguration, robot, type(robot))
+    robot.PlanToEndEffectorPose = types.MethodType(PlanToEndEffectorPose, robot, type(robot))
+    robot.LookAt = types.MethodType(LookAt, robot, type(robot))
+
+    # Bind extra methods to the manipulators.
+    initialize_manipulator(robot.left_arm)
+    initialize_manipulator(robot.right_arm)
+    initialize_manipulator(robot.head)
 
 def initialize(env_path='environments/pr_kitchen.robot.xml',
                robot_path='robots/herb2_padded.robot.xml',
