@@ -1,3 +1,4 @@
+import logging
 import openravepy, orcdchomp.orcdchomp
 from planner import Planner, PlanningError
 
@@ -16,6 +17,7 @@ class CHOMPPlanner(Planner):
         try:
             return self.module.runchomp(robot=self.robot, adofgoal=goal, **kw_args)
         except RuntimeError, e:
+            logging.warning('CHOMP returned error {0:s}'.format(e))
             raise PlanningError
 
     def ComputeDistanceField(self):

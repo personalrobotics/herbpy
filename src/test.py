@@ -1,5 +1,8 @@
 import herbpy, openravepy, numpy
 
+right_start_config = [ 4.6, -1.57, 0.0, 2.8, -3.0, -0.4, 0.0 ]
+right_home_config = [ 3.68, -1.90,  0.00,  2.20,  0.00,  0.00, 0.00 ]
+
 openravepy.RaveInitialize(True, level=openravepy.DebugLevel.Info)
 openravepy.misc.InitOpenRAVELogging();
 
@@ -15,10 +18,17 @@ def look_at_hand(robot, manipulator):
     target = manipulator.GetEndEffectorTransform()[0:3, 3]
     herbpy.look_at(robot, target, execute=True)
 
-robot.SetActiveManipulator(robot.right_arm)
-robot.SetActiveDOFs(robot.right_arm.GetArmIndices())
+with env:
+    robot.SetActiveManipulator(robot.right_arm)
+    robot.SetActiveDOFs(robot.right_arm.GetArmIndices())
+    robot.SetActiveDOFValues(right_start_config)
+    robot.SetTransform([[ 1, 0, 0, -1.25 ],
+                        [ 0, 1, 0,  0.49 ],
+                        [ 0, 0, 1,  0.00 ],
+                        [ 0, 0, 0,     1 ]])
 
-right_home_config = [ 3.68, -1.90,  0.00,  2.20,  0.00,  0.00, 0.00 ]
+traj = robot.chomp_planner.PlanToConfiguration(right_home_config, n_iter=100, lambda_=100.0)
+blended_traj = robot.BlendTrajectory(traj)
 
 # TODO: Trajectory retiming.
 # FIXME: Executing CHOMP trajectories through multicontroller fails.
@@ -31,6 +41,3 @@ Tend = numpy.array(Tstart)
 Tend[2, 3] -= 0.2
 traj = robot.cbirrt_planner.PlanToEndEffectorPose(Tend)
 '''
-
-#traj = robot.chomp_planner.PlanToConfiguration(right_home_config)
-

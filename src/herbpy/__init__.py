@@ -1,11 +1,11 @@
 import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
-import logging, openravepy, or_multi_controller, types
+import logging, types
+import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
 import cbirrt, chomp, herb, wam
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
-HEAD_DOFS = [ 22, 23 ]
 
 def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, simulation):
     if simulation:
@@ -42,10 +42,11 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
     right_arm_dofs = robot.right_arm.GetArmIndices()
     left_hand_dofs = robot.left_arm.GetChildDOFIndices()
     right_hand_dofs = robot.right_arm.GetChildDOFIndices()
+    head_dofs = robot.head.GetArmIndices()
 
     # Controllers.
     robot.multicontroller = or_multi_controller.MultiControllerWrapper(robot)
-    robot.head.arm_controller = attach_controller(robot, 'head', head_args, HEAD_DOFS, 0, head_sim)
+    robot.head.arm_controller = attach_controller(robot, 'head', head_args, head_dofs, 0, head_sim)
     robot.left_arm.arm_controller = attach_controller(robot, 'left_arm', left_arm_args, left_arm_dofs, 0, left_arm_sim)
     robot.right_arm.arm_controller = attach_controller(robot, 'right_arm', right_arm_args, right_arm_dofs, 0, right_arm_sim)
     robot.left_arm.hand_controller = attach_controller(robot, 'left_hand', left_hand_args, left_hand_dofs, 0, left_hand_sim)
@@ -87,10 +88,9 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.chomp_planner = chomp.CHOMPPlanner(robot)
     robot.planners = [ robot.cbirrt_planner, robot.chomp_planner ]
 
-    # Trajectory timing.
-    # TODO: Create a trajectory timing problem.
-    #robot.trajectory_problem = openravepy.RaveCreateProblem(robot.GetEnv(), 'Trajectory')
-    #robot.GetEnv().LoadProblem(robot.trajectory_problem, robot.GetName())
+    # Trajectory blending module.
+    robot.trajectory_module = prrave.rave.load_module(robot.GetEnv(), 'Trajectory', robot.GetName())
+    manipulation2.trajectory.bind(robot.trajectory_module)
 
     # Bind extra methods to the manipulators.
     initialize_manipulator(robot, robot.left_arm, openravepy.IkParameterization.Type.Transform6D)
@@ -100,18 +100,16 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     # Bind extra methods onto the OpenRAVE robot.
     robot.PlanToConfiguration = types.MethodType(herb.PlanToConfiguration, robot, type(robot))
     robot.PlanToEndEffectorPose = types.MethodType(herb.PlanToEndEffectorPose, robot, type(robot))
-    robot.RetimeTrajectory = types.MethodType(herb.RetimeTrajectory, robot, type(robot))
+    robot.BlendTrajectory = types.MethodType(herb.BlendTrajectory, robot, type(robot))
     robot.LookAt = types.MethodType(herb.LookAt, robot, type(robot))
 
 def initialize(env_path='environments/pr_kitchen.robot.xml',
                robot_path='robots/herb2_padded.robot.xml',
-               robot_name='HERB2', attach_viewer=False,
-               **kw_args):
+               attach_viewer=False, **kw_args):
     env = openravepy.Environment()
     env.Load(env_path)
 
     robot = env.ReadRobotXMLFile(robot_path)
-    robot.SetName(robot_name)
     env.Add(robot)
 
     if attach_viewer:
