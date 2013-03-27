@@ -21,9 +21,13 @@ robot.SetActiveDOFs(robot.right_arm.GetArmIndices())
 right_home_config = [ 3.68, -1.90,  0.00,  2.20,  0.00,  0.00, 0.00 ]
 
 # test cbirrt
+'''
 robot.SetActiveDOFValues(right_home_config)
 Tstart = robot.GetActiveManipulator().GetEndEffectorTransform()
 Tend = numpy.array(Tstart)
 Tend[2, 3] -= 0.2
-
 traj = robot.cbirrt_planner.PlanToEndEffectorPose(Tend)
+'''
+
+#traj = robot.chomp_planner.PlanToConfiguration(right_home_config)
+

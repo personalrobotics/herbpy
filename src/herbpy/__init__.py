@@ -1,7 +1,7 @@
 import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
 import logging, openravepy, or_multi_controller, types
-import cbirrt
+import cbirrt, chomp
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
@@ -119,6 +119,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
 
     # Monkey-patch the planners.
     robot.cbirrt_planner = cbirrt.CBiRRTPlanner(robot)
+    robot.chomp_planner = chomp.CHOMPPlanner(robot)
 
     # Wait for the robot's state to update.
     for controller in robot.controllers:

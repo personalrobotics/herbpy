@@ -9,8 +9,8 @@ class CBiRRTPlanner:
     def __init__(self, robot):
         self.env = robot.GetEnv()
         self.robot = robot
-        self.problem = openravepy.RaveCreateProblem(robot.GetEnv(), 'CBiRRT')
-        robot.GetEnv().LoadProblem(self.problem, robot.GetName())
+        self.problem = openravepy.RaveCreateProblem(self.env, 'CBiRRT')
+        self.env.LoadProblem(self.problem, robot.GetName())
 
     def Plan(self, smoothingitrs=None, timelimit=None, allowlimadj=None, extra_args=None):
         args = [ 'RunCBiRRT' ]
@@ -28,7 +28,6 @@ class CBiRRTPlanner:
         traj_path = '/tmp/cmovetraj.txt'
         args += [ 'filename', traj_path ]
         args_str = ' '.join(args)
-        print 'ARGS:', args_str
         response = self.problem.SendCommand(args_str)
         if int(response) != 1:
             raise PlanningError
