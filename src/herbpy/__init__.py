@@ -2,7 +2,7 @@ import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
 import logging, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
-import cbirrt, chomp, herb, wam
+import cbirrt, chomp, herb, wam, yaml
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
@@ -25,8 +25,10 @@ def initialize_manipulator(robot, manipulator, ik_type):
             manipulator.ik_database.autogenerate()
 
     # Bind extra methods.
+    t = type(manipulator)
     manipulator.parent = robot
-    manipulator.SetStiffness = types.MethodType(wam.SetStiffness, manipulator, type(manipulator))
+    manipulator.SetStiffness = types.MethodType(wam.SetStiffness, manipulator, t)
+    manipulator.MoveHand = types.MethodType(wam.MoveHand, manipulator, t)
 
 def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, right_hand_sim,
                                   head_sim, segway_sim):
@@ -103,6 +105,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.PlanToEndEffectorPose = types.MethodType(herb.PlanToEndEffectorPose, robot, t)
     robot.BlendTrajectory = types.MethodType(herb.BlendTrajectory, robot, t)
     robot.ExecuteTrajectory = types.MethodType(herb.ExecuteTrajectory, robot, t)
+    robot.AddTrajectoryFlags = types.MethodType(herb.AddTrajectoryFlags, robot, t)
     robot.LookAt = types.MethodType(herb.LookAt, robot, t)
 
 def initialize(env_path='environments/pr_kitchen.robot.xml',

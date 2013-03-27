@@ -27,10 +27,12 @@ with env:
                         [ 0, 0, 1,  0.00 ],
                         [ 0, 0, 0,     1 ]])
 
+# TODO: Named configurations.
+# TODO: Finger control.
 # FIXME: CHOMP always returns success.
 traj = robot.PlanToConfiguration(right_home_config)#, n_iter=100, lambda_=100.0)
 blended_traj = robot.BlendTrajectory(traj)
-robot.ExecuteTrajectory(blended_traj)
+#robot.ExecuteTrajectory(blended_traj)
 
 # test cbirrt
 '''

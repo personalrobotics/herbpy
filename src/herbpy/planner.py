@@ -1,6 +1,6 @@
 import openravepy, orcdchomp.orcdchomp
 
-class Planner:
+class Planner(Exception):
     def PlanToConfiguration(self, goal, **kw_args):
         raise NotImplementedError
 

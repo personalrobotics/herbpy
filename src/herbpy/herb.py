@@ -63,10 +63,43 @@ def PlanToConfiguration(robot, goal, **kw_args):
 def PlanToEndEffectorPose(robot, goal_pose, **kw_args):
     return PlanGeneric(robot, 'PlanToEndEffectorPose', robot, goal_pose, **kw_args)
 
+def PlanToNamedConfiguration(robot, name):
+    pass
+
 def BlendTrajectory(robot, traj, **kw_args):
     with robot.GetEnv():
         saver = robot.CreateRobotStateSaver()
         return robot.trajectory_module.blendtrajectory(traj=traj, execute=False, **kw_args)
+
+def AddTrajectoryFlags(robot, traj, stop_on_stall=True, stop_on_ft=False,
+                       force_direction=None, force_magnitude=None, torque=None):
+    flags  = [ 'stop_on_stall', str(int(stop_on_stall)) ]
+    flags += [ 'stop_on_ft', str(int(stop_on_ft)) ]
+
+    if stop_on_ft:
+        if force_direction is None:
+            logging.error('Force direction must be specified if stop_on_ft is true.')
+            return False
+        elif force_magnitude is None:
+            logging.error('Force magnitude must be specified if stop_on_ft is true.')
+            return False 
+        elif torque is None:
+            logging.error('Torque must be specified if stop_on_ft is true.')
+            return False 
+        elif len(force_direction) != 3:
+            logging.error('Force direction must be a three-dimensional vector.')
+            return False
+        elif len(torque) != 3:
+            logging.error('Torque must be a three-dimensional vector.')
+            return False 
+
+        flags += [ 'force_direction' ] + [ str(x) for x in force_direction ]
+        flags += [ 'force_magnitude', str(force_magnitude) ]
+        flags += [ 'torque' ] + [ str(x) for x in torque ]
+
+    flags_str = ' '.join(flags)
+    traj.SetUserData(flags_str)
+    return True
 
 def ExecuteTrajectory(robot, traj, timeout=None):
     robot.GetController().SetPath(traj)
