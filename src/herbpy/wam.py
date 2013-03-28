@@ -14,8 +14,9 @@ def MoveHand(manipulator, preshape, timeout=None):
         logging.error('Preshape has the wrong dimensions; expected 4, got {0:d}'.format(len(preshape)))
         return False
 
-    controller = manipulator.hand_controller
-    controller.SetDesired(preshape)
-
-    # TODO: Wait for the fingers to close.
+    manipulator.hand_controller.SetDesired(preshape)
+    if timeout == None:
+        manipulator.robot.WaitForController(0)
+    elif timeout > 0:
+        manipulator.robot.WaitForController(timeout)
     return True

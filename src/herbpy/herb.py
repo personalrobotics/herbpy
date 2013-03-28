@@ -33,8 +33,6 @@ def LookAt(robot, target, execute=True):
 def PlanGeneric(robot, command_name, execute=True, *args, **kw_args):
     traj = None
 
-    print kw_args
-
     # Sequentially try each planner until one succeeds.
     with robot.GetEnv():
         saver = robot.CreateRobotStateSaver()
@@ -120,3 +118,7 @@ def ExecuteTrajectory(robot, traj, timeout=None):
         robot.WaitForController(0)
     elif timeout > 0:
         robot.WaitForController(timeout)
+
+def TareForceTorqueSensor(robot):
+    #
+    pass
