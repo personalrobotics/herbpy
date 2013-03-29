@@ -141,12 +141,14 @@ def AddTrajectoryFlags(robot, traj, stop_on_stall=True, stop_on_ft=False,
 
 @HerbMethod
 def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True):
+    # Retiming the trajectory may be necessary to execute it on an
+    # IdealController in simulation. This timing is ignored by OWD.
+    if retime:
+        openravepy.planningutils.RetimeTrajectory(traj)
+
     # Annotate the trajectory with HERB-specific options.
     if blend:
         traj = robot.BlendTrajectory(traj)
-
-    if retime:
-        logging.warning('Trajectory retiming is not supported.')
 
     # Only add flags if none are present. This is the only way of checking if
     # the trajectory already has the flags added.
