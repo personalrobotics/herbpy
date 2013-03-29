@@ -39,3 +39,18 @@ def GetForceTorque(manipulator):
 @WamMethod
 def TareForceTorqueSensor(manipulator):
     manipulator.ft_sensor.SendCommand('Tare')
+
+@WamMethod
+def SetVelocityLimits(manipulator, velocity_limits, min_accel_time):
+    num_dofs = len(manipulator.GetArmIndices())
+    if len(velocity_limits) != num_dofs:
+        logging.error('Incorrect number of velocity limits; expected {0:d}, got {1:d}.'.format(
+                      num_dofs, len(velocity_limits)))
+        return False
+
+    args  = [ 'SetSpeed' ]
+    args += [ str(min_accel_time) ]
+    args += [ str(velocity) for velocity in velocity_limits ]
+    args_str = ' '.join(args)
+    manipulator.arm_controller.SendCommand(args_str)
+    return True

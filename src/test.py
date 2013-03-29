@@ -34,9 +34,9 @@ robot.chomp_planner.ComputeDistanceField()
 
 #traj = robot.cbirrt_planner.PlanToConfiguration(right_home_config)
 
-# TODO: Named configurations.
+# TODO: Implement synchronized trajectories.
+# TODO: Use different or_owd_controller flags for each controller instance.
 # TODO: Wait for the hand to finish closing.
-# TODO: Add F/T tare functionality.
 # FIXME: WaitForController doesn't work.
 # FIXME: CHOMP always returns success.
 

@@ -73,6 +73,9 @@ def MoveUntilTouch(robot, direction, distance, max_force=5, execute=True):
                                           force_magnitude=max_force, torque=[100,100,100])
 
     if execute:
+        # TODO: Only tare the force/torque sensor for the relevant manipulator(s).
+        robot.right_arm.TareForceTorque()
+        robot.left_arm.TareForceTorque()
         return robot.ExecuteTrajectory(traj)
     else:
         return traj
