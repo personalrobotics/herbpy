@@ -1,6 +1,10 @@
 import cbirrt, chomp, logging, openravepy
 from planner import PlanningError 
+from methodlist_decorator import CreateMethodListDecorator
 
+WamMethod = CreateMethodListDecorator()
+
+@WamMethod
 def SetStiffness(manipulator, stiffness):
     try:
         manipulator.arm_controller.SendCommand('SetStiffness {0:f}'.format(stiffness))
@@ -9,6 +13,7 @@ def SetStiffness(manipulator, stiffness):
         logging.error(e)
         return False
 
+@WamMethod
 def MoveHand(manipulator, f1=None, f2=None, f3=None, spread=None, timeout=None):
     # Default any None's to the current DOF values.
     hand_indices = sorted(manipulator.GetChildDOFIndices())

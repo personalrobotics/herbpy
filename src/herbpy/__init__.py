@@ -101,16 +101,21 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     initialize_manipulator(robot, robot.right_arm, openravepy.IkParameterization.Type.Transform6D)
     initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
 
-    # Bind extra methods onto the OpenRAVE robot.
-    t = type(robot)
-    robot.PlanToConfiguration = types.MethodType(herb.PlanToConfiguration, robot, t)
-    robot.PlanToEndEffectorPose = types.MethodType(herb.PlanToEndEffectorPose, robot, t)
-    robot.PlanToEndEffectorOffset = types.MethodType(herb.PlanToEndEffectorOffset, robot, t)
-    robot.MoveUntilTouch = types.MethodType(herb.MoveUntilTouch, robot, t)
-    robot.BlendTrajectory = types.MethodType(herb.BlendTrajectory, robot, t)
-    robot.ExecuteTrajectory = types.MethodType(herb.ExecuteTrajectory, robot, t)
-    robot.AddTrajectoryFlags = types.MethodType(herb.AddTrajectoryFlags, robot, t)
-    robot.LookAt = types.MethodType(herb.LookAt, robot, t)
+    # Bind extra methods onto the OpenRAVE robot and manipulators.
+    herb.HerbMethod.Bind(robot)
+    wam.WamMethod.Bind(robot.right_arm)
+    wam.WamMethod.Bind(robot.left_arm)
+
+    # Dynamically bind the planners to the robot through the PlanGeneric wrapper.
+    robot_type = type(robot)
+    for method in planner.PlanningMethod.methods:
+        def plan_method(robot, *args):
+            return herb.PlanGeneric(robot, method.__name__, args, **kw_args)
+
+        # TODO: Copy the docstring from the planner methods.
+        bound_method = types.MethodType(method, robot, robot_type)
+        setattr(robot, method.__name__, bound_method)
+
 
 def initialize(env_path='environments/pr_kitchen.robot.xml',
                robot_path='robots/herb2_padded.robot.xml',

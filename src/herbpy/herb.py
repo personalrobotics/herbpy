@@ -1,7 +1,11 @@
 import cbirrt, chomp, logging, openravepy
 import numpy
 import planner
+from methodlist_decorator import CreateMethodListDecorator
 
+HerbMethod = CreateMethodListDecorator()
+
+@HerbMethod
 def LookAt(robot, target, execute=True):
     # Find an IK solution to look at the point.
     ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
@@ -30,6 +34,7 @@ def LookAt(robot, target, execute=True):
 
     return traj
 
+@HerbMethod
 def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
     traj = None
 
@@ -55,16 +60,7 @@ def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
     else:
         return traj
 
-# TODO: Dynamically generate these from the Planner superclass.
-def PlanToConfiguration(robot, goal, **kw_args):
-    return PlanGeneric(robot, 'PlanToConfiguration', [ goal ], **kw_args)
-
-def PlanToEndEffectorPose(robot, goal_pose, **kw_args):
-    return PlanGeneric(robot, 'PlanToEndEffectorPose', [ goal_pose ], **kw_args)
-
-def PlanToEndEffectorOffset(robot, direction, distance, **kw_args):
-    return PlanGeneric(robot, 'PlanToEndEffectorOffset', [ direction, distance ], **kw_args)
-
+@HerbMethod
 def MoveUntilTouch(robot, direction, distance, max_force=5, execute=True):
     # Compute the expected force direction in the hand frame.
     direction = numpy.array(direction)
@@ -81,14 +77,17 @@ def MoveUntilTouch(robot, direction, distance, max_force=5, execute=True):
     else:
         return traj
 
+@HerbMethod
 def PlanToNamedConfiguration(robot, name):
     pass
 
+@HerbMethod
 def BlendTrajectory(robot, traj, **kw_args):
     with robot.GetEnv():
         saver = robot.CreateRobotStateSaver()
         return robot.trajectory_module.blendtrajectory(traj=traj, execute=False, **kw_args)
 
+@HerbMethod
 def AddTrajectoryFlags(robot, traj, stop_on_stall=True, stop_on_ft=False,
                        force_direction=None, force_magnitude=None, torque=None):
     flags  = [ 'or_owd_controller' ]
@@ -130,6 +129,7 @@ def AddTrajectoryFlags(robot, traj, stop_on_stall=True, stop_on_ft=False,
 
     return annotated_traj
 
+@HerbMethod
 def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True):
     # Annotate the trajectory with HERB-specific options.
     if blend:
@@ -154,7 +154,3 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True):
         robot.WaitForController(timeout)
 
     return traj
-
-def TareForceTorqueSensor(robot):
-    #
-    pass
