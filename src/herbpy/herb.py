@@ -172,9 +172,10 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True):
     Execute a trajectory. By default, this retimes, blends, and adds the
     stop_on_stall flag to all trajectories. Additionally, this function blocks
     until trajectory execution finishes. This can be changed by changing the
-    timeout parameter to a maximum number of seconds. Pass return instantly.
+    timeout parameter to a maximum number of seconds. Pass a timeout of zero to
+    return instantly.
     @param traj trajectory to execute
-    @param timeout execution timeout
+    @param timeout blocking execution timeout
     @param blend compute blend radii before execution
     @param retime retime the trajectory before execution
     @return executed_traj  
