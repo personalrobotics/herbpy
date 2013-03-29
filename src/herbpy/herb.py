@@ -85,10 +85,17 @@ def PlanToNamedConfiguration(robot, name):
     pass
 
 @HerbMethod
-def BlendTrajectory(robot, traj, **kw_args):
+def BlendTrajectory(robot, traj, maxsmoothiter=None, resolution=None,
+                    blend_radius=0.2, blend_attempts=4, blend_step_size=0.05,
+                    linearity_threshold=0.1, ignore_collisions=None, **kw_args):
     with robot.GetEnv():
         saver = robot.CreateRobotStateSaver()
-        return robot.trajectory_module.blendtrajectory(traj=traj, execute=False, **kw_args)
+        return robot.trajectory_module.blendtrajectory(traj=traj, execute=False,
+            maxsmoothiter=maxsmoothiter, resolution=resolution,
+            blend_radius=blend_radius, blend_attempts=blend_attempts,
+            blend_step_size=blend_step_size, linearity_threshold=linearity_threshold,
+            ignore_collisions=ignore_collisions
+        )
 
 @HerbMethod
 def AddTrajectoryFlags(robot, traj, stop_on_stall=True, stop_on_ft=False,
