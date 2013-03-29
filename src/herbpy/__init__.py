@@ -15,6 +15,16 @@ RIGHT_HAND_NAMESPACE = '/right/bhd'
 MOPED_NAMESPACE = '/moped'
 
 def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, simulation):
+    """
+    Attach a controller to some of HERB DOFs. If in simulation, the specified
+    controller is replaced with an IdealController.
+    @param name controller's name within the multicontroller
+    @param controller_args argument string used to construct the real controller
+    @param dof_indices joint DOFs controlled by the controller
+    @param affine_dofs affine DOFs controlled by the controller
+    @param simulation flag for simulation mode
+    @return controller
+    """
     if simulation:
         controller_args = 'IdealController'
 
@@ -23,6 +33,11 @@ def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, si
     return delegate_controller
 
 def initialize_manipulator(robot, manipulator, ik_type):
+    """
+    Bind extra methods to HERB's manipulators.
+    @param manipulator one of HERB's manipulators
+    @param ik_type inverse kinematics type for the manipulator
+    """
     # Store a reference to the robot instance with extra bound methods.
     manipulator.parent = robot
 
@@ -56,6 +71,15 @@ def initialize_manipulator(robot, manipulator, ik_type):
 
 def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, right_hand_sim,
                                   head_sim, segway_sim):
+    """
+    Initialize HERB's controllers.
+    @param head_sim simulate the head
+    @param left_arm_sim simulate the left arm 
+    @param right_arm_sim simulate the right arm 
+    @param left_hand_sim simulate the left hand
+    @param right_hand_sim simulate the right hand
+    @param segway_sim simulate the Segway
+    """
     head_args = 'OWDController {0:s} {1:s}'.format(NODE_NAME, HEAD_NAMESPACE)
     left_arm_args = 'OWDController {0:s} {1:s}'.format(NODE_NAME, LEFT_ARM_NAMESPACE)
     right_arm_args = 'OWDController {0:s} {1:s}'.format(NODE_NAME, RIGHT_ARM_NAMESPACE)
@@ -84,6 +108,12 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
     robot.multicontroller.finalize()
 
 def initialize_sensors(robot, left_ft_sim, right_ft_sim, moped_sim):
+    """
+    Initialize HERB's sensor plugins.
+    @param left_ft_sim simulate the left force/torque sensor
+    @param right_ft_sim simulate the right force/torque sensor
+    @param moped_sim simulate MOPED
+    """
     env = robot.GetEnv()
 
     # Force/torque sensors.
@@ -109,6 +139,18 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
                            head_sim=False, segway_sim=False,
                            left_ft_sim=False, right_ft_sim=False,
                            moped_sim=False):
+    """
+    Bind extra methods to HERB.
+    @param head_sim simulate the head
+    @param left_arm_sim simulate the left arm 
+    @param right_arm_sim simulate the right arm 
+    @param left_hand_sim simulate the left hand
+    @param right_hand_sim simulate the right hand
+    @param left_ft_sim simulate the left force/torque sensor
+    @param right_ft_sim simulate the right force/torque sensor
+    @param segway_sim simulate the Segway
+    @param moped_sim simulate MOPED
+    """
     robot.left_arm = robot.GetManipulator('left_wam')
     robot.right_arm = robot.GetManipulator('right_wam')
     robot.head = robot.GetManipulator('head_wam')
@@ -159,10 +201,18 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     initialize_manipulator(robot, robot.right_arm, openravepy.IkParameterization.Type.Transform6D)
     initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
 
-
 def initialize(env_path='environments/pr_kitchen.robot.xml',
                robot_path='robots/herb2_padded.robot.xml',
                attach_viewer=False, **kw_args):
+    """
+    Load an environment, HERB to it, and optionally create a viewer. This
+    accepts the same named parameters as initialize_herb.
+    @param env_path path to the environment XML file
+    @param robot_path path to the robot XML file
+    @param attach_viewer attach a graphical viewer
+    @param **kw_args named parameters for initialize_herb
+    @return environment,robot
+    """
     env = openravepy.Environment()
     env.Load(env_path)
 
@@ -176,9 +226,27 @@ def initialize(env_path='environments/pr_kitchen.robot.xml',
     return env, robot 
 
 def initialize_sim(**kw_args):
+    """
+    Initialize a simulated HERB. This is a convenience function that is simply
+    a thin wrapper around initialize.
+    @param **kw_args named parameters for initialize or initialize_herb
+    """
     return initialize(left_arm_sim=True, right_arm_sim=True,
                       left_hand_sim=True, right_hand_sim=True,
                       head_sim=True, segway_sim=True,
                       left_ft_sim=True, right_ft_sim=True,
                       moped_sim=True,
+                      **kw_args)
+
+def initialize_real(**kw_args):
+    """
+    Initialize the real HERB. This is a convenience function that is simply a
+    thin wrapper around initialize.
+    @param **kw_args named parameters for initialize or initialize_herb
+    """
+    return initialize(left_arm_sim=False, right_arm_sim=False,
+                      left_hand_sim=False, right_hand_sim=False,
+                      head_sim=False, segway_sim=False,
+                      left_ft_sim=False, right_ft_sim=False,
+                      moped_sim=False,
                       **kw_args)
