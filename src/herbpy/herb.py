@@ -1,6 +1,6 @@
 import cbirrt, chomp, logging, openravepy
 import numpy
-from planner import PlanningError 
+import planner
 
 def LookAt(robot, target, execute=True):
     # Find an IK solution to look at the point.
@@ -30,38 +30,37 @@ def LookAt(robot, target, execute=True):
 
     return traj
 
-def PlanGeneric(robot, command_name, execute=True, *args, **kw_args):
+def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
     traj = None
 
     # Sequentially try each planner until one succeeds.
     with robot.GetEnv():
-        saver = robot.CreateRobotStateSaver()
-
-        for planner in robot.planners:
-            try:
-                command = getattr(planner, command_name)
-                traj = command(*args, **kw_args)
-                break
-            except NotImplementedError:
-                pass
-            except PlanningError, e:
-                logging.warning('Planning with {0:s} failed: {1:s}'.format(planner.GetName(), e))
-
-        del saver
+        with robot.CreateRobotStateSaver():
+            for delegate_planner in robot.planners:
+                try:
+                    traj = getattr(delegate_planner, command_name)(*args, **kw_args)
+                    break
+                except planner.UnsupportedPlanningError, e:
+                    logging.debug('Unable to plan with {0:s}: {1:s}'.format(delegate_planner.GetName(), e))
+                except planner.PlanningError, e:
+                    logging.warning('Planning with {0:s} failed: {1:s}'.format(delegate_planner.GetName(), e))
 
     if traj is None:
         logging.error('Planning failed with all planners.')
         return None
 
-    # TODO: Retime the trajectory.
-    # TODO: Optionally execute the trajectory.
-    return traj
+    # Optionally execute the trajectory.
+    if execute:
+        return robot.ExecuteTrajectory(traj, **kw_args)
+    else:
+        return traj
 
+# TODO: Dynamically generate these from the Planner superclass.
 def PlanToConfiguration(robot, goal, **kw_args):
-    return PlanGeneric(robot, 'PlanToConfiguration', robot, goal, **kw_args)
+    return PlanGeneric(robot, 'PlanToConfiguration', [ goal ], **kw_args)
 
 def PlanToEndEffectorPose(robot, goal_pose, **kw_args):
-    return PlanGeneric(robot, 'PlanToEndEffectorPose', robot, goal_pose, **kw_args)
+    return PlanGeneric(robot, 'PlanToEndEffectorPose', [ goal_pose ], **kw_args)
 
 def PlanToNamedConfiguration(robot, name):
     pass
@@ -112,12 +111,24 @@ def AddTrajectoryFlags(robot, traj, stop_on_stall=True, stop_on_ft=False,
 
     return annotated_traj
 
-def ExecuteTrajectory(robot, traj, timeout=None):
+def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True):
+    # Annotate the trajectory with HERB-specific options.
+    if blend:
+        traj = robot.BlendTrajectory(traj)
+
+    if retime:
+        logging.warning('Trajectory retiming is not supported.')
+
+    # TODO: Only add flags if none are present.
+    traj = robot.AddTrajectoryFlags(traj, stop_on_stall=True)
+
     robot.GetController().SetPath(traj)
     if timeout == None:
         robot.WaitForController(0)
     elif timeout > 0:
         robot.WaitForController(timeout)
+
+    return traj
 
 def TareForceTorqueSensor(robot):
     #

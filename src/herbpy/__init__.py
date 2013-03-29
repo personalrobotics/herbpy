@@ -88,7 +88,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     # Configure the planners.
     robot.cbirrt_planner = cbirrt.CBiRRTPlanner(robot)
     robot.chomp_planner = chomp.CHOMPPlanner(robot)
-    robot.planners = [ robot.cbirrt_planner, robot.chomp_planner ]
+    robot.planners = [ robot.chomp_planner, robot.cbirrt_planner ]
 
     # Trajectory blending module.
     robot.trajectory_module = prrave.rave.load_module(robot.GetEnv(), 'Trajectory', robot.GetName())

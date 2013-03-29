@@ -1,6 +1,10 @@
 import herbpy, openravepy, numpy
 
-simulation = True 
+def look_at_hand(robot, manipulator):
+    target = manipulator.GetEndEffectorTransform()[0:3, 3]
+    robot.LookAt(target, execute=True)
+
+simulation = False 
 right_home_config = numpy.array([ 3.68, -1.90, 0.00, 2.20, 0.00, 0.00, 0.00 ])
 right_relaxed_config = numpy.array([ 5.73, -1.82, -0.35, 1.87, -4.06, -0.66, 0.98 ])
 
@@ -15,8 +19,6 @@ else:
                                    head_sim=False, segway_sim=False,
                                    moped_sim=True, attach_viewer=True)
 
-#robot.chomp_planner.ComputeDistanceField()
-
 with env:
     robot.SetActiveManipulator(robot.right_arm)
     robot.SetActiveDOFs(robot.right_arm.GetArmIndices())
@@ -28,9 +30,9 @@ if simulation:
                         [ 0, 0, 1,  0.00 ],
                         [ 0, 0, 0,     1 ]])
 
-def look_at_hand(robot, manipulator):
-    target = manipulator.GetEndEffectorTransform()[0:3, 3]
-    robot.LookAt(target, execute=True)
+robot.chomp_planner.ComputeDistanceField()
+
+#traj = robot.cbirrt_planner.PlanToConfiguration(right_home_config)
 
 # TODO: Named configurations.
 # TODO: Wait for the hand to finish closing.

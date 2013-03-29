@@ -1,8 +1,8 @@
 import cbirrt, logging, numpy, openravepy, os, tempfile
 import prrave.tsr
-from planner import Planner, PlanningError
+import planner
 
-class CBiRRTPlanner(Planner):
+class CBiRRTPlanner(planner.Planner):
     def __init__(self, robot):
         self.env = robot.GetEnv()
         self.robot = robot
@@ -30,7 +30,7 @@ class CBiRRTPlanner(Planner):
         args_str = ' '.join(args)
         response = self.problem.SendCommand(args_str)
         if int(response) != 1:
-            raise PlanningError
+            raise planner.PlanningError('Planning with CBiRRT failed.')
 
         with open(traj_path, 'rb') as traj_file:
             traj_xml = traj_file.read()
@@ -44,7 +44,7 @@ class CBiRRTPlanner(Planner):
         if len(goal_array) != self.robot.GetActiveDOF():
             logging.error('Incorrect number of DOFs in goal configuration; expected {0:d}, got {1:d}'.format(
                           self.robot.GetActiveDOF(), len(goal_array)))
-            raise PlanningError
+            raise planner.PlanningError('Incorrect number of DOFs in goal configuration.')
 
         extra_args = [ 'jointgoals', str(len(goal_array)), ' '.join([ str(x) for x in goal_array ]) ]
         return self.Plan(extra_args=extra_args, **kw_args)
