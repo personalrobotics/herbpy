@@ -37,7 +37,6 @@ robot.chomp_planner.ComputeDistanceField()
 # TODO: Named configurations.
 # TODO: Wait for the hand to finish closing.
 # TODO: Add F/T tare functionality.
-# TODO: Don't compute the signed distance field by default.
 # FIXME: WaitForController doesn't work.
 # FIXME: CHOMP always returns success.
 

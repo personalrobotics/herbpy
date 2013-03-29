@@ -106,6 +106,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.PlanToConfiguration = types.MethodType(herb.PlanToConfiguration, robot, t)
     robot.PlanToEndEffectorPose = types.MethodType(herb.PlanToEndEffectorPose, robot, t)
     robot.PlanToEndEffectorOffset = types.MethodType(herb.PlanToEndEffectorOffset, robot, t)
+    robot.MoveUntilTouch = types.MethodType(herb.MoveUntilTouch, robot, t)
     robot.BlendTrajectory = types.MethodType(herb.BlendTrajectory, robot, t)
     robot.ExecuteTrajectory = types.MethodType(herb.ExecuteTrajectory, robot, t)
     robot.AddTrajectoryFlags = types.MethodType(herb.AddTrajectoryFlags, robot, t)

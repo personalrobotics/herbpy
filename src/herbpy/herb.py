@@ -65,6 +65,22 @@ def PlanToEndEffectorPose(robot, goal_pose, **kw_args):
 def PlanToEndEffectorOffset(robot, direction, distance, **kw_args):
     return PlanGeneric(robot, 'PlanToEndEffectorOffset', [ direction, distance ], **kw_args)
 
+def MoveUntilTouch(robot, direction, distance, max_force=5, execute=True):
+    # Compute the expected force direction in the hand frame.
+    direction = numpy.array(direction)
+    hand_pose = robot.GetActiveManipulator().GetEndEffectorTransform()
+    force_direction = numpy.dot(hand_pose[0:3, 0:3], -direction)
+
+    # Plan a straight trajectory.
+    traj = robot.PlanToEndEffectorOffset(direction, distance, execute=False)
+    traj = robot.AddTrajectoryFlags(traj, stop_on_ft=True, force_direction=force_direction,
+                                          force_magnitude=max_force, torque=[100,100,100])
+
+    if execute:
+        return robot.ExecuteTrajectory(traj)
+    else:
+        return traj
+
 def PlanToNamedConfiguration(robot, name):
     pass
 
