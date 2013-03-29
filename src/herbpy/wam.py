@@ -30,3 +30,12 @@ def MoveHand(manipulator, f1=None, f2=None, f3=None, spread=None, timeout=None):
     elif timeout > 0:
         manipulator.parent.WaitForController(timeout)
     return True
+
+@WamMethod
+def GetForceTorque(manipulator):
+    sensor_data = manipulator.ft_sensor.GetSensorData()
+    return sensor_data.force, sensor_data.torque
+
+@WamMethod
+def TareForceTorqueSensor(manipulator):
+    manipulator.ft_sensor.SendCommand('Tare')
