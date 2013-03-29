@@ -28,7 +28,9 @@ class CHOMPPlanner(planner.Planner):
             # Disable everything.
             savers = list()
             for body in self.env.GetBodies():
-                savers.append(body.CreateKinBodyStateSaver())
+                saver = body.CreateKinBodyStateSaver()
+                saver.__enter__()
+                savers.append(saver)
                 body.Enable(False)
 
             # Compute the distance field for the non-spherized parts of HERB. This
@@ -56,7 +58,9 @@ class CHOMPPlanner(planner.Planner):
                     body.Enable(False)
 
         self.initialized = True 
-        del savers
+        for saver in savers:
+            saver.Restore()
+            saver.Release()
 
     def GetCachePath(self, body):
         cache_dir = rospkg.get_ros_home()

@@ -32,6 +32,16 @@ def MoveHand(manipulator, f1=None, f2=None, f3=None, spread=None, timeout=None):
     return True
 
 @WamMethod
+def OpenHand(manipulator, timeout=None):
+    # TODO: Load this angle from somewhere.
+    return manipulator.MoveHand(f1=0.0, f2=0.0, f3=0.0, timeout=timeout)
+
+@WamMethod
+def CloseHand(manipulator, timeout=None):
+    # TODO: Load this angle from somewhere.
+    return manipulator.MoveHand(f1=3.2, f2=3.2, f3=3.2, timeout=timeout)
+
+@WamMethod
 def GetForceTorque(manipulator):
     sensor_data = manipulator.ft_sensor.GetSensorData()
     return sensor_data.force, sensor_data.torque

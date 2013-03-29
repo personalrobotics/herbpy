@@ -26,13 +26,9 @@ def LookAt(robot, target, execute=True):
 
     # Optionally exeucute the trajectory.
     if execute:
-        robot.head.arm_controller.SetPath(traj)
-        # TODO: Implement a more efficient way of waiting for a single
-        # controller to finish.
-        while not robot.head.arm_controller.IsDone():
-            pass
-
-    return traj
+        return robot.ExecuteTrajectory(traj)
+    else:
+        return traj
 
 @HerbMethod
 def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
