@@ -18,3 +18,5 @@ class Planner:
     def PlanToEndEffectorPose(self, goal_pose):
         raise UnsupportedPlanningError('This planner does not support PlanToEndEffectorPose.')
 
+    def PlanToEndEffectorOffset(self, direction, distance):
+        raise UnsupportedPlanningError('This planner does not support PlanToEndEffectorOffset.')

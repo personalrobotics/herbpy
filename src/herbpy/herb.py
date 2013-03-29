@@ -62,6 +62,9 @@ def PlanToConfiguration(robot, goal, **kw_args):
 def PlanToEndEffectorPose(robot, goal_pose, **kw_args):
     return PlanGeneric(robot, 'PlanToEndEffectorPose', [ goal_pose ], **kw_args)
 
+def PlanToEndEffectorOffset(robot, direction, distance, **kw_args):
+    return PlanGeneric(robot, 'PlanToEndEffectorOffset', [ direction, distance ], **kw_args)
+
 def PlanToNamedConfiguration(robot, name):
     pass
 

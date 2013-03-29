@@ -2,7 +2,8 @@ import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
 import logging, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
-import cbirrt, chomp, herb, wam, yaml
+import planner, cbirrt, chomp, jacobian_planner
+import herb, wam, yaml
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
@@ -88,7 +89,8 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     # Configure the planners.
     robot.cbirrt_planner = cbirrt.CBiRRTPlanner(robot)
     robot.chomp_planner = chomp.CHOMPPlanner(robot)
-    robot.planners = [ robot.chomp_planner, robot.cbirrt_planner ]
+    robot.jacobian_planner = jacobian_planner.JacobianPlanner(robot)
+    robot.planners = [ robot.chomp_planner, robot.cbirrt_planner, robot.jacobian_planner ]
 
     # Trajectory blending module.
     robot.trajectory_module = prrave.rave.load_module(robot.GetEnv(), 'Trajectory', robot.GetName())
@@ -103,6 +105,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     t = type(robot)
     robot.PlanToConfiguration = types.MethodType(herb.PlanToConfiguration, robot, t)
     robot.PlanToEndEffectorPose = types.MethodType(herb.PlanToEndEffectorPose, robot, t)
+    robot.PlanToEndEffectorOffset = types.MethodType(herb.PlanToEndEffectorOffset, robot, t)
     robot.BlendTrajectory = types.MethodType(herb.BlendTrajectory, robot, t)
     robot.ExecuteTrajectory = types.MethodType(herb.ExecuteTrajectory, robot, t)
     robot.AddTrajectoryFlags = types.MethodType(herb.AddTrajectoryFlags, robot, t)
