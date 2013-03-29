@@ -23,6 +23,9 @@ def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, si
     return delegate_controller
 
 def initialize_manipulator(robot, manipulator, ik_type):
+    # Store a reference to the robot instance with extra bound methods.
+    manipulator.parent = robot
+
     # Load the IK database.
     with robot.GetEnv():
         robot.SetActiveManipulator(manipulator)
@@ -31,11 +34,25 @@ def initialize_manipulator(robot, manipulator, ik_type):
             logging.info('Generating IK database for {0:s}.'.format(manipulator.GetName()))
             manipulator.ik_database.autogenerate()
 
-    # Bind extra methods.
-    t = type(manipulator)
-    manipulator.parent = robot
-    manipulator.SetStiffness = types.MethodType(wam.SetStiffness, manipulator, t)
-    manipulator.MoveHand = types.MethodType(wam.MoveHand, manipulator, t)
+    # Bind extra methods for the manipulator.
+    # TODO: Don't bind MoveHand for the head.
+    wam.WamMethod.Bind(manipulator)
+
+    # Dynamically wrap all of the planning functions such that they ignore the
+    # active DOFs and plan using this manipulator.
+    for method in planner.PlanningMethod.methods:
+        def WrapPlan(method):
+            @functools.wraps(method)
+            def plan_method(manipulator, *args, **kw_args):
+                with robot.CreateRobotStateSaver():
+                    robot.SetActiveManipulator(manipulator)
+                    robot.SetActiveDOFs(manipulator.GetArmIndices())
+                    getattr(robot, method.__name__)(*args, **kw_args)
+
+            return plan_method
+
+        bound_method = types.MethodType(WrapPlan(method), manipulator, type(manipulator))
+        setattr(manipulator, method.__name__, bound_method)
 
 def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, right_hand_sim,
                                   head_sim, segway_sim):
@@ -119,18 +136,10 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.trajectory_module = prrave.rave.load_module(robot.GetEnv(), 'Trajectory', robot.GetName())
     manipulation2.trajectory.bind(robot.trajectory_module)
 
-    # Bind extra methods to the manipulators.
-    initialize_manipulator(robot, robot.left_arm, openravepy.IkParameterization.Type.Transform6D)
-    initialize_manipulator(robot, robot.right_arm, openravepy.IkParameterization.Type.Transform6D)
-    initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
-
-    # Bind extra methods onto the OpenRAVE robot and manipulators.
+    # Bind extra methods onto the OpenRAVE robot and manipulators..
     herb.HerbMethod.Bind(robot)
-    wam.WamMethod.Bind(robot.right_arm)
-    wam.WamMethod.Bind(robot.left_arm)
 
     # Dynamically bind the planners to the robot through the PlanGeneric wrapper.
-    robot_type = type(robot)
     for method in planner.PlanningMethod.methods:
         # Wrapping this in a factory function is necessary to create a new
         # scope for the plan_method function. Otherwise the function would be
@@ -142,8 +151,13 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
 
             return plan_method
 
-        bound_method = types.MethodType(WrapPlan(method), robot, robot_type)
+        bound_method = types.MethodType(WrapPlan(method), robot, type(robot))
         setattr(robot, method.__name__, bound_method)
+
+    # Bind extra methods to the manipulators.
+    initialize_manipulator(robot, robot.left_arm, openravepy.IkParameterization.Type.Transform6D)
+    initialize_manipulator(robot, robot.right_arm, openravepy.IkParameterization.Type.Transform6D)
+    initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
 
 
 def initialize(env_path='environments/pr_kitchen.robot.xml',
