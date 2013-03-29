@@ -7,6 +7,14 @@ HerbMethod = CreateMethodListDecorator()
 
 @HerbMethod
 def LookAt(robot, target, execute=True):
+    """
+    Look at a point in the world frame. This creates and, optionally executes,
+    a two-waypoint trajectory that starts at the current configuration and
+    moves to a goal configuration found through the neck's inverse kinematics.
+    @param target point in the world frame.
+    @param execute immediately execute the trajectory
+    @return trajectory head trajectory
+    """
     # Find an IK solution to look at the point.
     ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
     target_dof_values = robot.head.ik_database.manip.FindIKSolution(ik_params, 0)
@@ -58,6 +66,15 @@ def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
 
 @HerbMethod
 def MoveUntilTouch(robot, direction, distance, max_force=5, execute=True):
+    """
+    Execute a straight move-until-touch action. This action stops when
+    the maximum force is 
+    @param direction unit vector for the direction o fmotion in the world frame
+    @param distance maximum distance in meters
+    @param max_force maximum force in Newtons
+    @param execute optionally execute the trajectory
+    @return traj output trajectory
+    """
     # Compute the expected force direction in the hand frame.
     direction = numpy.array(direction)
     hand_pose = robot.GetActiveManipulator().GetEndEffectorTransform()
@@ -77,13 +94,15 @@ def MoveUntilTouch(robot, direction, distance, max_force=5, execute=True):
         return traj
 
 @HerbMethod
-def PlanToNamedConfiguration(robot, name):
-    pass
-
-@HerbMethod
 def BlendTrajectory(robot, traj, maxsmoothiter=None, resolution=None,
                     blend_radius=0.2, blend_attempts=4, blend_step_size=0.05,
                     linearity_threshold=0.1, ignore_collisions=None, **kw_args):
+    """
+    Blend a trajectory. This appends a blend_radius group to an existing
+    trajectory.
+    @param traj input trajectory
+    @return blended_trajectory trajectory with additional blend_radius group
+    """
     with robot.GetEnv():
         saver = robot.CreateRobotStateSaver()
         return robot.trajectory_module.blendtrajectory(traj=traj, execute=False,
@@ -96,6 +115,18 @@ def BlendTrajectory(robot, traj, maxsmoothiter=None, resolution=None,
 @HerbMethod
 def AddTrajectoryFlags(robot, traj, stop_on_stall=True, stop_on_ft=False,
                        force_direction=None, force_magnitude=None, torque=None):
+    """
+    Add OWD trajectory execution options to a trajectory. These options are
+    encoded in the or_owd_controller group. The force_direction, force_magnitude,
+    and torque parameters must be specified if stop_on_ft is True.
+    @param traj input trajectory
+    @param stop_on_stall stop the trajectory if the stall torques are exceeded
+    @param stop_on_ft stop the trajectory on force/torque sensor input
+    @param force_direction unit vector of the expected force in the hand frame
+    @param force_magnitude maximum force magnitude in meters
+    @param torque maximum torque in the hand frame in Newton-meters
+    @return annotated_traj trajectory annotated with OWD execution options
+    """
     flags  = [ 'or_owd_controller' ]
     flags += [ 'stop_on_stall', str(int(stop_on_stall)) ]
     flags += [ 'stop_on_ft', str(int(stop_on_ft)) ]
@@ -137,6 +168,17 @@ def AddTrajectoryFlags(robot, traj, stop_on_stall=True, stop_on_ft=False,
 
 @HerbMethod
 def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True):
+    """
+    Execute a trajectory. By default, this retimes, blends, and adds the
+    stop_on_stall flag to all trajectories. Additionally, this function blocks
+    until trajectory execution finishes. This can be changed by changing the
+    timeout parameter to a maximum number of seconds. Pass return instantly.
+    @param traj trajectory to execute
+    @param timeout execution timeout
+    @param blend compute blend radii before execution
+    @param retime retime the trajectory before execution
+    @return executed_traj  
+    """
     # Retiming the trajectory may be necessary to execute it on an
     # IdealController in simulation. This timing is ignored by OWD.
     if retime:
