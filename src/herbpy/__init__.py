@@ -132,12 +132,18 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     # Dynamically bind the planners to the robot through the PlanGeneric wrapper.
     robot_type = type(robot)
     for method in planner.PlanningMethod.methods:
-        def plan_method(robot, *args):
-            return herb.PlanGeneric(robot, method.__name__, args, **kw_args)
+        method_name = method.__name__
 
-        # TODO: Copy the docstring from the planner methods.
-        bound_method = types.MethodType(method, robot, robot_type)
-        setattr(robot, method.__name__, bound_method)
+        def WrapPlan(method_name):
+            def plan_method(robot, *args, **kw_args):
+                herb.PlanGeneric(robot, method_name, args, **kw_args)
+
+            # TODO: Copy the docstring from the planner methods.
+            return plan_method
+
+        bound_method = types.MethodType(WrapPlan(method_name), robot, robot_type)
+        print 'BOUND', bound_method, 'to', method_name 
+        setattr(robot, method_name, bound_method)
 
 
 def initialize(env_path='environments/pr_kitchen.robot.xml',
