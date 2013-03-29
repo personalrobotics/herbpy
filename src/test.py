@@ -36,13 +36,9 @@ robot.chomp_planner.ComputeDistanceField()
 
 # TODO: Named configurations.
 # TODO: Wait for the hand to finish closing.
-# TODO: Executing trajectories through multicontroller is broken.
 # TODO: Add F/T tare functionality.
-# TODO: Switch from strings to unbound method pointers in the planner
-# TODO: Automatically blend and add flags to the trajectory.
-# TODO: Allow overwriting of the blend and flags.
-# TODO: Bind 
 # TODO: Don't compute the signed distance field by default.
+# FIXME: WaitForController doesn't work.
 # FIXME: CHOMP always returns success.
 
 if False:

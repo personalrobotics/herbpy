@@ -119,9 +119,15 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True):
     if retime:
         logging.warning('Trajectory retiming is not supported.')
 
-    # TODO: Only add flags if none are present.
-    traj = robot.AddTrajectoryFlags(traj, stop_on_stall=True)
+    # Only add flags if none are present. This is the only way of checking if
+    # the trajectory already has the flags added.
+    try:
+        config_spec = traj.GetConfigurationSpecification()
+        group = config_spec.GetGroupFromName('or_owd_controller')
+    except openravepy.openrave_exception:
+        traj = robot.AddTrajectoryFlags(traj, stop_on_stall=True)
 
+    # FIXME: Waiting for the controller fails.
     robot.GetController().SetPath(traj)
     if timeout == None:
         robot.WaitForController(0)

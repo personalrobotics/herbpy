@@ -9,14 +9,19 @@ def SetStiffness(manipulator, stiffness):
         logging.error(e)
         return False
 
-def MoveHand(manipulator, preshape, timeout=None):
-    if len(preshape) != 4:
-        logging.error('Preshape has the wrong dimensions; expected 4, got {0:d}'.format(len(preshape)))
-        return False
+def MoveHand(manipulator, f1=None, f2=None, f3=None, spread=None, timeout=None):
+    # Default any None's to the current DOF values.
+    hand_indices = sorted(manipulator.GetChildDOFIndices())
+    preshape = manipulator.parent.GetDOFValues(hand_indices)
+
+    if f1     is not None: preshape[0] = f1
+    if f2     is not None: preshape[1] = f2
+    if f3     is not None: preshape[2] = f3
+    if spread is not None: preshape[3] = spread
 
     manipulator.hand_controller.SetDesired(preshape)
     if timeout == None:
-        manipulator.robot.WaitForController(0)
+        manipulator.parent.WaitForController(0)
     elif timeout > 0:
-        manipulator.robot.WaitForController(timeout)
+        manipulator.parent.WaitForController(timeout)
     return True
