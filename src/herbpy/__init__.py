@@ -7,6 +7,12 @@ import herb, wam, yaml
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
+HEAD_NAMESPACE = '/head/owd'
+LEFT_ARM_NAMESPACE = '/left/owd'
+RIGHT_ARM_NAMESPACE = '/right/owd'
+LEFT_HAND_NAMESPACE = '/left/bhd'
+RIGHT_HAND_NAMESPACE = '/right/bhd'
+MOPED_NAMESPACE = '/moped'
 
 def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, simulation):
     if simulation:
@@ -33,11 +39,11 @@ def initialize_manipulator(robot, manipulator, ik_type):
 
 def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, right_hand_sim,
                                   head_sim, segway_sim):
-    head_args = 'OWDController {0:s} {1:s}'.format(NODE_NAME, '/head/owd')
-    left_arm_args = 'OWDController {0:s} {1:s}'.format(NODE_NAME, '/left/owd')
-    right_arm_args = 'OWDController {0:s} {1:s}'.format(NODE_NAME, '/right/owd')
-    left_hand_args = 'BHController {0:s} {1:s}'.format(NODE_NAME, '/left/bhd')
-    right_hand_args = 'BHController {0:s} {1:s}'.format(NODE_NAME, '/right/bhd')
+    head_args = 'OWDController {0:s} {1:s}'.format(NODE_NAME, HEAD_NAMESPACE)
+    left_arm_args = 'OWDController {0:s} {1:s}'.format(NODE_NAME, LEFT_ARM_NAMESPACE)
+    right_arm_args = 'OWDController {0:s} {1:s}'.format(NODE_NAME, RIGHT_ARM_NAMESPACE)
+    left_hand_args = 'BHController {0:s} {1:s}'.format(NODE_NAME, LEFT_HAND_NAMESPACE)
+    right_hand_args = 'BHController {0:s} {1:s}'.format(NODE_NAME, RIGHT_HAND_NAMESPACE)
     base_args = 'SegwayController {0:s}'.format(NODE_NAME)
 
     # Create aliases for the manipulators.
@@ -60,15 +66,32 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
                           robot.left_arm.hand_controller, robot.right_arm.hand_controller ]
     robot.multicontroller.finalize()
 
-def initialize_sensors(robot, moped_sim=True):
-    moped_args = 'MOPEDSensorSystem {0:s} {1:s} {2:s}'.format(NODE_NAME, '/moped', OPENRAVE_FRAME_ID)
+def initialize_sensors(robot, left_ft_sim, right_ft_sim, moped_sim):
+    env = robot.GetEnv()
 
+    # Force/torque sensors.
+    # TODO: Move this into the manipulator initialization function.
+    # TODO: Why is SetName missing for sensors in the Python bindings?
+    if not left_ft_sim:
+        robot.left_arm.ft_sensor = openravepy.RaveCreateSensor(env,
+            'BarrettFTSensor {0:s} {1:s}'.format(NODE_NAME, LEFT_ARM_NAMESPACE))
+        env.Add(robot.left_arm.ft_sensor, True)
+
+    if not right_ft_sim:
+        robot.right_arm.ft_sensor = openravepy.RaveCreateSensor(env,
+            'BarrettFTSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_ARM_NAMESPACE))
+        env.Add(robot.right_arm.ft_sensor, True)
+
+    # MOPED.
     if not moped_sim:
-        self.moped_sensorsystem = openravepy.RaveCreateSensorSystem(robot.GetEnv(), args)
+        moped_args = 'MOPEDSensorSystem {0:s} {1:s} {2:s}'.format(NODE_NAME, MOPED_NAMESPACE, OPENRAVE_FRAME_ID)
+        self.moped_sensorsystem = openravepy.RaveCreateSensorSystem(env, args)
 
 def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
                            left_hand_sim=False, right_hand_sim=False,
-                           head_sim=False, segway_sim=False, moped_sim=False):
+                           head_sim=False, segway_sim=False,
+                           left_ft_sim=False, right_ft_sim=False,
+                           moped_sim=False):
     robot.left_arm = robot.GetManipulator('left_wam')
     robot.right_arm = robot.GetManipulator('right_wam')
     robot.head = robot.GetManipulator('head_wam')
@@ -77,7 +100,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     initialize_controllers(robot, left_arm_sim=left_arm_sim, right_arm_sim=right_arm_sim,
                                   left_hand_sim=left_hand_sim, right_hand_sim=right_hand_sim,
                                   head_sim=head_sim, segway_sim=segway_sim)
-    initialize_sensors(robot, moped_sim=moped_sim)
+    initialize_sensors(robot, left_ft_sim=left_ft_sim, right_ft_sim=right_ft_sim, moped_sim=moped_sim)
 
     # Wait for the robot's state to update.
     for controller in robot.controllers:
@@ -135,5 +158,7 @@ def initialize(env_path='environments/pr_kitchen.robot.xml',
 def initialize_sim(**kw_args):
     return initialize(left_arm_sim=True, right_arm_sim=True,
                       left_hand_sim=True, right_hand_sim=True,
-                      head_sim=True, segway_sim=True, moped_sim=True,
+                      head_sim=True, segway_sim=True,
+                      left_ft_sim=True, right_ft_sim=True,
+                      moped_sim=True,
                       **kw_args)
