@@ -16,10 +16,9 @@ openravepy.misc.InitOpenRAVELogging();
 if simulation:
     env, robot = herbpy.initialize_sim(attach_viewer=True)
 else:
-    env, robot = herbpy.initialize(left_arm_sim=False, right_arm_sim=False,
-                                   left_hand_sim=False, right_hand_sim=False,
-                                   head_sim=False, segway_sim=False,
-                                   moped_sim=True, attach_viewer=True)
+    env, robot = herbpy.initialize_real()
+    #env, robot = herbpy.initialize_real()
+    #env, robot = herbpy.initialize_herb(attach_viewer=True)
 
 with env:
     robot.SetActiveManipulator(robot.right_arm)

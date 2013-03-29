@@ -8,8 +8,8 @@ def CreateMethodListDecorator():
             self._func = func
             self.__class__.methods.append(func)
 
-        def __call__(self, *args):
-            self._func(*args)
+        def __call__(self, *args, **kw_args):
+            self._func(*args, **kw_args)
 
         @classmethod
         def Bind(cls, instance):
