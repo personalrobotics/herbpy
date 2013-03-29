@@ -1,6 +1,6 @@
 import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
-import logging, types
+import functools, logging, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
 import planner, cbirrt, chomp, jacobian_planner
 import herb, wam, yaml
@@ -132,18 +132,18 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     # Dynamically bind the planners to the robot through the PlanGeneric wrapper.
     robot_type = type(robot)
     for method in planner.PlanningMethod.methods:
-        method_name = method.__name__
-
-        def WrapPlan(method_name):
+        # Wrapping this in a factory function is necessary to create a new
+        # scope for the plan_method function. Otherwise the function would be
+        # overwritten in subsequent loop iterations.
+        def WrapPlan(method):
+            @functools.wraps(method)
             def plan_method(robot, *args, **kw_args):
-                herb.PlanGeneric(robot, method_name, args, **kw_args)
+                return herb.PlanGeneric(robot, method.__name__, args, **kw_args)
 
-            # TODO: Copy the docstring from the planner methods.
             return plan_method
 
-        bound_method = types.MethodType(WrapPlan(method_name), robot, robot_type)
-        print 'BOUND', bound_method, 'to', method_name 
-        setattr(robot, method_name, bound_method)
+        bound_method = types.MethodType(WrapPlan(method), robot, robot_type)
+        setattr(robot, method.__name__, bound_method)
 
 
 def initialize(env_path='environments/pr_kitchen.robot.xml',
