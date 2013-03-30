@@ -1,16 +1,14 @@
 import openravepy, orcdchomp.orcdchomp
 import inspect
-from methodlist_decorator import CreateMethodListDecorator
+import util
 
-PlanningMethod = CreateMethodListDecorator()
+PlanningMethod = util.CreateMethodListDecorator()
 
-class PlanningError(openravepy.openrave_exception):
-    def __init__(self, message):
-        super(openravepy.openrave_exception, self).__init__(message)
+class PlanningError(Exception):
+    pass
 
 class UnsupportedPlanningError(PlanningError):
-    def __init__(self, message):
-        super(PlanningError, self).__init__(message)
+    pass
 
 class Planner:
     def GetName(self):
@@ -30,7 +28,7 @@ class Planner:
         raise UnsupportedPlanningError('This planner does not support PlanToConfiguration.')
 
     @PlanningMethod
-    def PlanToEndEffectorPose(self, goal_pose):
+    def PlanToEndEffectorPose(self, goal_pose, **kw_args):
         """
         Plan from the robot's current configuration to a goal end-effector pose.
         @param goal_pose desired end-effector pose
@@ -39,7 +37,7 @@ class Planner:
         raise UnsupportedPlanningError('This planner does not support PlanToEndEffectorPose.')
 
     @PlanningMethod
-    def PlanToEndEffectorOffset(self, direction, distance):
+    def PlanToEndEffectorOffset(self, direction, distance, **kw_args):
         """
         Plan a straight motion in the world frame.
         @param direction unit vector in the direction of motion

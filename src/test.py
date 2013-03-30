@@ -4,7 +4,7 @@ def look_at_hand(robot, manipulator):
     target = manipulator.GetEndEffectorTransform()[0:3, 3]
     robot.LookAt(target, execute=True)
 
-simulation = False 
+simulation = True
 left_home_config = numpy.array([ 2.60, -1.90,  0.00,  2.20,  0.00,  0.00,  0.00 ])
 left_relaxed_config = numpy.array([ 0.55, -1.82,  0.35,  1.87, -2.22, -0.66, -0.98 ])
 right_home_config = numpy.array([ 3.68, -1.90, 0.00, 2.20, 0.00, 0.00, 0.00 ])
@@ -14,9 +14,9 @@ openravepy.RaveInitialize(True, level=openravepy.DebugLevel.Info)
 openravepy.misc.InitOpenRAVELogging();
 
 if simulation:
-    env, robot = herbpy.initialize_sim(attach_viewer=True)
+    env, robot = herbpy.initialize_sim(attach_viewer=False)
 else:
-    env, robot = herbpy.initialize_real()
+    env, robot = herbpy.initialize_real(left_ft_sim=True, right_ft_sim=True)
     #env, robot = herbpy.initialize_real()
     #env, robot = herbpy.initialize_herb(attach_viewer=True)
 

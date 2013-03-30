@@ -12,7 +12,7 @@ class JacobianPlanner(planner.Planner):
     def GetName(self):
         return 'jacobian_planner'
 
-    def PlanToEndEffectorOffset(self, direction, distance):
+    def PlanToEndEffectorOffset(self, direction, distance, **kw_args):
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             traj_path = temp_file.name
 
@@ -36,7 +36,7 @@ class JacobianPlanner(planner.Planner):
             traj = openravepy.RaveCreateTrajectory(self.env, '')
             traj.deserialize(traj_xml)
         except openravepy.openrave_exception, e:
-            raise planning.PlanningError('Planning with JMoveHandStraight failed.')
+            raise planner.PlanningError('Planning with JMoveHandStraight failed.')
 
         # TODO: Verify that the trajectory moved the full distance.
         return traj

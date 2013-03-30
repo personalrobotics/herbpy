@@ -2,9 +2,9 @@ import cbirrt, chomp, logging, openravepy
 import numpy
 import planner
 import time
-from methodlist_decorator import CreateMethodListDecorator
+import util
 
-HerbMethod = CreateMethodListDecorator()
+HerbMethod = util.CreateMethodListDecorator()
 
 @HerbMethod
 def LookAt(robot, target, execute=True):
