@@ -35,7 +35,7 @@ def LookAt(robot, target, execute=True):
 
     # Optionally exeucute the trajectory.
     if execute:
-        return robot.ExecuteTrajectory(traj)
+        return robot.ExecuteTrajectory(traj, retime=True)
     else:
         return traj
 
@@ -66,7 +66,7 @@ def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
         return traj
 
 @HerbMethod
-def PlanToNamedConfiguration(robot, name):
+def PlanToNamedConfiguration(robot, name, **kw_args):
     config_inds = numpy.array(robot.configs[name]['dofs'])
     config_vals = numpy.array(robot.configs[name]['vals'])
 
@@ -94,12 +94,16 @@ def PlanToNamedConfiguration(robot, name):
             right_inds.append(dof)
             right_vals.append(val)
 
-    if len(right_inds) > 0:
-        robot.SetActiveDOFs(right_inds)
-        robot.right_arm.PlanToConfiguration(right_vals, execute=True)
+    traj_left = None
+    traj_right = None
     if len(left_inds) > 0:
         robot.SetActiveDOFs(left_inds)
-        robot.left_arm.PlanToConfiguration(left_vals, execute=True)
+        traj_left = robot.left_arm.PlanToConfiguration(left_vals, **kw_args)
+    if len(right_inds) > 0:
+        robot.SetActiveDOFs(right_inds)
+        traj_right = robot.right_arm.PlanToConfiguration(right_vals, **kw_args)
+
+    return [ traj_left, traj_right ]
 
 @HerbMethod
 def AddNamedConfiguration(robot, name, dofs, vals):
@@ -184,7 +188,7 @@ def AddTrajectoryFlags(robot, traj, stop_on_stall=True, stop_on_ft=False,
     return annotated_traj
 
 @HerbMethod
-def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_args):
+def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_args):
     """
     Execute a trajectory. By default, this retimes, blends, and adds the
     stop_on_stall flag to all trajectories. Additionally, this function blocks
@@ -225,7 +229,6 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_a
 
 @HerbMethod
 def WaitForObject(robot, obj_name, timeout = 0.0):
-    
     # TODO: start the sensor
     object_found = False
     object_name = ''

@@ -13,13 +13,14 @@ class CHOMPPlanner(planner.Planner):
     def GetName(self):
         return 'chomp'
 
-    def PlanToConfiguration(self, goal, **kw_args):
+    def PlanToConfiguration(self, goal, lambda_=100.0, n_iter=100, **kw_args):
         if not self.initialized:
             raise planner.UnsupportedPlanningError('CHOMP requires a distance field.')
 
         with self.robot.CreateRobotStateSaver(self.robot):
             try:
-                return self.module.runchomp(robot=self.robot, adofgoal=goal, **kw_args)
+                return self.module.runchomp(robot=self.robot, adofgoal=goal,
+                                            lambda_=lambda_, n_iter=n_iter, **kw_args)
             except RuntimeError, e:
                 raise planner.PlanningError(str(e))
 

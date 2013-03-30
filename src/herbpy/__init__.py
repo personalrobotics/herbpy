@@ -160,6 +160,17 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.right_arm = robot.GetManipulator('right_wam')
     robot.head = robot.GetManipulator('head_wam')
 
+    # Simulation flags.
+    robot.left_arm_sim = left_arm_sim 
+    robot.left_hand_sim = left_hand_sim 
+    robot.left_ft_sim = left_ft_sim 
+    robot.right_arm_sim = right_arm_sim 
+    robot.right_hand_sim = right_hand_sim 
+    robot.right_ft_sim = right_ft_sim 
+    robot.head_sim = head_sim 
+    robot.segway_sim = segway_sim
+    robot.moped_sim = moped_sim
+
     # Initialize the OpenRAVE plugins.
     initialize_controllers(robot, left_arm_sim=left_arm_sim, right_arm_sim=right_arm_sim,
                                   left_hand_sim=left_hand_sim, right_hand_sim=right_hand_sim,
