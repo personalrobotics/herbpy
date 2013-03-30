@@ -98,3 +98,7 @@ def SetVelocityLimits(manipulator, velocity_limits, min_accel_time):
     args_str = ' '.join(args)
     manipulator.arm_controller.SendCommand(args_str)
     return True
+
+@WamMethod
+def SetActive(manipulator):
+    manipulator.parent.SetActiveManipulator(manipulator)

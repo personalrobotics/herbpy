@@ -6,7 +6,7 @@ PlanningMethod = CreateMethodListDecorator()
 
 class PlanningError(openravepy.openrave_exception):
     def __init__(self, message):
-        super(openrave.openrave_exception, self).__init__(message)
+        super(openravepy.openrave_exception, self).__init__(message)
 
 class UnsupportedPlanningError(PlanningError):
     def __init__(self, message):

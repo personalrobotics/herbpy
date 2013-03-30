@@ -8,6 +8,7 @@
     <license>BSD</license>
 
     <depend package="rospy"/>
+    <depend package="rospack"/>
     <!-- OpenRAVE -->
     <depend package="openrave"/>
     <depend package="openrave_exports"/>
@@ -20,6 +21,7 @@
     <depend package="or_octomap_sensor"/>
     <depend package="or_owd_controller"/>
     <depend package="or_segway_controller"/>
+    <depend package="or_barrett_ft_sensor"/>
     <!-- planner plugins -->
     <depend package="cbirrt2"/>
     <depend package="orcdchomp"/>

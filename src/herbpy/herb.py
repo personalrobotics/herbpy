@@ -1,6 +1,7 @@
 import cbirrt, chomp, logging, openravepy
 import numpy
 import planner
+import time
 from methodlist_decorator import CreateMethodListDecorator
 
 HerbMethod = CreateMethodListDecorator()
@@ -92,6 +93,51 @@ def MoveUntilTouch(robot, direction, distance, max_force=5, execute=True):
         return robot.ExecuteTrajectory(traj)
     else:
         return traj
+
+@HerbMethod
+def PlanToNamedConfiguration(robot, name):
+    config_inds = numpy.array(robot.configs[name]['dofs'])
+    config_vals = numpy.array(robot.configs[name]['vals'])
+
+    if len(config_inds) == 0:
+        raise Exception('Failed to find named config: %s'%name)
+
+    # TODO: Hacky. Can we do this better?
+    # Need to parse out left and right manipulator indices
+    # Also do we want to parse out head?
+    all_left = numpy.array(robot.left_arm.GetArmIndices())
+    all_left.sort()    
+    all_right = numpy.array(robot.right_arm.GetArmIndices())
+    all_right.sort()
+
+    left_vals = []
+    left_inds = []
+    right_vals = []
+    right_inds = []
+
+    for dof, val in zip(config_inds, config_vals):
+        if dof in all_left:
+            left_inds.append(dof)
+            left_vals.append(val)
+        if dof in all_right:
+            right_inds.append(dof)
+            right_vals.append(val)
+
+    if len(right_inds) > 0:
+        robot.SetActiveDOFs(right_inds)
+        robot.right_arm.PlanToConfiguration(right_vals, execute=True)
+    if len(left_inds) > 0:
+        robot.SetActiveDOFs(left_inds)
+        robot.left_arm.PlanToConfiguration(left_vals, execute=True)
+
+@HerbMethod
+def AddNamedConfiguration(robot, name, dofs, vals):
+    if len(dofs) != len(vals):
+        raise Exception('AddNamedConfiguration Failed. Lengths of dofs and vals must be equal:\n\tconfig_inds=%s\n\tconfig_vals=[%s]'%(str(config_indxs), SerializeArray(config_vals)))
+
+    robot.configs[name] = {}
+    robot.configs[name]['dofs'] = numpy.array( dofs )
+    robot.configs[name]['vals'] = numpy.array( vals )
 
 @HerbMethod
 def BlendTrajectory(robot, traj, maxsmoothiter=None, resolution=None,
@@ -205,3 +251,135 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True):
         robot.WaitForController(timeout)
 
     return traj
+
+@HerbMethod
+def WaitForObject(robot, obj_name, timeout = 0.0):
+    
+    # TODO: start the sensor
+    object_found = False
+    object_name = ''
+    start = time.time()
+
+    while True:
+        if ( timeout > 0 and
+             (( time.time() - start ) >= timeout )):
+            logging.info("Timed out without finding object.")
+            break
+        object_list = robot.GetEnv().GetBodies()
+        for obj in object_list:
+            if obj_name == obj.GetName()[:len(obj_name)]:
+                object_found = True
+                object_name = obj.GetName()
+                break
+            if object_found:
+                break
+            else:
+                logging.info("Waiting for object %s to appear.", obj_name)
+                time.sleep(1)
+
+    #TODO: stop the sensor
+    return object_found, object_name
+
+@HerbMethod
+def DriveStraightUntilForce(robot, direction=[0.0,0.0,0.0], max_distance=1.0, right_arm=True, left_arm=True, force_threshold=3.0):
+
+    controller_name = robot.segway_controller.GetXMLId().split()[0]
+    if controller_name == 'IdealController':
+        logger.error("drive_segway_until_force not working if herbcontroller is not used.")
+        raise Exception
+    else:
+        
+
+        # Tare the appropariate ft sensors
+        if right_arm:
+            robot.right_arm.TareForceTorqueSensor()
+        if left_arm:
+            robot.left_arm.TareForceTorqueSensor()
+
+        # rotate to face the right direction
+        robot_pose = robot.GetTransform()
+        robot_angle = numpy.arctan2(robot_pose[1,0], robot_pose[0,0])
+        des_angle = numpy.arctan2(direction[1], direction[0])
+        robot.RotateSegway(des_angle - robot_angle)
+        
+        # now drive until we feel a force
+        robot.segway_controller.SendCommand("Drive " + str(max_distance))
+        felt_force = False
+        start = time.time()
+        while not felt_force:
+
+            if right_arm:
+                force, torque = robot.right_arm.GetForceTorque()
+                if numpy.sqrt(numpy.dot(force, force)) > force_threshold:
+                    # stop the segway
+                    robot.segway_controller.Reset(0)
+                    felt_force = True
+            if left_arm:
+                force, torque = robot.left_arm.GetForceTorque()
+                if numpy.sqrt(numpy.dot(force, force)) > force_threshold:
+                    # stop the segway
+                    robot.segway_controller.Reset(0)
+                    felt_force = True
+
+        return felt_force
+
+@ HerbMethod
+def DriveAlongVector(robot, direction, goal_pos):
+    direction = direction[:2]/numpy.linalg.norm(direction[:2])
+    herb_pose = robot.GetTransform()
+    distance = numpy.dot(goal_pos[:2]-herb_pose[:2,3], direction)
+    cur_angle = numpy.arctan2(herb_pose[1,0],herb_pose[0,0])
+    des_angle = numpy.arctan2(direction[1],direction[0])
+    robot.RotateSegway(des_angle-cur_angle)
+    robot.DriveSegway(distance)
+
+
+@HerbMethod
+def DriveSegway(robot, meters, timeout=None):
+    
+    controller_name = robot.segway_controller.GetXMLId().split()[0]
+    if controller_name == 'IdealController':
+        # in simulation
+        current_pose = robot.GetTransform().copy()
+        current_pose[0:3,3] = current_pose[0:3,3] + meters*current_pose[0:3,0]
+        robot.SetTransform(current_pose)
+
+    else:
+        robot.segway_controller.SendCommand("Drive " + str(meters))
+        if timeout == None:
+            robot.WaitForController(0)
+        elif timeout > 0:
+            robot.WaitForController(timeout)
+
+        
+
+@HerbMethod
+def DriveSegwayToNamedPosition(robot, named_position):
+    
+    controller_name = robot.segway_controller.GetXMLId().split()[0]
+    if controller_name == 'IdealController':
+        logger.warm('Drive to named positions not implemented in simulation.')
+    else:
+        robot.segway_controller.SendCommand("Goto " + named_position)
+
+@HerbMethod
+def RotateSegway(robot, angle_rad, timeout=None):
+    
+    controller_name = robot.segway_controller.GetXMLId().split()[0]
+    if controller_name == 'IdealController':
+        # in simulation
+        current_pose_in_world = robot.GetTransform().copy()
+        
+        #rotate by the angle around z
+        desired_pose_in_herb = numpy.array([[numpy.cos(angle_rad), -numpy.sin(angle_rad), 0, 0],
+                                            [numpy.sin(angle_rad), numpy.cos(angle_rad), 0, 0],
+                                            [0, 0, 1, 0],
+                                            [0, 0, 0, 1]])
+        desired_pose_in_world = numpy.dot(current_pose_in_world, desired_pose_in_herb)
+        robot.SetTransform(desired_pose_in_world)
+    else:
+        robot.segway_controller.SendCommand("Rotate " + str(angle_rad))
+        if timeout == None:
+            robot.WaitForController(0)
+        elif timeout > 0:
+            robot.WaitForController(timeout)

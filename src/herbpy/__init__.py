@@ -1,9 +1,11 @@
 import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
+import rospkg
 import functools, logging, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
 import planner, cbirrt, chomp, jacobian_planner
 import herb, wam, yaml
+import numpy
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
@@ -13,6 +15,8 @@ RIGHT_ARM_NAMESPACE = '/right/owd'
 LEFT_HAND_NAMESPACE = '/left/bhd'
 RIGHT_HAND_NAMESPACE = '/right/bhd'
 MOPED_NAMESPACE = '/moped'
+rp = rospkg.RosPack()
+herbpy_package_path = rp.get_path(NODE_NAME)
 
 def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, simulation):
     """
@@ -132,13 +136,14 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, moped_sim):
     # MOPED.
     if not moped_sim:
         moped_args = 'MOPEDSensorSystem {0:s} {1:s} {2:s}'.format(NODE_NAME, MOPED_NAMESPACE, OPENRAVE_FRAME_ID)
-        self.moped_sensorsystem = openravepy.RaveCreateSensorSystem(env, args)
+        robot.moped_sensorsystem = openravepy.RaveCreateSensorSystem(env, moped_args)
 
 def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
                            left_hand_sim=False, right_hand_sim=False,
                            head_sim=False, segway_sim=False,
                            left_ft_sim=False, right_ft_sim=False,
-                           moped_sim=False):
+                           moped_sim=False,
+                           **kw_args):
     """
     Bind extra methods to HERB.
     @param head_sim simulate the head
@@ -200,6 +205,47 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     initialize_manipulator(robot, robot.left_arm, openravepy.IkParameterization.Type.Transform6D)
     initialize_manipulator(robot, robot.right_arm, openravepy.IkParameterization.Type.Transform6D)
     initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
+
+
+    # Load saved configs
+    initialize_saved_configs(robot, **kw_args)
+    
+def initialize_saved_configs(robot, yaml_path=None):
+    
+    if yaml_path is None:
+        yaml_path = '%s/config/herb_robot_configs.yaml' % herbpy_package_path
+
+    try:
+        with open(yaml_path,'r') as yaml_file:
+            robot.configs = {}
+            robot_configs_dict = yaml.load(yaml_file);
+            if 'named_indices' not in robot_configs_dict:
+                raise Exception('yaml file does not include required \'named_indices\' entry'%yaml_path)
+            named_inds = robot_configs_dict['named_indices']
+            for config_name, config in robot_configs_dict.items():
+                if config_name == 'named_indices':
+                    continue
+                robot.configs[config_name] = {}
+                config_dofs = []
+                config_vals = []
+                for inds_name, vals in config.items():
+                    if inds_name not in named_inds:
+                        raise Exception('indices name \'%s\' is not in the \'named_indices\' dictionary'%inds_name)
+                    config_dofs.extend( named_inds[inds_name] )
+                    config_vals.extend( vals )
+                    if len(config_dofs) != len(set(config_dofs)):
+                        raise Exception('robot config \'%s\' has repeat dof indices: %s'%(config_name,str(config_dofs)))
+                    sorted_config_dofs = sorted(config_dofs)
+                    sorted_config_vals = [ config_vals[config_dofs.index(d)] for d in sorted_config_dofs ]
+                    if len(config_dofs) > 0:
+                        robot.configs[config_name]['dofs'] = numpy.array( sorted_config_dofs )
+                        robot.configs[config_name]['vals'] = numpy.array( sorted_config_vals )
+                    else:
+                        del robot.configs[config_name]
+                #print 'herb.robot_configs:\n', self.robot_configs
+    except Exception as e:
+        raise Exception( 'initialize_saved_configs: Caught exception while loading yaml file \'%s\': %s'%(yaml_path, str(e)) )
+    
 
 def initialize(env_path='environments/pr_kitchen.robot.xml',
                robot_path='robots/herb2_padded.robot.xml',
