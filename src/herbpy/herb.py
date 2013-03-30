@@ -231,7 +231,7 @@ def WaitForObject(robot, obj_name, timeout = 0.0):
     object_name = ''
     start = time.time()
 
-    while True:
+    while not object_found:
         if ( timeout > 0 and
              (( time.time() - start ) >= timeout )):
             logging.info("Timed out without finding object.")
@@ -242,11 +242,11 @@ def WaitForObject(robot, obj_name, timeout = 0.0):
                 object_found = True
                 object_name = obj.GetName()
                 break
-            if object_found:
-                break
-            else:
-                logging.info("Waiting for object %s to appear.", obj_name)
-                time.sleep(1)
+        if object_found:
+            break
+        else:
+            logging.info("Waiting for object %s to appear.", obj_name)
+            time.sleep(1)
 
     #TODO: stop the sensor
     return object_found, object_name
