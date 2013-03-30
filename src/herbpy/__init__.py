@@ -66,7 +66,7 @@ def initialize_manipulator(robot, manipulator, ik_type):
                 with robot.CreateRobotStateSaver():
                     robot.SetActiveManipulator(manipulator)
                     robot.SetActiveDOFs(manipulator.GetArmIndices())
-                    getattr(robot, method.__name__)(*args, **kw_args)
+                    return getattr(robot, method.__name__)(*args, **kw_args)
 
             return plan_method
 

@@ -12,7 +12,7 @@ def CreateMethodListDecorator():
             return self.__class__(self._func.__get__(obj, type))
 
         def __call__(self, *args, **kw_args):
-            self._func(*args, **kw_args)
+            return self._func(*args, **kw_args)
 
         @classmethod
         def Bind(cls, instance):

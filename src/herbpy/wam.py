@@ -1,4 +1,5 @@
 import logging, openravepy
+import numpy
 import util
 from planner import PlanningError 
 
@@ -102,3 +103,31 @@ def SetVelocityLimits(manipulator, velocity_limits, min_accel_time):
 @WamMethod
 def SetActive(manipulator):
     manipulator.parent.SetActiveManipulator(manipulator)
+
+@WamMethod
+def MoveUntilTouch(manipulator, direction, distance, max_force=5, execute=True):
+    """
+    Execute a straight move-until-touch action. This action stops when
+    the maximum force is 
+    @param direction unit vector for the direction o fmotion in the world frame
+    @param distance maximum distance in meters
+    @param max_force maximum force in Newtons
+    @param execute optionally execute the trajectory
+    @return traj output trajectory
+    """
+    # Compute the expected force direction in the hand frame.
+    direction = numpy.array(direction)
+    hand_pose = manipulator.GetEndEffectorTransform()
+    force_direction = numpy.dot(hand_pose[0:3, 0:3], -direction)
+
+    # Plan a straight trajectory.
+    traj = manipulator.PlanToEndEffectorOffset(direction, distance, execute=False)
+    traj = manipulator.parent.AddTrajectoryFlags(traj, stop_on_ft=True, force_direction=force_direction,
+                                          force_magnitude=max_force, torque=[100,100,100])
+
+    if execute:
+        # TODO: Only tare the force/torque sensor for the relevant manipulator(s).
+        manipulator.TareForceTorqueSensor()
+        return manipulator.parent.ExecuteTrajectory(traj, retime=False)
+    else:
+        return traj
