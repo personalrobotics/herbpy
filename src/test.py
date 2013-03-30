@@ -16,8 +16,8 @@ openravepy.misc.InitOpenRAVELogging();
 if simulation:
     env, robot = herbpy.initialize_sim(attach_viewer=False)
 else:
-    env, robot = herbpy.initialize_real(left_ft_sim=True, right_ft_sim=True)
-    #env, robot = herbpy.initialize_real()
+    #env, robot = herbpy.initialize_real(left_ft_sim=True, right_ft_sim=True)
+    env, robot = herbpy.initialize_real()
     #env, robot = herbpy.initialize_herb(attach_viewer=True)
 
 with env:
