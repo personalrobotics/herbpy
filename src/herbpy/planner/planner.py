@@ -1,6 +1,6 @@
 import openravepy, orcdchomp.orcdchomp
 import inspect
-import util
+from .. import util
 
 PlanningMethod = util.CreateMethodListDecorator()
 

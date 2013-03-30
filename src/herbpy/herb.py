@@ -1,4 +1,4 @@
-import cbirrt, chomp, logging, openravepy
+import logging, openravepy
 import numpy
 import planner
 import time

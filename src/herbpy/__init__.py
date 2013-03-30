@@ -3,7 +3,7 @@ import openrave_exports; openrave_exports.export()
 import rospkg
 import functools, logging, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
-import planner, cbirrt, chomp, jacobian_planner
+import planner
 import herb, wam, yaml
 import numpy
 
@@ -174,9 +174,9 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
             pass
 
     # Configure the planners.
-    robot.cbirrt_planner = cbirrt.CBiRRTPlanner(robot)
-    robot.chomp_planner = chomp.CHOMPPlanner(robot)
-    robot.jacobian_planner = jacobian_planner.JacobianPlanner(robot)
+    robot.cbirrt_planner = planner.cbirrt.CBiRRTPlanner(robot)
+    robot.chomp_planner = planner.chomp.CHOMPPlanner(robot)
+    robot.jacobian_planner = planner.jacobian.JacobianPlanner(robot)
     robot.planners = [ robot.chomp_planner, robot.cbirrt_planner, robot.jacobian_planner ]
 
     # Trajectory blending module.

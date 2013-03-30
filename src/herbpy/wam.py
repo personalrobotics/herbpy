@@ -1,8 +1,8 @@
-import cbirrt, chomp, logging, openravepy
+import logging, openravepy
+import util
 from planner import PlanningError 
-from methodlist_decorator import CreateMethodListDecorator
 
-WamMethod = CreateMethodListDecorator()
+WamMethod = util.CreateMethodListDecorator()
 
 @WamMethod
 def SetStiffness(manipulator, stiffness):
