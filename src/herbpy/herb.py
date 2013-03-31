@@ -256,7 +256,6 @@ def WaitForObject(robot, obj_name, timeout=None, update_period=0.1):
 
 @HerbMethod
 def DriveStraightUntilForce(robot, direction=[0.0,0.0,0.0], max_distance=1.0, right_arm=True, left_arm=True, force_threshold=3.0):
-
     controller_name = robot.segway_controller.GetXMLId().split()[0]
     if controller_name == 'IdealController':
         logger.error("drive_segway_until_force not working if herbcontroller is not used.")
