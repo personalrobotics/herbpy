@@ -54,10 +54,10 @@ def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
                     logging.debug('Unable to plan with {0:s}: {1:s}'.format(delegate_planner.GetName(), e))
                 except planner.PlanningError, e:
                     logging.warning('Planning with {0:s} failed: {1:s}'.format(delegate_planner.GetName(), e))
+                    # TODO: Log the scene and planner parameters to a file.
 
     if traj is None:
-        logging.error('Planning failed with all planners.')
-        return None
+        raise planner.PlanningError('Planning failed with all planners.')
 
     # Optionally execute the trajectory.
     if execute:
@@ -228,31 +228,31 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_
     return traj
 
 @HerbMethod
-def WaitForObject(robot, obj_name, timeout = 0.0):
-    # TODO: start the sensor
-    object_found = False
-    object_name = ''
+def WaitForObject(robot, obj_name, timeout=None, update_period=0.1):
     start = time.time()
+    found_body = None
 
-    while not object_found:
-        if ( timeout > 0 and
-             (( time.time() - start ) >= timeout )):
-            logging.info("Timed out without finding object.")
-            break
-        object_list = robot.GetEnv().GetBodies()
-        for obj in object_list:
-            if obj_name == obj.GetName()[:len(obj_name)]:
-                object_found = True
-                object_name = obj.GetName()
-                break
-        if object_found:
-            break
-        else:
+    # TODO: This should be wrapped elsewhere.
+    robot.moped_sensorsystem.SendCommand('Enable')
+
+    try:
+        while True:
             logging.info("Waiting for object %s to appear.", obj_name)
-            time.sleep(1)
 
-    #TODO: stop the sensor
-    return object_found, object_name
+            # Check for an object with the appropriate name in the environment.
+            bodies = robot.GetEnv().GetBodies()
+            for body in bodies:
+                if body.GetName().startswith('moped_' + obj_name):
+                    return body
+
+            # Check for a timeout.
+            if timeout is not None and time.time() - start >= timeout:
+                logging.info("Timed out without finding object.")
+                return None
+
+            time.sleep(update_period)
+    finally:
+        robot.moped_sensorsystem.SendCommand('Disable')
 
 @HerbMethod
 def DriveStraightUntilForce(robot, direction=[0.0,0.0,0.0], max_distance=1.0, right_arm=True, left_arm=True, force_threshold=3.0):

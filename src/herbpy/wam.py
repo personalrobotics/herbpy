@@ -11,12 +11,20 @@ def SetStiffness(manipulator, stiffness):
     Set the WAM's stiffness. This enables or disables gravity compensation.
     @param stiffness value between 0.0 and 1.0
     """
-    try:
-        manipulator.arm_controller.SendCommand('SetStiffness {0:f}'.format(stiffness))
-        return True
-    except openravepy.openrave_exception, e:
-        logging.error(e)
-        return False
+    manipulator.arm_controller.SendCommand('SetStiffness {0:f}'.format(stiffness))
+
+@WamMethod
+def Servo(manipulator, velocities):
+    """
+    Servo with an instantaneous vector joint velocities.
+    @param joint velocities
+    """
+    num_dof = len(manipulator.GetArmIndices())
+    if len(velocities) != num_dof:
+        raise ValueError('Incorrect number of joint velocities. Expected {0:d}; got {0:d}.'.format(
+                         num_dof, len(velocities)))
+
+    manipulator.arm_controller.SendCommand('Servo ', ' '.join([ str(qdot) for qdot in velocities ]))
 
 @WamMethod
 def MoveHand(manipulator, f1=None, f2=None, f3=None, spread=None, timeout=None):

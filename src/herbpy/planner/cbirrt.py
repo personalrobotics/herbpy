@@ -12,7 +12,7 @@ class CBiRRTPlanner(planner.Planner):
     def GetName(self):
         return 'cbirrt'
 
-    def Plan(self, smoothingitrs=None, timelimit=None, allowlimadj=None, extra_args=None):
+    def Plan(self, smoothingitrs=None, timelimit=None, allowlimadj=None, extra_args=None, **kw_args):
         args = [ 'RunCBiRRT' ]
         if extra_args is not None:
             args += extra_args

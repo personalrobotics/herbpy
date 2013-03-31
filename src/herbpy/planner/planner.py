@@ -7,8 +7,15 @@ PlanningMethod = util.CreateMethodListDecorator()
 class PlanningError(Exception):
     pass
 
+class PlanningFailed(PlanningError):
+    """
+    Unable to plan a valid trajectory.
+    """
+
 class UnsupportedPlanningError(PlanningError):
-    pass
+    """
+    Planner does not implement the desired method.
+    """
 
 class Planner:
     def GetName(self):
