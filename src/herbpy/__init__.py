@@ -1,7 +1,7 @@
 import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
 import rospkg
-import functools, logging, types
+import functools, logging, sys, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
 import planner
 import herb, wam, yaml
@@ -17,6 +17,18 @@ RIGHT_HAND_NAMESPACE = '/right/bhd'
 MOPED_NAMESPACE = '/moped'
 rp = rospkg.RosPack()
 herbpy_package_path = rp.get_path(NODE_NAME)
+
+def initialize_logging():
+    logger = logging.getLogger('herbpy')
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('{%(name)s:%(filename)s:%(lineno)d}:%(funcName)s: %(levelname)s - %(message)s')
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    return logger
+
+logger = initialize_logging()
 
 def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, simulation):
     """
@@ -50,7 +62,7 @@ def initialize_manipulator(robot, manipulator, ik_type):
         robot.SetActiveManipulator(manipulator)
         manipulator.ik_database = openravepy.databases.inversekinematics.InverseKinematicsModel(robot, iktype=ik_type)
         if not manipulator.ik_database.load():
-            logging.info('Generating IK database for {0:s}.'.format(manipulator.GetName()))
+            logger.info('Generating IK database for {0:s}.'.format(manipulator.GetName()))
             manipulator.ik_database.autogenerate()
 
     # Bind extra methods for the manipulator.

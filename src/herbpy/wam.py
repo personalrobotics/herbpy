@@ -1,4 +1,5 @@
-import logging, openravepy
+import herbpy
+import openravepy
 import numpy
 import util
 from planner import PlanningError 
@@ -24,7 +25,7 @@ def Servo(manipulator, velocities):
         raise ValueError('Incorrect number of joint velocities. Expected {0:d}; got {0:d}.'.format(
                          num_dof, len(velocities)))
 
-    manipulator.arm_controller.SendCommand('Servo ', ' '.join([ str(qdot) for qdot in velocities ]))
+    manipulator.arm_controller.SendCommand('Servo ' + ' '.join([ str(qdot) for qdot in velocities ]))
 
 @WamMethod
 def MoveHand(manipulator, f1=None, f2=None, f3=None, spread=None, timeout=None):
@@ -97,8 +98,8 @@ def SetVelocityLimits(manipulator, velocity_limits, min_accel_time):
     """
     num_dofs = len(manipulator.GetArmIndices())
     if len(velocity_limits) != num_dofs:
-        logging.error('Incorrect number of velocity limits; expected {0:d}, got {1:d}.'.format(
-                      num_dofs, len(velocity_limits)))
+        herbpy.logging.error('Incorrect number of velocity limits; expected {0:d}, got {1:d}.'.format(
+                             num_dofs, len(velocity_limits)))
         return False
 
     args  = [ 'SetSpeed' ]

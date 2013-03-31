@@ -1,4 +1,5 @@
-import logging, openravepy
+import herbpy
+import openravepy
 import numpy
 import planner
 import time
@@ -51,9 +52,9 @@ def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
                     traj = getattr(delegate_planner, command_name)(*args, **kw_args)
                     break
                 except planner.UnsupportedPlanningError, e:
-                    logging.debug('Unable to plan with {0:s}: {1:s}'.format(delegate_planner.GetName(), e))
+                    herbpy.logger.debug('Unable to plan with {0:s}: {1:s}'.format(delegate_planner.GetName(), e))
                 except planner.PlanningError, e:
-                    logging.warning('Planning with {0:s} failed: {1:s}'.format(delegate_planner.GetName(), e))
+                    herbpy.logger.warning('Planning with {0:s} failed: {1:s}'.format(delegate_planner.GetName(), e))
                     # TODO: Log the scene and planner parameters to a file.
 
     if traj is None:
@@ -154,19 +155,19 @@ def AddTrajectoryFlags(robot, traj, stop_on_stall=True, stop_on_ft=False,
 
     if stop_on_ft:
         if force_direction is None:
-            logging.error('Force direction must be specified if stop_on_ft is true.')
+            herbpy.logger.error('Force direction must be specified if stop_on_ft is true.')
             return None
         elif force_magnitude is None:
-            logging.error('Force magnitude must be specified if stop_on_ft is true.')
+            herbpy.logger.error('Force magnitude must be specified if stop_on_ft is true.')
             return None 
         elif torque is None:
-            logging.error('Torque must be specified if stop_on_ft is true.')
+            herbpy.logger.error('Torque must be specified if stop_on_ft is true.')
             return None 
         elif len(force_direction) != 3:
-            logging.error('Force direction must be a three-dimensional vector.')
+            herbpy.logger.error('Force direction must be a three-dimensional vector.')
             return None
         elif len(torque) != 3:
-            logging.error('Torque must be a three-dimensional vector.')
+            herbpy.logger.error('Torque must be a three-dimensional vector.')
             return None
 
         flags += [ 'force_direction' ] + [ str(x) for x in force_direction ]
@@ -237,7 +238,7 @@ def WaitForObject(robot, obj_name, timeout=None, update_period=0.1):
 
     try:
         while True:
-            logging.info("Waiting for object %s to appear.", obj_name)
+            herbpy.logger.info("Waiting for object %s to appear.", obj_name)
 
             # Check for an object with the appropriate name in the environment.
             bodies = robot.GetEnv().GetBodies()
@@ -247,7 +248,7 @@ def WaitForObject(robot, obj_name, timeout=None, update_period=0.1):
 
             # Check for a timeout.
             if timeout is not None and time.time() - start >= timeout:
-                logging.info("Timed out without finding object.")
+                herbpy.logger.info("Timed out without finding object.")
                 return None
 
             time.sleep(update_period)
