@@ -41,6 +41,16 @@ def LookAt(robot, target, execute=True):
         return traj
 
 @HerbMethod
+def FindHeadDofs(robot, target):
+    # Find an IK solution to look at the point.
+    ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
+    target_dof_values = robot.head.ik_database.manip.FindIKSolution(ik_params, 0)
+    if target_dof_values == None:
+        return None
+    return target_dof_values
+
+
+@HerbMethod
 def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
     traj = None
 
