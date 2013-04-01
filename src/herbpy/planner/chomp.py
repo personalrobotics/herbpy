@@ -52,14 +52,14 @@ class CHOMPPlanner(planner.Planner):
                 self.module.computedistancefield(self.robot, cache_filename=cache_path)
                 self.robot.Enable(False)
 
-            # Compute separate distance fields for all other objects.
-            for body in self.env.GetBodies():
-                if body != self.robot:
-                    logging.info("Creating distance field for '{0:s}'.".format(body.GetName()))
-                    body.Enable(True)
-                    cache_path = self.GetCachePath(body)
-                    self.module.computedistancefield(body, cache_filename=cache_path)
-                    body.Enable(False)
+                # Compute separate distance fields for all other objects.
+                for body in self.env.GetBodies():
+                    if body != self.robot:
+                        logging.info("Creating distance field for '{0:s}'.".format(body.GetName()))
+                        body.Enable(True)
+                        cache_path = self.GetCachePath(body)
+                        self.module.computedistancefield(body, cache_filename=cache_path)
+                        body.Enable(False)
 
         self.initialized = True 
         for saver in savers:
