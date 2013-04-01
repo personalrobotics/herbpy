@@ -243,13 +243,11 @@ def WaitForObject(robot, obj_name, timeout=None, update_period=0.1):
     start = time.time()
     found_body = None
 
-    # TODO: This should be wrapped elsewhere.
     robot.moped_sensorsystem.SendCommand('Enable')
 
+    herbpy.logger.info("Waiting for object %s to appear.", obj_name)
     try:
         while True:
-            herbpy.logger.info("Waiting for object %s to appear.", obj_name)
-
             # Check for an object with the appropriate name in the environment.
             bodies = robot.GetEnv().GetBodies()
             for body in bodies:

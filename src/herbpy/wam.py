@@ -162,7 +162,17 @@ def SetVelocityLimits(manipulator, velocity_limits, min_accel_time):
 
 @WamMethod
 def SetActive(manipulator):
+    '''
+    Sets this as the active manipulator.
+    '''
     manipulator.parent.SetActiveManipulator(manipulator)
+
+@WamMethod
+def SetArmDOFValues(manipulator, dof_values):
+    '''
+    Sets this manipulator's DOF values.
+    ''' 
+    manipulator.parent.SetDOFValues(dof_values, manipulator.GetArmDOFIndices())
 
 @WamMethod
 def MoveUntilTouch(manipulator, direction, distance, max_force=5, execute=True):

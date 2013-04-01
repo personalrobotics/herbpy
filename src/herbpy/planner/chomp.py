@@ -1,4 +1,4 @@
-import logging, rospkg, os
+import contextlib, logging, rospkg, os
 import openravepy, orcdchomp.orcdchomp
 import planner
 
@@ -26,28 +26,31 @@ class CHOMPPlanner(planner.Planner):
 
     def ComputeDistanceField(self):
         with self.env:
-            # Disable everything.
-            savers = list()
-            for body in self.env.GetBodies():
-                saver = body.CreateKinBodyStateSaver()
-                saver.__enter__()
-                savers.append(saver)
-                body.Enable(False)
+            # Save the state so we can restore it later.
+            savers = [ body.CreateKinBodyStateSaver() for body in self.env.GetBodies() ]
 
-            # Compute the distance field for the non-spherized parts of HERB. This
-            # includes everything that isn't attached to an arm. Otherwise the
-            # initial arm will be incorrectly added to the distance field.
-            self.robot.Enable(True)
-            logging.info("Creating the robot's distance field.")
-            proximal_joints = [ manip.GetArmIndices()[0] for manip in self.robot.GetManipulators() ]
-            for link in self.robot.GetLinks():
-                for proximal_joint in proximal_joints:
-                    if not self.robot.DoesAffect(proximal_joint, link.GetIndex()):
-                        link.Enable(True)
+            with contextlib.nested(*savers):
+                # Disable everything.
+                for body in self.env.GetBodies():
+                    body.Enable(False)
 
-            cache_path = self.GetCachePath(self.robot)
-            self.module.computedistancefield(self.robot, cache_filename=cache_path)
-            self.robot.Enable(False)
+                # Compute the distance field for the non-spherized parts of HERB. This
+                # includes everything that isn't attached to an arm. Otherwise the
+                # initial arm will be incorrectly added to the distance field.
+                self.robot.Enable(True)
+                logging.info("Creating the robot's distance field.")
+                for link in self.robot.GetLinks():
+                    link.Enable(False)
+
+                proximal_joints = [ manip.GetArmIndices()[0] for manip in self.robot.GetManipulators() ]
+                for link in self.robot.GetLinks():
+                    for proximal_joint in proximal_joints:
+                        if not self.robot.DoesAffect(proximal_joint, link.GetIndex()):
+                            link.Enable(True)
+
+                cache_path = self.GetCachePath(self.robot)
+                self.module.computedistancefield(self.robot, cache_filename=cache_path)
+                self.robot.Enable(False)
 
             # Compute separate distance fields for all other objects.
             for body in self.env.GetBodies():
