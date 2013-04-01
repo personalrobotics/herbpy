@@ -279,6 +279,8 @@ def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
         raise Exception('DriveStraightUntilForce does not work with simulated force/torque sensors.')
 
     env = robot.GetEnv()
+    direction = numpy.array(direction, dtype='float')
+    direction /= numpy.linalg.norm(direction) 
     manipulators = list()
     if left_arm:
         manipulators.append(robot.left_arm)
@@ -338,17 +340,14 @@ def DriveAlongVector(robot, direction, goal_pos):
     robot.RotateSegway(des_angle-cur_angle)
     robot.DriveSegway(distance)
 
-
 @HerbMethod
 def DriveSegway(robot, meters, timeout=None):
-    
     controller_name = robot.segway_controller.GetXMLId().split()[0]
     if controller_name == 'IdealController':
         # in simulation
         current_pose = robot.GetTransform().copy()
         current_pose[0:3,3] = current_pose[0:3,3] + meters*current_pose[0:3,0]
         robot.SetTransform(current_pose)
-
     else:
         robot.segway_controller.SendCommand("Drive " + str(meters))
         if timeout == None:
@@ -356,11 +355,8 @@ def DriveSegway(robot, meters, timeout=None):
         elif timeout > 0:
             robot.WaitForController(timeout)
 
-        
-
 @HerbMethod
 def DriveSegwayToNamedPosition(robot, named_position):
-    
     controller_name = robot.segway_controller.GetXMLId().split()[0]
     if controller_name == 'IdealController':
         logger.warm('Drive to named positions not implemented in simulation.')
@@ -369,7 +365,6 @@ def DriveSegwayToNamedPosition(robot, named_position):
 
 @HerbMethod
 def RotateSegway(robot, angle_rad, timeout=None):
-    
     controller_name = robot.segway_controller.GetXMLId().split()[0]
     if controller_name == 'IdealController':
         # in simulation

@@ -127,7 +127,7 @@ def MoveUntilTouch(manipulator, direction, distance, max_force=5, execute=True):
     # Compute the expected force direction in the hand frame.
     direction = numpy.array(direction)
     hand_pose = manipulator.GetEndEffectorTransform()
-    force_direction = numpy.dot(hand_pose[0:3, 0:3], -direction)
+    force_direction = numpy.dot(hand_pose[0:3, 0:3].T, -direction)
 
     # Plan a straight trajectory.
     traj = manipulator.PlanToEndEffectorOffset(direction, distance, execute=False)
@@ -135,7 +135,6 @@ def MoveUntilTouch(manipulator, direction, distance, max_force=5, execute=True):
                                           force_magnitude=max_force, torque=[100,100,100])
 
     if execute:
-        # TODO: Only tare the force/torque sensor for the relevant manipulator(s).
         manipulator.TareForceTorqueSensor()
         return manipulator.parent.ExecuteTrajectory(traj, retime=False)
     else:
