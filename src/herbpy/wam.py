@@ -3,8 +3,11 @@ import openravepy
 import numpy
 import util
 from planner import PlanningError 
+import math
+from time import sleep
 
 WamMethod = util.CreateMethodListDecorator()
+
 
 @WamMethod
 def SetStiffness(manipulator, stiffness):
@@ -26,6 +29,54 @@ def Servo(manipulator, velocities):
                          num_dof, len(velocities)))
 
     manipulator.arm_controller.SendCommand('Servo ' + ' '.join([ str(qdot) for qdot in velocities ]))
+
+
+@WamMethod
+def ServoTo(manipulator, target, duration, timeStep = 0.05, collisionChecking= True):
+    """
+    Servo's the WAM to the target taking the duration passed to it
+    @param target dofs
+    @param duration of the full servo
+    @param timeStep
+    @param collisionChecking
+    """
+    steps = int(math.ceil(duration/timeStep))
+    original_dofs = manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
+    velocity = target-manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
+    velocities = [v/steps for v in velocity]
+    inCollision = False 
+    if collisionChecking==True:
+        inCollision = manipulator.CollisionCheck(target)
+    if inCollision == False:       
+        for i in range(1,steps):
+            manipulator.Servo(velocities)
+            sleep(timeStep)
+        v = [0] * len(manipulator.GetArmIndices())
+        #print v
+        manipulator.Servo([0] * len(manipulator.GetArmIndices()))
+        #sleep(1)
+        new_dofs = manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
+        print original_dofs
+        print new_dofs    
+        return True
+    return False
+
+@WamMethod
+def CollisionCheck(manipulator, end_dof):
+    with manipulator.GetEnv():
+        robot_saver = manipulator.parent.CreateRobotStateSaver()
+        for i in range(1,steps):
+            q = manipulator.parent.GetDOFValues(manipulator.GetArmIndices)
+            q = q + velocity*timeStep
+            self.herb.SetActiveDOFValues(q)
+            if manipulator.GetEnv().CheckCollision(manipulator.parent):
+                print'Servo motion unable to complete. Detected collision.'
+                return True
+            if manipulator.parent.CheckSelfCollision():
+                print'Servo motion unable to complete. Detected self collision.'
+                return True
+    return False
+
 
 @WamMethod
 def MoveHand(manipulator, f1=None, f2=None, f3=None, spread=None, timeout=None):
