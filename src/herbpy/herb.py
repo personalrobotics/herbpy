@@ -256,46 +256,62 @@ def WaitForObject(robot, obj_name, timeout=None, update_period=0.1):
         robot.moped_sensorsystem.SendCommand('Disable')
 
 @HerbMethod
-def DriveStraightUntilForce(robot, direction=[0.0,0.0,0.0], max_distance=1.0, right_arm=True, left_arm=True, force_threshold=3.0):
-    controller_name = robot.segway_controller.GetXMLId().split()[0]
-    if controller_name == 'IdealController':
-        logger.error("drive_segway_until_force not working if herbcontroller is not used.")
-        raise Exception
-    else:
-        
+def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
+                            max_distance=None, timeout=None, left_arm=True, right_arm=True):
+    if robot.segway_sim:
+        raise Exception('DriveStraightUntilForce does not work with a simulated Segway.')
+    elif (robot.left_ft_sim and left_arm) or (robot.right_ft_sim and right_arm):
+        raise Exception('DriveStraightUntilForce does not work with simulated force/torque sensors.')
 
-        # Tare the appropariate ft sensors
-        if right_arm:
-            robot.right_arm.TareForceTorqueSensor()
-        if left_arm:
-            robot.left_arm.TareForceTorqueSensor()
+    env = robot.GetEnv()
+    manipulators = list()
+    if left_arm:
+        manipulators.append(robot.left_arm)
+    if right_arm:
+        manipulators.append(robot.right_arm)
 
-        # rotate to face the right direction
+    if not manipulators:
+        herbpy.logger.warning('Executing DriveStraightUntilForce with no force/torque sensor for feedback.')
+
+    # Tare the force/torque sensors.
+    for manipulator in manipulators:
+        manipulator.TareForceTorqueSensor()
+
+    # Rotate to face the right direction.
+    with env:
         robot_pose = robot.GetTransform()
-        robot_angle = numpy.arctan2(robot_pose[1,0], robot_pose[0,0])
-        des_angle = numpy.arctan2(direction[1], direction[0])
-        robot.RotateSegway(des_angle - robot_angle)
-        
-        # now drive until we feel a force
-        robot.segway_controller.SendCommand("Drive " + str(max_distance))
+    robot_angle = numpy.arctan2(robot_pose[1, 0], robot_pose[0, 0])
+    desired_angle = numpy.arctan2(direction[1], direction[0])
+    robot.RotateSegway(desired_angle - robot_angle)
+    
+    try:
         felt_force = False
-        start = time.time()
-        while not felt_force:
+        start_time = time.time()
+        start_pos = robot_pose[0:3, 3]
+        while True:
+            # Check if we felt a force on any of the force/torque sensors.
+            for manipulator in manipulators:
+                force, torque = manipulator.GetForceTorque()
+                if numpy.linalg.norm(force) > force_threshold:
+                    return True
 
-            if right_arm:
-                force, torque = robot.right_arm.GetForceTorque()
-                if numpy.sqrt(numpy.dot(force, force)) > force_threshold:
-                    # stop the segway
-                    robot.segway_controller.Reset(0)
-                    felt_force = True
-            if left_arm:
-                force, torque = robot.left_arm.GetForceTorque()
-                if numpy.sqrt(numpy.dot(force, force)) > force_threshold:
-                    # stop the segway
-                    robot.segway_controller.Reset(0)
-                    felt_force = True
+            # Check if we've exceeded the maximum distance.
+            with env:
+                current_pos = robot.GetTransform()[0:3, 3]
+            distance = numpy.dot(current_pos - start_pos, direction)
+            if max_distance is not None and distance >= max_distance:
+                return False
 
-        return felt_force
+            # Check for a timeout.
+            time_now = time.time()
+            if timeout is not None and time_now - star_time > timeout:
+                return False
+
+            # Continuously stream forward velocities.
+            robot.segway_controller.SendCommand('DriveInstantaneous {0:f} 0 0'.format(velocity))
+    finally:
+        # Stop the Segway before returning.
+        robot.segway_controller.SendCommand('DriveInstantaneous 0 0 0')
 
 @ HerbMethod
 def DriveAlongVector(robot, direction, goal_pos):
