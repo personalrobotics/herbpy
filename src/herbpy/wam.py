@@ -224,9 +224,8 @@ def MoveUntilTouch(manipulator, direction, distance, max_force=5, **kw_args):
     # TODO: Use a simulated force/torque sensor in simulation.
     try:
         manipulator.TareForceTorqueSensor()
-        return manipulator.parent.ExecuteTrajectory(traj, retime=False)
-    else:
-        return traj
+        manipulator.parent.ExecuteTrajectory(traj, execute=True)
+        return False
     # Trajectory is aborted by OWD because we felt a force.
     except exceptions.TrajectoryAborted:
         return True
@@ -234,14 +233,20 @@ def MoveUntilTouch(manipulator, direction, distance, max_force=5, **kw_args):
 
 @WamMethod
 def StartServoSim(manipulator):
+    """
+    Starts a new thread with the ServoSim method
+    """
     t = threading.Thread(target=ServoSim, args=[manipulator])
     t.start()
 
 @WamMethod
 def ServoSim(manipulator):
+    """
+    Simulates servo commands for the given manipulator
+    """
     manipulator.servo_velocity = numpy.zeros(len(manipulator.GetArmIndices()))
     manipulator.servo_timestamp = 0
-    timestep = 0.05
+    timestep = 0.025
     time_start = time()
     while True:
         with manipulator.parent.GetEnv():
@@ -257,10 +262,5 @@ def ServoSim(manipulator):
                 manipulator.parent.SetDOFValues(current_dofs + vel*timestep, dof_indices)
                 # Reset time
                 time_start = time()
-                print 'Updated dofs'
-                print manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
-                #print manipulator.servo_velocity
         sleep(timestep)
-        manipulator.parent.ExecuteTrajectory(traj, execute=True)
-        return False 
 
