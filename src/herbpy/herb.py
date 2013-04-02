@@ -42,7 +42,7 @@ def LookAt(robot, target, execute=True):
         return traj
 
 @HerbMethod
-def LookAtKinBody(robot, body)
+def LookAtKinBody(robot, body):
     target = body.GetTransform()[0:3, 3]
     traj = robot.LookAt(target, execute=True)
 
