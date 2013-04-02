@@ -2,13 +2,13 @@ import cbirrt, logging, numpy, openravepy, time
 import prrave.tsr
 import planner
 
-class MoveHandStraightPlanner(planner.Planner):
+class MKPlanner(planner.Planner):
     def __init__(self, robot):
         self.env = robot.GetEnv()
         self.robot = robot
 
     def GetName(self):
-        return 'movehandstraight'
+        return 'mk'
 
     def GetStraightVelocity(self, manip, velocity, initial_pose):
         # Transform everything into the hand frame because all of OpenRAVE's
@@ -38,8 +38,7 @@ class MoveHandStraightPlanner(planner.Planner):
         # TODO: Implement a null-space projector.
         return numpy.dot(jacobian_pinv, pose_error)
 
-    def PlanToEndEffectorOffset(self, direction, distance, planning_timeout=5.0, step_size=0.001, **kw_args):
-        current_distance = 0.0
+    def PlanToEndEffectorOffset(self, direction, distance, planning_timeout=0.5, step_size=0.01, **kw_args):
         direction  = numpy.array(direction, dtype='float')
         direction /= numpy.linalg.norm(direction)
 
@@ -56,6 +55,7 @@ class MoveHandStraightPlanner(planner.Planner):
                 traj.Insert(0, q)
 
                 start_time = time.time()
+                current_distance = 0.0
                 while current_distance < distance:
                     # Check for a timeout.
                     current_time = time.time()
@@ -80,6 +80,5 @@ class MoveHandStraightPlanner(planner.Planner):
                     hand_pose = manip.GetEndEffectorTransform()
                     displacement = hand_pose[0:3, 3] - initial_pose[0:3, 3]
                     current_distance = numpy.dot(displacement, direction)
-                    print current_distance
 
         return traj

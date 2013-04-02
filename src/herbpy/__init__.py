@@ -1,11 +1,9 @@
 import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
 import rospkg
-import functools, logging, sys, types
+import functools, logging, numpy, sys, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
-import planner, planner.movehandstraight
-import herb, wam, yaml
-import numpy
+import planner, herb, wam, yaml
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
@@ -197,12 +195,13 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
             pass
 
     # Configure the planners.
-    # TODO: Add MoveHandStraight to the list of planners.
+    import planner.chomp, planner.cbirrt, planner.jacobian, planner.mk
     robot.cbirrt_planner = planner.cbirrt.CBiRRTPlanner(robot)
     robot.chomp_planner = planner.chomp.CHOMPPlanner(robot)
-    robot.movehandstraight_planner = planner.movehandstraight.MoveHandStraightPlanner(robot)
+    robot.mk_planner = planner.mk.MKPlanner(robot)
     robot.jacobian_planner = planner.jacobian.JacobianPlanner(robot)
-    robot.planners = [ robot.chomp_planner, robot.cbirrt_planner, robot.jacobian_planner ]
+    robot.planners = [ robot.chomp_planner, robot.cbirrt_planner,
+                       robot.mk_planner, robot.jacobian_planner ]
 
     # Trajectory blending module.
     robot.trajectory_module = prrave.rave.load_module(robot.GetEnv(), 'Trajectory', robot.GetName())
