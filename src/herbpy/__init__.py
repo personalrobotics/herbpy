@@ -205,7 +205,8 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.chomp_planner = planner.chomp.CHOMPPlanner(robot)
     robot.mk_planner = planner.mk.MKPlanner(robot)
     robot.jacobian_planner = planner.jacobian.JacobianPlanner(robot)
-    robot.planners = [ robot.chomp_planner, robot.cbirrt_planner, robot.jacobian_planner  ]
+
+    robot.planners = [  robot.jacobian_planner, robot.mk_planner, robot.chomp_planner, robot.cbirrt_planner  ]
 
     # Trajectory blending module.
     robot.trajectory_module = prrave.rave.load_module(robot.GetEnv(), 'Trajectory', robot.GetName())

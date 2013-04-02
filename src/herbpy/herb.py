@@ -42,6 +42,11 @@ def LookAt(robot, target, execute=True):
         return traj
 
 @HerbMethod
+def LookAtKinBody(robot, body)
+    target = body.GetTransform()[0:3, 3]
+    traj = robot.LookAt(target, execute=True)
+
+@HerbMethod
 def FindHeadDofs(robot, target):
     # Find an IK solution to look at the point.
     ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
@@ -60,6 +65,7 @@ def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
         with robot.CreateRobotStateSaver():
             for delegate_planner in robot.planners:
                 try:
+                    herbpy.logger.info('Trying planner: %s', delegate_planner.GetName())
                     traj = getattr(delegate_planner, command_name)(*args, **kw_args)
                     break
                 except planner.UnsupportedPlanningError, e:
@@ -213,6 +219,9 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_
     @param retime retime the trajectory before execution
     @return executed_traj  
     """
+    #TODO: Figure out better way to do this
+    time.sleep(1.0)
+
     # Retiming the trajectory may be necessary to execute it on an
     # IdealController in simulation. This timing is ignored by OWD.
     if retime:
@@ -229,6 +238,7 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_
         group = config_spec.GetGroupFromName('or_owd_controller')
     except openravepy.openrave_exception:
         traj = robot.AddTrajectoryFlags(traj, stop_on_stall=True)
+
 
     # Wait for the controller to finish execution.
     # TODO: Figure out why rendering trajectories fails on HERB.

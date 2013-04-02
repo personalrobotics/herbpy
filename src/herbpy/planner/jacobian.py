@@ -24,8 +24,10 @@ class JacobianPlanner(planner.Planner):
         args += [ 'execute', '0' ]
         args += [ 'writetraj', traj_path ]
         args_str = ' '.join(args)
-        response = self.module.SendCommand(args_str)
-
+        try:
+            response = self.module.SendCommand(args_str)
+        except Exception, e:
+            raise planner.PlanningError('Planning with JMoveHandStraight failed: %s' % str(e))
         # Load and return the trajectory.
         # TODO: Delete the temporary trajectory file.
         with open(traj_path, 'rb') as traj_file:
