@@ -121,6 +121,10 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
                           robot.left_arm.hand_controller, robot.right_arm.hand_controller ]
     robot.multicontroller.finalize()
 
+
+
+
+
 def initialize_sensors(robot, left_ft_sim, right_ft_sim, moped_sim):
     """
     Initialize HERB's sensor plugins.
@@ -230,6 +234,12 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     initialize_manipulator(robot, robot.right_arm, openravepy.IkParameterization.Type.Transform6D)
     initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
 
+    if head_sim:
+        robot.head.StartServoSim()
+    if right_arm_sim:
+        robot.right_arm.StartServoSim()
+    if left_arm_sim:
+        robot.left_arm.StartServoSim()
     # Convienence simulation flags for the manipulators.
     # TODO: Can we make a cleaner API for this?
     robot.left_arm.arm_simulated = left_arm_sim
