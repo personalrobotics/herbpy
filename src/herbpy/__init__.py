@@ -200,8 +200,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.chomp_planner = planner.chomp.CHOMPPlanner(robot)
     robot.mk_planner = planner.mk.MKPlanner(robot)
     robot.jacobian_planner = planner.jacobian.JacobianPlanner(robot)
-    robot.planners = [ robot.chomp_planner, robot.cbirrt_planner,
-                       robot.mk_planner, robot.jacobian_planner ]
+    robot.planners = [ robot.chomp_planner, robot.cbirrt_planner, robot.mk_planner ]
 
     # Trajectory blending module.
     robot.trajectory_module = prrave.rave.load_module(robot.GetEnv(), 'Trajectory', robot.GetName())
@@ -266,7 +265,6 @@ def initialize_saved_configs(robot, yaml_path=None):
                         robot.configs[config_name]['vals'] = numpy.array( sorted_config_vals )
                     else:
                         del robot.configs[config_name]
-                #print 'herb.robot_configs:\n', self.robot_configs
     except Exception as e:
         raise Exception( 'initialize_saved_configs: Caught exception while loading yaml file \'%s\': %s'%(yaml_path, str(e)) )
     
