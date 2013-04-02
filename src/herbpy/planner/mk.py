@@ -10,28 +10,24 @@ class MKPlanner(planner.Planner):
     def GetName(self):
         return 'mk'
 
-    def GetStraightVelocity(self, manip, velocity, initial_pose):
-        # Transform everything into the hand frame because all of OpenRAVE's
-        # Jacobians are hand-relative.
-        hand_pose = manip.GetEndEffectorTransform()
-        initial_pose_relative = numpy.dot(numpy.linalg.inv(hand_pose), initial_pose)
-        hand_velocity = velocity
+    def GetStraightVelocity(self, manip, velocity, initial_hand_pose):
+        current_hand_pose = manip.GetEndEffectorTransform()
 
         # Project the position error orthogonal to the velocity of motion. Then
         # add a constant forward force.
-        pos_offset = initial_pose[0:3, 3] - hand_pose[0:3, 3]
+        #pos_offset = initial_hand_pose[0:3, 3] - current_hand_pose[0:3, 3]
         #pos_error  = pos_offset - hand_velocity * numpy.dot(pos_offset, hand_velocity)
-        pos_error = hand_velocity
+        error_pos = velocity 
 
         # Append the desired quaternion to create the error vector.
-        ori_error = numpy.zeros(3)
-        #ori_error = openravepy.quatFromRotationMatrix(initial_pose_relative)
-        pose_error = numpy.hstack((pos_error, ori_error))
+        initial_ori = openravepy.quatFromRotationMatrix(initial_hand_pose)
+        current_ori = openravepy.quatFromRotationMatrix(current_hand_pose)
+        error_ori = initial_ori - current_ori
+        pose_error = numpy.hstack((error_pos, error_ori))
 
-        # Jacobian pseudo-inverse controller.
+        # Jacobian pseudo-inverse.
         jacobian_spatial = manip.CalculateJacobian()
-        jacobian_angular = manip.CalculateAngularVelocityJacobian()
-        #jacobian_angular = manip.CalculateRotationJacobian()
+        jacobian_angular = manip.CalculateRotationJacobian()
         jacobian = numpy.vstack((jacobian_spatial, jacobian_angular))
         jacobian_pinv = numpy.linalg.pinv(jacobian)
 
