@@ -75,14 +75,11 @@ class CHOMPPlanner(planner.Planner):
                 # initial arm will be incorrectly added to the distance field.
                 self.robot.Enable(True)
                 logging.info("Creating the robot's distance field.")
-                for link in self.robot.GetLinks():
-                    link.Enable(False)
-
                 proximal_joints = [ manip.GetArmIndices()[0] for manip in self.robot.GetManipulators() ]
                 for link in self.robot.GetLinks():
                     for proximal_joint in proximal_joints:
-                        if not self.robot.DoesAffect(proximal_joint, link.GetIndex()):
-                            link.Enable(True)
+                        if self.robot.DoesAffect(proximal_joint, link.GetIndex()):
+                            link.Enable(False)
 
                 cache_path = self.GetCachePath(self.robot)
                 self.module.computedistancefield(self.robot, cache_filename=cache_path)
@@ -104,5 +101,5 @@ class CHOMPPlanner(planner.Planner):
 
     def GetCachePath(self, body):
         cache_dir = rospkg.get_ros_home()
-        cache_name = '{0:s}.chomp'.format(self.robot.GetKinematicsGeometryHash())
+        cache_name = '{0:s}.chomp'.format(body.GetKinematicsGeometryHash())
         return os.path.join(cache_dir, cache_name)
