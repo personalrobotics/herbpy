@@ -230,11 +230,12 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_
         traj = robot.AddTrajectoryFlags(traj, stop_on_stall=True)
 
     # FIXME: Waiting for the controller fails.
-    robot.GetController().SetPath(traj)
-    if timeout == None:
-        robot.WaitForController(0)
-    elif timeout > 0:
-        robot.WaitForController(timeout)
+    with util.RenderTrajectory(robot, traj):
+        robot.GetController().SetPath(traj)
+        if timeout == None:
+            robot.WaitForController(0)
+        elif timeout > 0:
+            robot.WaitForController(timeout)
 
     return traj
 
