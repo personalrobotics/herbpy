@@ -249,7 +249,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.right_arm.arm_simulated = right_arm_sim
     robot.right_arm.hand_simulated = right_hand_sim
     robot.right_arm.ft_simulated = right_ft_sim
-    robot.head.simulated = head_sim 
+    robot.head.arm_simulated = head_sim 
 
     # Load saved configs
     initialize_saved_configs(robot, **kw_args)
