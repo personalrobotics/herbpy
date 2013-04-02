@@ -1,5 +1,6 @@
 import contextlib, logging, rospkg, os
 import openravepy, orcdchomp.orcdchomp
+import prrave.tsr
 import planner
 
 class CHOMPPlanner(planner.Planner):
@@ -23,6 +24,17 @@ class CHOMPPlanner(planner.Planner):
                                             lambda_=lambda_, n_iter=n_iter, **kw_args)
             except RuntimeError, e:
                 raise planner.PlanningError(str(e))
+
+    def PlanToEndEffectorPose(self, goal_pose, lambda_=100.0, n_iter=100, **kw_args):
+        manipulator_index = self.robot.GetActiveManipulatorIndex()
+        goal_tsr = prrave.tsr.TSR(T0_w=goal_pose, manip=manipulator_index)
+        start_config = self.robot.GetActiveDOFValues()
+
+        if not self.initialized:
+            raise planner.UnsupportedPlanningError('CHOMP requires a distance field.')
+
+        traj = self.module.runchomp(robot=self.robot, adofgoal=start_config, start_tsr=goal_tsr)
+        return openravepy.planningutils.ReverseTrajectory(traj)
 
     def ComputeDistanceField(self):
         with self.env:
