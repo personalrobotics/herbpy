@@ -1,4 +1,5 @@
 import cbirrt, logging, numpy, openravepy, os, tempfile
+import prrave.kin
 import prrave.tsr
 import planner
 
@@ -17,9 +18,9 @@ class CBiRRTPlanner(planner.Planner):
         if extra_args is not None:
             args += extra_args
         if smoothingitrs is not None:
-            args += [ 'smoothingitrs', smoothingitrs ]
+            args += [ 'smoothingitrs', str(smoothingitrs) ]
         if timelimit is not None:
-            args += [ 'timelimit', timelimit ]
+            args += [ 'timelimit', str(timelimit) ]
         if allowlimadj is not None and allowlimadj:
             args += [ 'allowlimadj', '1' ]
 
@@ -28,6 +29,8 @@ class CBiRRTPlanner(planner.Planner):
         traj_path = '/tmp/cmovetraj.txt'
         args += [ 'filename', traj_path ]
         args_str = ' '.join(args)
+        
+
         response = self.problem.SendCommand(args_str)
         if int(response) != 1:
             raise planner.PlanningError('Planning with CBiRRT failed.')
@@ -57,3 +60,54 @@ class CBiRRTPlanner(planner.Planner):
         extra_args  = [ 'TSRChain', tsr_chain.serialize() ]
         extra_args += [ 'psample', str(psample) ]
         return self.Plan(extra_args=extra_args, **kw_args)
+
+    def PlanToEndEffectorOffset(self, direction, distance, 
+                                timelimit = 5.0, smoothingitrs = 250, **kw_args):
+
+        with self.env:
+            with self.robot.CreateRobotStateSaver():
+                
+                manip = self.robot.GetActiveManipulator()
+                H_world_ee = manip.GetEndEffectorTransform()
+
+                # 'object frame w' is at ee, z pointed along direction to move
+                H_world_w = prrave.kin.H_from_op_diff(H_world_ee[0:3,3], direction)
+                H_w_ee = numpy.dot(prrave.kin.invert_H(H_world_w), H_world_ee)
+            
+                # Serialize TSR string (goal)
+                Hw_end = numpy.eye(4)
+                Hw_end[2,3] = distance
+
+                goaltsr = prrave.tsr.TSR(T0_w = numpy.dot(H_world_w,Hw_end), 
+                                         Tw_e = H_w_ee, 
+                                         Bw = numpy.zeros((6,2)), 
+                                         manip = self.robot.GetActiveManipulatorIndex())
+                goal_tsr_chain = prrave.tsr.TSRChain(sample_goal = True,
+                                                     TSRs = [goaltsr])
+
+                # Serialize TSR string (whole-trajectory constraint)
+                Bw = numpy.zeros((6,2))
+                epsilon = 0.001
+                Bw = numpy.array([[-epsilon,            epsilon],
+                                  [-epsilon,            epsilon],
+                                  [min(0.0, distance),  max(0.0, distance)],
+                                  [-epsilon,            epsilon],
+                                  [-epsilon,            epsilon],
+                                  [-epsilon,            epsilon]])
+
+                trajtsr = prrave.tsr.TSR(T0_w = H_world_w, 
+                                         Tw_e = H_w_ee, 
+                                         Bw = Bw, 
+                                         manip = self.robot.GetActiveManipulatorIndex())
+                traj_tsr_chain = prrave.tsr.TSRChain(constrain = True,
+                                                     TSRs = [trajtsr])
+            
+                # Run the planner
+                # Note: this will re-lock in the same thread (which is fine)
+                # We need to keep the environment locked so robot updates don't poison the planning
+                extra_args = ['psample', '0.1']
+                extra_args += [ 'TSRChain', goal_tsr_chain.serialize() ]
+                extra_args += [ 'TSRChain', traj_tsr_chain.serialize() ]
+                return self.Plan(allowlimadj = True, timelimit = timelimit, smoothingitrs = smoothingitrs, extra_args=extra_args, **kw_args)
+
+        

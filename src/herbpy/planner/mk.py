@@ -49,7 +49,7 @@ class MKPlanner(planner.Planner):
         return numpy.dot(jacobian_pinv, pose_error) + numpy.dot(nullspace_projector, nullspace_goal)
 
     def PlanToEndEffectorOffset(self, direction, distance, nullspace=JointLimitAvoidance,
-                                planning_timeout=0.5, step_size=0.01,
+                                timelimit=0.5, step_size=0.01,
                                 position_tolerance=0.01, angular_tolerance=0.03, **kw_args):
         direction  = numpy.array(direction, dtype='float')
         direction /= numpy.linalg.norm(direction)
@@ -71,7 +71,7 @@ class MKPlanner(planner.Planner):
                 while current_distance < distance:
                     # Check for a timeout.
                     current_time = time.time()
-                    if planning_timeout is not None and current_time - start_time > planning_timeout:
+                    if timelimit is not None and current_time - start_time > timelimit:
                         raise planner.PlanningError('Reached time limit.')
 
                     # Compute joint velocities using the Jacobian pseudoinverse.
