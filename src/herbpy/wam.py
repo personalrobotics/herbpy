@@ -1,5 +1,16 @@
+<<<<<<< .mine
+import herbpy
+import openravepy
+import numpy
+import util
+from planner import PlanningError 
+import math
+from time import sleep, time
+import threading
+=======
 import math, numpy, openravepy
 import herbpy, exceptions, util
+>>>>>>> .r20005
 
 WamMethod = util.CreateMethodListDecorator()
 
@@ -51,7 +62,7 @@ def ServoTo(manipulator, target, duration, timeStep = 0.05, collisionChecking= T
     return False
 
 @WamMethod
-def CollisionCheck(manipulator, end_dof):
+def ServoCollisionCheck(manipulator, end_dof):
     with manipulator.GetEnv():
         robot_saver = manipulator.parent.CreateRobotStateSaver()
         for i in range(1,steps):
@@ -213,8 +224,43 @@ def MoveUntilTouch(manipulator, direction, distance, max_force=5, **kw_args):
     # TODO: Use a simulated force/torque sensor in simulation.
     try:
         manipulator.TareForceTorqueSensor()
-        manipulator.parent.ExecuteTrajectory(traj, execute=True)
-        return False 
+        return manipulator.parent.ExecuteTrajectory(traj, retime=False)
+    else:
+        return traj
     # Trajectory is aborted by OWD because we felt a force.
     except exceptions.TrajectoryAborted:
         return True
+
+
+@WamMethod
+def StartServoSim(manipulator):
+    t = threading.Thread(target=ServoSim, args=[manipulator])
+    t.start()
+
+@WamMethod
+def ServoSim(manipulator):
+    manipulator.servo_velocity = numpy.zeros(len(manipulator.GetArmIndices()))
+    manipulator.servo_timestamp = 0
+    timestep = 0.05
+    time_start = time()
+    while True:
+        with manipulator.parent.GetEnv():
+            # Check for timeout
+            if abs(time_start - manipulator.servo_timestamp)>0.1:
+                manipulator.servo_velocity = numpy.zeros(len(manipulator.GetArmIndices()))
+                time_start = time()
+            else:
+                # Set robot's dof
+                current_dofs = numpy.array(manipulator.parent.GetDOFValues(manipulator.GetArmIndices()))
+                vel = numpy.array(manipulator.servo_velocity)
+                dof_indices = manipulator.GetArmIndices()
+                manipulator.parent.SetDOFValues(current_dofs + vel*timestep, dof_indices)
+                # Reset time
+                time_start = time()
+                print 'Updated dofs'
+                print manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
+                #print manipulator.servo_velocity
+        sleep(timestep)
+        manipulator.parent.ExecuteTrajectory(traj, execute=True)
+        return False 
+
