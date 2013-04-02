@@ -42,8 +42,8 @@ def ServoTo(manipulator, target, duration, timeStep = 0.05, collisionChecking= T
     """
     steps = int(math.ceil(duration/timeStep))
     original_dofs = manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
-    velocity = target-manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
-    velocities = [v/steps for v in velocity]
+    velocity = numpy.array(target-manipulator.parent.GetDOFValues(manipulator.GetArmIndices()))
+    velocities = v/steps#[v/steps for v in velocity]
     inCollision = False 
     if collisionChecking==True:
         inCollision = manipulator.CollisionCheck(target)
@@ -51,13 +51,8 @@ def ServoTo(manipulator, target, duration, timeStep = 0.05, collisionChecking= T
         for i in range(1,steps):
             manipulator.Servo(velocities)
             sleep(timeStep)
-        v = [0] * len(manipulator.GetArmIndices())
-        #print v
         manipulator.Servo([0] * len(manipulator.GetArmIndices()))
-        #sleep(1)
         new_dofs = manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
-        print original_dofs
-        print new_dofs    
         return True
     return False
 
