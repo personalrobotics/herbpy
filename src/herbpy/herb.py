@@ -1,4 +1,5 @@
 import herbpy
+import exceptions
 import openravepy
 import numpy
 import planner
@@ -229,13 +230,30 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_
     except openravepy.openrave_exception:
         traj = robot.AddTrajectoryFlags(traj, stop_on_stall=True)
 
-    # FIXME: Waiting for the controller fails.
-    with util.RenderTrajectory(robot, traj):
-        robot.GetController().SetPath(traj)
-        if timeout == None:
-            robot.WaitForController(0)
-        elif timeout > 0:
-            robot.WaitForController(timeout)
+    # Wait for the controller to finish execution.
+    # TODO: Figure out why rendering trajectories fails on HERB.
+    # TODO: Only wait for the relevant controllers.
+    execution_done = False
+    #with util.RenderTrajectory(robot, traj):
+    robot.GetController().SetPath(traj)
+    if timeout == None:
+        execution_done = robot.WaitForController(0)
+    elif timeout > 0:
+        execution_done = robot.WaitForController(timeout)
+
+    # Query the active manipulators based on which DOF indices are
+    # included in the trajectory. Request the controller status from
+    # each manipulator's controller.
+    config_spec = traj.GetConfigurationSpecification()
+    group = config_spec.GetGroupFromName('joint_values')
+    traj_indices = set([ int(index) for index in group.name.split()[2:] ])
+
+    for manipulator in robot.manipulators:
+        manipulator_indices = set(manipulator.GetArmIndices())
+        if traj_indices & manipulator_indices:
+            status = manipulator.GetTrajectoryStatus()
+            if status == 'aborted':
+                raise exceptions.TrajectoryAborted
 
     return traj
 

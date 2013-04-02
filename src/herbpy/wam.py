@@ -1,13 +1,7 @@
-import herbpy
-import openravepy
-import numpy
-import util
-from planner import PlanningError 
-import math
-from time import sleep
+import math, numpy, openravepy
+import herbpy, exceptions, util
 
 WamMethod = util.CreateMethodListDecorator()
-
 
 @WamMethod
 def SetStiffness(manipulator, stiffness):
@@ -50,7 +44,7 @@ def ServoTo(manipulator, target, duration, timeStep = 0.05, collisionChecking= T
     if inCollision == False:       
         for i in range(1,steps):
             manipulator.Servo(velocities)
-            sleep(timeStep)
+            time.sleep(timeStep)
         manipulator.Servo([0] * len(manipulator.GetArmIndices()))
         new_dofs = manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
         return True
@@ -101,22 +95,24 @@ def MoveHand(manipulator, f1=None, f2=None, f3=None, spread=None, timeout=None):
         manipulator.parent.WaitForController(timeout)
 
 @WamMethod
-def OpenHand(manipulator, timeout=None):
+def OpenHand(manipulator, spread=None, timeout=None):
     """
     Open the hand with a fixed spread.
+    @param spread hand spread
     @param timeout blocking execution timeout
     """
     # TODO: Load this angle from somewhere.
-    manipulator.MoveHand(f1=0.0, f2=0.0, f3=0.0, timeout=timeout)
+    manipulator.MoveHand(f1=0.0, f2=0.0, f3=0.0, spread=spread, timeout=timeout)
 
 @WamMethod
-def CloseHand(manipulator, timeout=None):
+def CloseHand(manipulator, spread=None, timeout=None):
     """
     Close the hand with a fixed spread.
+    @param spread hand spread
     @param timeout blocking execution timeout
     """
     # TODO: Load this angle from somewhere.
-    manipulator.MoveHand(f1=3.2, f2=3.2, f3=3.2, timeout=timeout)
+    manipulator.MoveHand(f1=3.2, f2=3.2, f3=3.2, spread=spread, timeout=timeout)
 
 @WamMethod
 def GetForceTorque(manipulator):
@@ -133,7 +129,8 @@ def TareForceTorqueSensor(manipulator):
     Tare the force/torque sensor. This is necessary before using the sensor
     whenever the arm configuration has changed.
     """
-    manipulator.ft_sensor.SendCommand('Tare')
+    if not manipulator.ft_simulated:
+        manipulator.ft_sensor.SendCommand('Tare')
 
 @WamMethod
 def SetVelocityLimits(manipulator, velocity_limits, min_accel_time):
@@ -156,11 +153,33 @@ def SetVelocityLimits(manipulator, velocity_limits, min_accel_time):
     return True
 
 @WamMethod
+def GetTrajectoryStatus(manipulator):
+    '''
+    Gets the status of the current (or previous) trajectory executed by the
+    controller.
+    '''
+    if not manipulator.arm_simulated:
+        return manipulator.arm_controller.SendCommand('GetStatus')
+    else:
+        if manipulator.arm_controller.IsDone():
+            return 'done'
+        else:
+            return 'active'
+
+@WamMethod
 def SetActive(manipulator):
     '''
-    Sets this as the active manipulator.
+    Sets this as the active manipulator and updates the active DOF indices.
     '''
     manipulator.parent.SetActiveManipulator(manipulator)
+    manipulator.parent.SetActiveDOFs(manipulator.GetArmIndices())
+
+@WamMethod
+def GetArmDOFValues(manipulator, dof_values):
+    '''
+    Gets this manipulator's DOF values.
+    ''' 
+    return manipulator.parent.GetDOFValues(manipulator.GetArmDOFIndices())
 
 @WamMethod
 def SetArmDOFValues(manipulator, dof_values):
@@ -170,15 +189,16 @@ def SetArmDOFValues(manipulator, dof_values):
     manipulator.parent.SetDOFValues(dof_values, manipulator.GetArmDOFIndices())
 
 @WamMethod
-def MoveUntilTouch(manipulator, direction, distance, max_force=5, execute=True):
+def MoveUntilTouch(manipulator, direction, distance, max_force=5, **kw_args):
     """
-    Execute a straight move-until-touch action. This action stops when
-    the maximum force is 
-    @param direction unit vector for the direction o fmotion in the world frame
+    Execute a straight move-until-touch action. This action stops when a
+    sufficient force is is felt or the manipulator moves the maximum distance.
+    @param direction unit vector for the direction of motion in the world frame
     @param distance maximum distance in meters
     @param max_force maximum force in Newtons
     @param execute optionally execute the trajectory
-    @return traj output trajectory
+    @param **kw_args planner parameters
+    @return felt_force flag indicating whether we felt a force.
     """
     # Compute the expected force direction in the hand frame.
     direction = numpy.array(direction)
@@ -186,12 +206,15 @@ def MoveUntilTouch(manipulator, direction, distance, max_force=5, execute=True):
     force_direction = numpy.dot(hand_pose[0:3, 0:3].T, -direction)
 
     # Plan a straight trajectory.
-    traj = manipulator.PlanToEndEffectorOffset(direction, distance, execute=False)
+    traj = manipulator.PlanToEndEffectorOffset(direction, distance, execute=False, **kw_args)
     traj = manipulator.parent.AddTrajectoryFlags(traj, stop_on_ft=True, force_direction=force_direction,
-                                          force_magnitude=max_force, torque=[100,100,100])
+                                                 force_magnitude=max_force, torque=[100,100,100])
 
-    if execute:
+    # TODO: Use a simulated force/torque sensor in simulation.
+    try:
         manipulator.TareForceTorqueSensor()
-        return manipulator.parent.ExecuteTrajectory(traj, retime=False)
-    else:
-        return traj
+        manipulator.parent.ExecuteTrajectory(traj, execute=True)
+        return False 
+    # Trajectory is aborted by OWD because we felt a force.
+    except exceptions.TrajectoryAborted:
+        return True

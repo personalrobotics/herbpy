@@ -169,6 +169,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.left_arm = robot.GetManipulator('left_wam')
     robot.right_arm = robot.GetManipulator('right_wam')
     robot.head = robot.GetManipulator('head_wam')
+    robot.manipulators = [ robot.left_arm, robot.right_arm, robot.head ]
 
     # Simulation flags.
     robot.left_arm_sim = left_arm_sim 
@@ -200,7 +201,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     robot.chomp_planner = planner.chomp.CHOMPPlanner(robot)
     robot.mk_planner = planner.mk.MKPlanner(robot)
     robot.jacobian_planner = planner.jacobian.JacobianPlanner(robot)
-    robot.planners = [ robot.mk_planner, robot.chomp_planner, robot.cbirrt_planner, robot.jacobian_planner  ]
+    robot.planners = [ robot.chomp_planner, robot.cbirrt_planner, robot.jacobian_planner  ]
 
     # Trajectory blending module.
     robot.trajectory_module = prrave.rave.load_module(robot.GetEnv(), 'Trajectory', robot.GetName())
@@ -229,6 +230,15 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     initialize_manipulator(robot, robot.right_arm, openravepy.IkParameterization.Type.Transform6D)
     initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
 
+    # Convienence simulation flags for the manipulators.
+    # TODO: Can we make a cleaner API for this?
+    robot.left_arm.arm_simulated = left_arm_sim
+    robot.left_arm.hand_simulated = left_hand_sim
+    robot.left_arm.ft_simulated = left_ft_sim
+    robot.right_arm.arm_simulated = right_arm_sim
+    robot.right_arm.hand_simulated = right_hand_sim
+    robot.right_arm.ft_simulated = right_ft_sim
+    robot.head.simulated = head_sim 
 
     # Load saved configs
     initialize_saved_configs(robot, **kw_args)
