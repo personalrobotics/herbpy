@@ -19,11 +19,14 @@ class MKPlanner(planner.Planner):
         #pos_error  = pos_offset - hand_velocity * numpy.dot(pos_offset, hand_velocity)
         error_pos = velocity 
 
-        # Append the desired quaternion to create the error vector.
+        # Append the desired quaternion to create the error vector. There is a
+        # sign ambiguity on quaternions, so we'll always choose the shortest
+        # path.
         initial_ori = openravepy.quatFromRotationMatrix(initial_hand_pose)
         current_ori = openravepy.quatFromRotationMatrix(current_hand_pose)
-        error_ori = initial_ori - current_ori
-        pose_error = numpy.hstack((error_pos, error_ori))
+        choices_ori = [ -initial_ori - current_ori, -initial_ori + current_ori,
+                        -initial_ori + current_ori, +initial_ori + current_ori ]
+        error_ori = min(choices_ori, key=lambda q: numpy.linalg.norm(q))
 
         # Jacobian pseudo-inverse.
         jacobian_spatial = manip.CalculateJacobian()
@@ -32,6 +35,7 @@ class MKPlanner(planner.Planner):
         jacobian_pinv = numpy.linalg.pinv(jacobian)
 
         # TODO: Implement a null-space projector.
+        pose_error = numpy.hstack((error_pos, error_ori))
         return numpy.dot(jacobian_pinv, pose_error)
 
     def PlanToEndEffectorOffset(self, direction, distance, planning_timeout=0.5, step_size=0.01, **kw_args):
