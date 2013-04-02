@@ -12,6 +12,11 @@ import herbpy, exceptions, util
 WamMethod = util.CreateMethodListDecorator()
 
 @WamMethod
+def LookAtHand(manipulator):
+    target = manipulator.GetEndEffectorTransform()[0:3, 3]
+    traj = manipulator.parent.LookAt(target, execute=True)
+
+@WamMethod
 def SetStiffness(manipulator, stiffness):
     """
     Set the WAM's stiffness. This enables or disables gravity compensation.
