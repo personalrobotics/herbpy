@@ -1,4 +1,3 @@
-<<<<<<< .mine
 import herbpy
 import openravepy
 import numpy
@@ -7,10 +6,8 @@ from planner import PlanningError
 import math
 from time import sleep, time
 import threading
-=======
 import math, numpy, openravepy
 import herbpy, exceptions, util
->>>>>>> .r20005
 
 WamMethod = util.CreateMethodListDecorator()
 
