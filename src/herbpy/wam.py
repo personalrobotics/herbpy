@@ -171,6 +171,7 @@ def GetTrajectoryStatus(manipulator):
     Gets the status of the current (or previous) trajectory executed by the
     controller.
     '''
+    
     if not manipulator.arm_simulated:
         return manipulator.arm_controller.SendCommand('GetStatus')
     else:
@@ -178,6 +179,14 @@ def GetTrajectoryStatus(manipulator):
             return 'done'
         else:
             return 'active'
+
+@WamMethod
+def ClearTrajectoryStatus(manipulator):
+    '''
+    Clears the status of the trajectory
+    '''
+    if not manipulator.arm_simulated:
+        manipulator.arm_controller.SendCommand('ClearStatus')
 
 @WamMethod
 def SetActive(manipulator):
@@ -188,18 +197,18 @@ def SetActive(manipulator):
     manipulator.parent.SetActiveDOFs(manipulator.GetArmIndices())
 
 @WamMethod
-def GetArmDOFValues(manipulator, dof_values):
+def GetArmDOFValues(manipulator):
     '''
     Gets this manipulator's DOF values.
     ''' 
-    return manipulator.parent.GetDOFValues(manipulator.GetArmDOFIndices())
+    return manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
 
 @WamMethod
 def SetArmDOFValues(manipulator, dof_values):
     '''
     Sets this manipulator's DOF values.
     ''' 
-    manipulator.parent.SetDOFValues(dof_values, manipulator.GetArmDOFIndices())
+    manipulator.parent.SetDOFValues(dof_values, manipulator.GetArmIndices())
 
 @WamMethod
 def MoveUntilTouch(manipulator, direction, distance, max_force=5, **kw_args):

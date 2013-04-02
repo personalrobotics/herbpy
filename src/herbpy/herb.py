@@ -239,6 +239,21 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_
     except openravepy.openrave_exception:
         traj = robot.AddTrajectoryFlags(traj, stop_on_stall=True)
 
+    # Query the active manipulators based on which DOF indices are
+    # included in the trajectory.
+    active_manipulators = []
+    config_spec = traj.GetConfigurationSpecification()
+    group = config_spec.GetGroupFromName('joint_values')
+    traj_indices = set([ int(index) for index in group.name.split()[2:] ])
+
+    for manipulator in robot.manipulators:
+        manipulator_indices = set(manipulator.GetArmIndices())
+        if traj_indices & manipulator_indices:
+            active_manipulators.append(manipulator)
+
+    # Reset old trajectory execution flags
+    for manipulator in active_manipulators:
+        manipulator.ClearTrajectoryStatus()
 
     # Wait for the controller to finish execution.
     # TODO: Figure out why rendering trajectories fails on HERB.
@@ -250,20 +265,13 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_
         execution_done = robot.WaitForController(0)
     elif timeout > 0:
         execution_done = robot.WaitForController(timeout)
-
-    # Query the active manipulators based on which DOF indices are
-    # included in the trajectory. Request the controller status from
+        
+    # Request the controller status from
     # each manipulator's controller.
-    config_spec = traj.GetConfigurationSpecification()
-    group = config_spec.GetGroupFromName('joint_values')
-    traj_indices = set([ int(index) for index in group.name.split()[2:] ])
-
-    for manipulator in robot.manipulators:
-        manipulator_indices = set(manipulator.GetArmIndices())
-        if traj_indices & manipulator_indices:
-            status = manipulator.GetTrajectoryStatus()
-            if status == 'aborted':
-                raise exceptions.TrajectoryAborted
+    for manipulator in active_manipulators:
+        status = manipulator.GetTrajectoryStatus()
+        if status == 'aborted':
+            raise exceptions.TrajectoryAborted('Trajectory aborted for %s' % manipulator.GetName())
 
     return traj
 
