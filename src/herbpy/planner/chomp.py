@@ -1,5 +1,5 @@
 import contextlib, logging, rospkg, os
-import openravepy, orcdchomp.orcdchomp
+import openravepy, numpy, orcdchomp.orcdchomp
 import prrave.tsr
 import planner
 
@@ -25,7 +25,11 @@ class CHOMPPlanner(planner.Planner):
             except RuntimeError, e:
                 raise planner.PlanningError(str(e))
 
-    def PlanToEndEffectorPose(self, goal_pose, lambda_=100.0, n_iter=100, **kw_args):
+    def PlanToEndEffectorPose(self, goal_pose, lambda_=100.0, n_iter=100, goal_tolerance=0.01, **kw_args):
+        # CHOMP only supports start sets. Instead, we plan backwards from the
+        # goal TSR to the starting configuration. Afterwards, we reverse the
+        # trajectory.
+        # TODO: Replace this with a proper goalset CHOMP implementation.
         manipulator_index = self.robot.GetActiveManipulatorIndex()
         goal_tsr = prrave.tsr.TSR(T0_w=goal_pose, manip=manipulator_index)
         start_config = self.robot.GetActiveDOFValues()
@@ -33,8 +37,28 @@ class CHOMPPlanner(planner.Planner):
         if not self.initialized:
             raise planner.UnsupportedPlanningError('CHOMP requires a distance field.')
 
-        traj = self.module.runchomp(robot=self.robot, adofgoal=start_config, start_tsr=goal_tsr)
-        return openravepy.planningutils.ReverseTrajectory(traj)
+        with self.robot.CreateRobotStateSaver():
+            try:
+                traj = self.module.runchomp(robot=self.robot, adofgoal=start_config, start_tsr=goal_tsr)
+                traj = openravepy.planningutils.ReverseTrajectory(traj)
+            except RuntimeError, e:
+                raise planner.PlanningError(str(e))
+
+            # Verify that CHOMP didn't converge to the wrong goal. This is a
+            # workaround for a bug in GSCHOMP where the constraint projection
+            # fails because of joint limits.
+            config_spec = traj.GetConfigurationSpecification()
+            last_waypoint = traj.GetWaypoint(traj.GetNumWaypoints() - 1)
+            final_config = config_spec.ExtractJointValues(last_waypoint, self.robot, self.robot.GetActiveDOFIndices())
+            self.robot.SetActiveDOFValues(final_config)
+            final_pose = self.robot.GetActiveManipulator().GetEndEffectorTransform()
+
+            # TODO: Also check the orientation.
+            goal_distance = numpy.linalg.norm(final_pose[0:3, 3] - goal_pose[0:3, 3])
+            if goal_distance > goal_tolerance:
+                raise planner.PlanningError('CHOMP deviated from the goal pose by {0:f} meters.'.format(goal_distance))
+
+            return traj
 
     def ComputeDistanceField(self):
         with self.env:
