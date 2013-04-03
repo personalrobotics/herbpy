@@ -1,7 +1,7 @@
 import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
 import rospkg
-import functools, logging, numpy, sys, types
+import functools, logging, numpy, signal, sys, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
 import planner, herb, wam, yaml
 
@@ -307,7 +307,6 @@ def initialize(env_path='environments/pr_kitchen.robot.xml',
     """
     env = openravepy.Environment()
     env.Load(env_path)
-
     robot = env.ReadRobotXMLFile(robot_path)
     env.Add(robot)
 
@@ -315,6 +314,13 @@ def initialize(env_path='environments/pr_kitchen.robot.xml',
         env.SetViewer('qtcoin')
 
     initialize_herb(robot, **kw_args)
+
+    # Prevent ROS from intercepting Control+C.
+    def RaiseKeyboardInterrupt(number, stack_frame):
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGINT, RaiseKeyboardInterrupt)
+
     return env, robot 
 
 def initialize_sim(**kw_args):
