@@ -24,8 +24,11 @@ def LookAt(robot, target, execute=True):
     if target_dof_values == None:
         return None
 
-    # Create a two waypoint trajectory for the head.
-    current_dof_values = robot.GetDOFValues(robot.head.GetArmIndices())
+    # Update the controllers to get new joint values.
+    with robot.GetEnv():
+        robot.GetController().SimulationStep(0)
+        current_dof_values = robot.GetDOFValues(robot.head.GetArmIndices())
+
     config_spec = robot.head.GetArmConfigurationSpecification()
     traj = openravepy.RaveCreateTrajectory(robot.GetEnv(), '')
     traj.Init(config_spec)
@@ -60,8 +63,11 @@ def FindHeadDofs(robot, target):
 def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
     traj = None
 
-    # Sequentially try each planner until one succeeds.
     with robot.GetEnv():
+        # Update the controllers to get new joint values.
+        robot.GetController().SimulationStep(0)
+
+        # Sequentially try each planner until one succeeds.
         with robot.CreateRobotStateSaver():
             for delegate_planner in robot.planners:
                 try:

@@ -13,6 +13,7 @@ RIGHT_ARM_NAMESPACE = '/right/owd'
 LEFT_HAND_NAMESPACE = '/left/bhd'
 RIGHT_HAND_NAMESPACE = '/right/bhd'
 MOPED_NAMESPACE = '/moped'
+TALKER_NAMESPACE = '/talker'
 rp = rospkg.RosPack()
 herbpy_package_path = rp.get_path(NODE_NAME)
 
@@ -121,11 +122,7 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
                           robot.left_arm.hand_controller, robot.right_arm.hand_controller ]
     robot.multicontroller.finalize()
 
-
-
-
-
-def initialize_sensors(robot, left_ft_sim, right_ft_sim, moped_sim):
+def initialize_sensors(robot, left_ft_sim, right_ft_sim, moped_sim, talker_sim):
     """
     Initialize HERB's sensor plugins.
     @param left_ft_sim simulate the left force/torque sensor
@@ -152,11 +149,16 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, moped_sim):
         moped_args = 'MOPEDSensorSystem {0:s} {1:s} {2:s}'.format(NODE_NAME, MOPED_NAMESPACE, OPENRAVE_FRAME_ID)
         robot.moped_sensorsystem = openravepy.RaveCreateSensorSystem(env, moped_args)
 
+    # Talker.
+    if not talker_sim:
+        talker_args = 'TalkerModule {0:s} {1:s}'.format(NODE_NAME, TALKER_NAMESPACE)
+        robot.talker_module = openravepy.RaveCreateModule(env, talker_args)
+
 def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
                            left_hand_sim=False, right_hand_sim=False,
                            head_sim=False, segway_sim=False,
                            left_ft_sim=False, right_ft_sim=False,
-                           moped_sim=False,
+                           moped_sim=False, talker_sim=False,
                            **kw_args):
     """
     Bind extra methods to HERB.
@@ -169,6 +171,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     @param right_ft_sim simulate the right force/torque sensor
     @param segway_sim simulate the Segway
     @param moped_sim simulate MOPED
+    @param talker_sim simulate talker
     """
     robot.left_arm = robot.GetManipulator('left_wam')
     robot.right_arm = robot.GetManipulator('right_wam')
@@ -190,7 +193,7 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     initialize_controllers(robot, left_arm_sim=left_arm_sim, right_arm_sim=right_arm_sim,
                                   left_hand_sim=left_hand_sim, right_hand_sim=right_hand_sim,
                                   head_sim=head_sim, segway_sim=segway_sim)
-    initialize_sensors(robot, left_ft_sim=left_ft_sim, right_ft_sim=right_ft_sim, moped_sim=moped_sim)
+    initialize_sensors(robot, left_ft_sim=left_ft_sim, right_ft_sim=right_ft_sim, moped_sim=moped_sim, talker_sim=talker_sim)
 
     # Wait for the robot's state to update.
     for controller in robot.controllers:
@@ -324,7 +327,7 @@ def initialize_sim(**kw_args):
                       left_hand_sim=True, right_hand_sim=True,
                       head_sim=True, segway_sim=True,
                       left_ft_sim=True, right_ft_sim=True,
-                      moped_sim=True,
+                      moped_sim=True, talker_sim=True,
                       **kw_args)
 
 def initialize_real(**kw_args):
@@ -337,5 +340,5 @@ def initialize_real(**kw_args):
                       left_hand_sim=False, right_hand_sim=False,
                       head_sim=False, segway_sim=False,
                       left_ft_sim=False, right_ft_sim=False,
-                      moped_sim=False,
+                      moped_sim=False, talker_sim=False,
                       **kw_args)

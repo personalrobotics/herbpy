@@ -21,6 +21,7 @@
     <depend package="or_owd_controller"/>
     <depend package="or_segway_controller"/>
     <depend package="or_barrett_ft_sensor"/>
+    <depend package="or_talker_module"/>
     <!-- planner plugins -->
     <depend package="cbirrt2"/>
     <depend package="orcdchomp"/>
