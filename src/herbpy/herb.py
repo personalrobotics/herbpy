@@ -9,6 +9,16 @@ import util
 HerbMethod = util.CreateMethodListDecorator()
 
 @HerbMethod
+def Say(robot, message):
+    """
+    Say a message using HERB's text-to-speech engine.
+    @param message
+    """
+    herbpy.logger.info('Saying "%s".', message)
+    if robot.talker_module is not None:
+        robot.talker_module.SendCommand('Say ' + message)
+
+@HerbMethod
 def LookAt(robot, target, execute=True):
     """
     Look at a point in the world frame. This creates and, optionally executes,
