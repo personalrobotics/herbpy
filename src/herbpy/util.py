@@ -51,6 +51,7 @@ class Timer:
         self.start = 0 
 
     def __enter__(self):
+        herbpy.logger.info('%s started execution.', self.message)
         self.start = time.time()
 
     def __exit__(self, exc_type, exc_value, traceback):

@@ -25,7 +25,7 @@ class CHOMPPlanner(planner.Planner):
             except RuntimeError, e:
                 raise planner.PlanningError(str(e))
 
-    def PlanToEndEffectorPose(self, goal_pose, lambda_=100.0, n_iter=100, goal_tolerance=0.01, **kw_args):
+    def PlanToEndEffectorPose(self, goal_pose, lambda_=50.0, n_iter=50, goal_tolerance=0.01, **kw_args):
         # CHOMP only supports start sets. Instead, we plan backwards from the
         # goal TSR to the starting configuration. Afterwards, we reverse the
         # trajectory.

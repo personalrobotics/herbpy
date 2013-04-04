@@ -82,31 +82,33 @@ def FindHeadDofs(robot, target):
 def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
     traj = None
 
-    with robot.GetEnv():
-        # Update the controllers to get new joint values.
-        robot.GetController().SimulationStep(0)
+    with util.Timer("Full planning"):
+        with robot.GetEnv():
+            # Update the controllers to get new joint values.
+            robot.GetController().SimulationStep(0)
 
-        # Sequentially try each planner until one succeeds.
-        with robot.CreateRobotStateSaver():
-            for delegate_planner in robot.planners:
-                try:
-                    herbpy.logger.info('Trying planner: %s', delegate_planner.GetName())
-                    traj = getattr(delegate_planner, command_name)(*args, **kw_args)
-                    break
-                except planner.UnsupportedPlanningError, e:
-                    herbpy.logger.debug('Unable to plan with {0:s}: {1:s}'.format(delegate_planner.GetName(), e))
-                except planner.PlanningError, e:
-                    herbpy.logger.warning('Planning with {0:s} failed: {1:s}'.format(delegate_planner.GetName(), e))
-                    # TODO: Log the scene and planner parameters to a file.
+            # Sequentially try each planner until one succeeds.
+            with robot.CreateRobotStateSaver():
+                for delegate_planner in robot.planners:
+                    try:
+                        herbpy.logger.info('Trying planner: %s', delegate_planner.GetName())
+                        traj = getattr(delegate_planner, command_name)(*args, **kw_args)
+                        break
+                    except planner.UnsupportedPlanningError, e:
+                        herbpy.logger.debug('Unable to plan with {0:s}: {1:s}'.format(delegate_planner.GetName(), e))
+                    except planner.PlanningError, e:
+                        herbpy.logger.warning('Planning with {0:s} failed: {1:s}'.format(delegate_planner.GetName(), e))
+                        # TODO: Log the scene and planner parameters to a file.
 
     if traj is None:
         raise planner.PlanningError('Planning failed with all planners.')
 
     # Optionally execute the trajectory.
-    if execute:
-        return robot.ExecuteTrajectory(traj, **kw_args)
-    else:
-        return traj
+    with util.Timer("Full trajectory execution"):
+        if execute:
+            return robot.ExecuteTrajectory(traj, **kw_args)
+        else:
+            return traj
 
 @HerbMethod
 def PlanToNamedConfiguration(robot, name, **kw_args):
@@ -210,17 +212,18 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_
     @param retime retime the trajectory before execution
     @return executed_traj  
     """
-    #TODO: Figure out better way to do this
-    time.sleep(1.0)
-
+    
+    
     # Retiming the trajectory may be necessary to execute it on an
     # IdealController in simulation. This timing is ignored by OWD.
-    if retime:
-        openravepy.planningutils.RetimeTrajectory(traj)
+    with util.Timer("retime"):
+        if retime:
+            openravepy.planningutils.RetimeTrajectory(traj)
 
     # Annotate the trajectory with HERB-specific options.
-    if blend:
-        traj = robot.BlendTrajectory(traj)
+    with util.Timer("blend"):
+        if blend:
+            traj = robot.BlendTrajectory(traj)
 
     # Only add flags if none are present. This is the only way of checking if
     # the trajectory already has the flags added.
@@ -250,12 +253,13 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_
     # TODO: Figure out why rendering trajectories fails on HERB.
     # TODO: Only wait for the relevant controllers.
     execution_done = False
-    #with util.RenderTrajectory(robot, traj):
-    robot.GetController().SetPath(traj)
-    if timeout == None:
-        execution_done = robot.WaitForController(0)
-    elif timeout > 0:
-        execution_done = robot.WaitForController(timeout)
+    with util.RenderTrajectory(robot, traj):
+        with util.Timer("actual execution"):
+            robot.GetController().SetPath(traj)
+            if timeout == None:
+                execution_done = robot.WaitForController(0)
+            elif timeout > 0:
+                execution_done = robot.WaitForController(timeout)
         
     # Request the controller status from
     # each manipulator's controller.
@@ -314,59 +318,60 @@ def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
     elif (robot.left_ft_sim and left_arm) or (robot.right_ft_sim and right_arm):
         raise Exception('DriveStraightUntilForce does not work with simulated force/torque sensors.')
 
-    env = robot.GetEnv()
-    direction = numpy.array(direction, dtype='float')
-    direction /= numpy.linalg.norm(direction) 
-    manipulators = list()
-    if left_arm:
-        manipulators.append(robot.left_arm)
-    if right_arm:
-        manipulators.append(robot.right_arm)
+    with util.Timer("Drive segway until force"):
+        env = robot.GetEnv()
+        direction = numpy.array(direction, dtype='float')
+        direction /= numpy.linalg.norm(direction) 
+        manipulators = list()
+        if left_arm:
+            manipulators.append(robot.left_arm)
+        if right_arm:
+            manipulators.append(robot.right_arm)
 
-    if not manipulators:
-        herbpy.logger.warning('Executing DriveStraightUntilForce with no force/torque sensor for feedback.')
+        if not manipulators:
+            herbpy.logger.warning('Executing DriveStraightUntilForce with no force/torque sensor for feedback.')
 
-    # Tare the force/torque sensors.
-    for manipulator in manipulators:
-        manipulator.TareForceTorqueSensor()
+        # Tare the force/torque sensors.
+        for manipulator in manipulators:
+            manipulator.TareForceTorqueSensor()
 
-    # Rotate to face the right direction.
-    with env:
-        robot_pose = robot.GetTransform()
-    robot_angle = numpy.arctan2(robot_pose[1, 0], robot_pose[0, 0])
-    desired_angle = numpy.arctan2(direction[1], direction[0])
-    robot.RotateSegway(desired_angle - robot_angle)
-    
-    try:
-        felt_force = False
-        start_time = time.time()
-        start_pos = robot_pose[0:3, 3]
-        while True:
-            # Check if we felt a force on any of the force/torque sensors.
-            for manipulator in manipulators:
-                force, torque = manipulator.GetForceTorque()
-                if numpy.linalg.norm(force) > force_threshold:
-                    return True
+        # Rotate to face the right direction.
+        with env:
+            robot_pose = robot.GetTransform()
+        robot_angle = numpy.arctan2(robot_pose[1, 0], robot_pose[0, 0])
+        desired_angle = numpy.arctan2(direction[1], direction[0])
+        robot.RotateSegway(desired_angle - robot_angle)
+        
+        try:
+            felt_force = False
+            start_time = time.time()
+            start_pos = robot_pose[0:3, 3]
+            while True:
+                # Check if we felt a force on any of the force/torque sensors.
+                for manipulator in manipulators:
+                    force, torque = manipulator.GetForceTorque()
+                    if numpy.linalg.norm(force) > force_threshold:
+                        return True
 
-            # Check if we've exceeded the maximum distance.
-            with env:
-                current_pos = robot.GetTransform()[0:3, 3]
-            distance = numpy.dot(current_pos - start_pos, direction)
-            if max_distance is not None and distance >= max_distance:
-                return False
+                # Check if we've exceeded the maximum distance.
+                with env:
+                    current_pos = robot.GetTransform()[0:3, 3]
+                distance = numpy.dot(current_pos - start_pos, direction)
+                if max_distance is not None and distance >= max_distance:
+                    return False
 
-            # Check for a timeout.
-            time_now = time.time()
-            if timeout is not None and time_now - star_time > timeout:
-                return False
+                # Check for a timeout.
+                time_now = time.time()
+                if timeout is not None and time_now - star_time > timeout:
+                    return False
 
-            # Continuously stream forward velocities.
-            robot.segway_controller.SendCommand('DriveInstantaneous {0:f} 0 0'.format(velocity))
-    finally:
-        # Stop the Segway before returning.
-        robot.segway_controller.SendCommand('DriveInstantaneous 0 0 0')
+                # Continuously stream forward velocities.
+                robot.segway_controller.SendCommand('DriveInstantaneous {0:f} 0 0'.format(velocity))
+        finally:
+            # Stop the Segway before returning.
+            robot.segway_controller.SendCommand('DriveInstantaneous 0 0 0')
 
-@ HerbMethod
+@HerbMethod
 def DriveAlongVector(robot, direction, goal_pos):
     direction = direction[:2]/numpy.linalg.norm(direction[:2])
     herb_pose = robot.GetTransform()
@@ -378,18 +383,19 @@ def DriveAlongVector(robot, direction, goal_pos):
 
 @HerbMethod
 def DriveSegway(robot, meters, timeout=None):
-    controller_name = robot.segway_controller.GetXMLId().split()[0]
-    if controller_name == 'IdealController':
-        # in simulation
-        current_pose = robot.GetTransform().copy()
-        current_pose[0:3,3] = current_pose[0:3,3] + meters*current_pose[0:3,0]
-        robot.SetTransform(current_pose)
-    else:
-        robot.segway_controller.SendCommand("Drive " + str(meters))
-        if timeout == None:
-            robot.WaitForController(0)
-        elif timeout > 0:
-            robot.WaitForController(timeout)
+    with util.Timer("Drive segway"):
+        controller_name = robot.segway_controller.GetXMLId().split()[0]
+        if controller_name == 'IdealController':
+            # in simulation
+            current_pose = robot.GetTransform().copy()
+            current_pose[0:3,3] = current_pose[0:3,3] + meters*current_pose[0:3,0]
+            robot.SetTransform(current_pose)
+        else:
+            robot.segway_controller.SendCommand("Drive " + str(meters))
+            if timeout == None:
+                robot.WaitForController(0)
+            elif timeout > 0:
+                robot.WaitForController(timeout)
 
 @HerbMethod
 def DriveSegwayToNamedPosition(robot, named_position):
@@ -401,21 +407,22 @@ def DriveSegwayToNamedPosition(robot, named_position):
 
 @HerbMethod
 def RotateSegway(robot, angle_rad, timeout=None):
-    controller_name = robot.segway_controller.GetXMLId().split()[0]
-    if controller_name == 'IdealController':
-        # in simulation
-        current_pose_in_world = robot.GetTransform().copy()
-        
-        #rotate by the angle around z
-        desired_pose_in_herb = numpy.array([[numpy.cos(angle_rad), -numpy.sin(angle_rad), 0, 0],
-                                            [numpy.sin(angle_rad), numpy.cos(angle_rad), 0, 0],
-                                            [0, 0, 1, 0],
-                                            [0, 0, 0, 1]])
-        desired_pose_in_world = numpy.dot(current_pose_in_world, desired_pose_in_herb)
-        robot.SetTransform(desired_pose_in_world)
-    else:
-        robot.segway_controller.SendCommand("Rotate " + str(angle_rad))
-        if timeout == None:
-            robot.WaitForController(0)
-        elif timeout > 0:
-            robot.WaitForController(timeout)
+    with util.Timer("Rotate segway"):
+        controller_name = robot.segway_controller.GetXMLId().split()[0]
+        if controller_name == 'IdealController':
+            # in simulation
+            current_pose_in_world = robot.GetTransform().copy()
+            
+            #rotate by the angle around z
+            desired_pose_in_herb = numpy.array([[numpy.cos(angle_rad), -numpy.sin(angle_rad), 0, 0],
+                                                [numpy.sin(angle_rad), numpy.cos(angle_rad), 0, 0],
+                                                [0, 0, 1, 0],
+                                                [0, 0, 0, 1]])
+            desired_pose_in_world = numpy.dot(current_pose_in_world, desired_pose_in_herb)
+            robot.SetTransform(desired_pose_in_world)
+        else:
+            robot.segway_controller.SendCommand("Rotate " + str(angle_rad))
+            if timeout == None:
+                robot.WaitForController(0)
+            elif timeout > 0:
+                robot.WaitForController(timeout)
