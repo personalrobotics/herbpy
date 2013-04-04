@@ -5,6 +5,8 @@ import numpy
 import planner
 import time
 import util
+import rospy
+from pr_msgs.srv import AppletCommand
 
 HerbMethod = util.CreateMethodListDecorator()
 
@@ -15,8 +17,15 @@ def Say(robot, message):
     @param message
     """
     herbpy.logger.info('Saying "%s".', message)
-    if robot.talker_module is not None:
-        robot.talker_module.SendCommand('Say ' + message)
+
+    rospy.wait_for_service('/talkerapplet')
+    talk = rospy.ServiceProxy('/talkerapplet', AppletCommand)    
+
+    try:
+        talk('say', message, 0, 0)
+    except rospy.ServiceException, e:
+        herbpy.logger.info('Error talking.')
+
 
 @HerbMethod
 def LookAt(robot, target, execute=True):
