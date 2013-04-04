@@ -13,22 +13,4 @@ right_relaxed_config = numpy.array([ 5.73, -1.82, -0.35, 1.87, -4.06, -0.66, 0.9
 openravepy.RaveInitialize(True, level=openravepy.DebugLevel.Debug)
 openravepy.misc.InitOpenRAVELogging();
 
-'''
-if simulation:
-    env, robot = herbpy.initialize_sim(attach_viewer=True)
-else:
-    env, robot = herbpy.initialize_real(attach_viewer=True)
-'''
-
-with env:
-    robot.SetActiveManipulator(robot.right_arm)
-    robot.SetActiveDOFs(robot.right_arm.GetArmIndices())
-
-if simulation:
-    robot.SetActiveDOFValues(right_relaxed_config)
-    robot.SetTransform([[ 1, 0, 0, -1.25 ],
-                        [ 0, 1, 0,  0.49 ],
-                        [ 0, 0, 1,  0.00 ],
-                        [ 0, 0, 0,     1 ]])
-
-robot.chomp_planner.ComputeDistanceField()
+env, robot = herbpy.initialize_sim(attach_viewer=True, right_arm_sim=False)

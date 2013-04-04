@@ -16,6 +16,7 @@
     <depend package="pr_ordata"/>
     <depend package="prrave"/>
     <!-- hardware plugins -->
+    <depend package="or_ros_module"/>
     <depend package="or_moped_sensorsystem"/>
     <depend package="or_multi_controller"/>
     <depend package="or_owd_controller"/>

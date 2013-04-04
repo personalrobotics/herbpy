@@ -1,7 +1,7 @@
 import roslib; roslib.load_manifest('herbpy')
 import openrave_exports; openrave_exports.export()
-import rospkg
-import functools, logging, numpy, signal, sys, types
+import rospkg, rospy
+import atexit, functools, logging, numpy, signal, sys, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
 import planner, herb, wam, yaml
 
@@ -154,11 +154,11 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, moped_sim, talker_sim):
         talker_args = 'TalkerModule {0:s} {1:s}'.format(NODE_NAME, TALKER_NAMESPACE)
         robot.talker_module = openravepy.RaveCreateModule(env, talker_args)
 
-def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
-                           left_hand_sim=False, right_hand_sim=False,
-                           head_sim=False, segway_sim=False,
-                           left_ft_sim=False, right_ft_sim=False,
-                           moped_sim=False, talker_sim=False,
+def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
+                           left_hand_sim=True, right_hand_sim=True,
+                           head_sim=True, segway_sim=True,
+                           left_ft_sim=True, right_ft_sim=True,
+                           moped_sim=True, talker_sim=True,
                            **kw_args):
     """
     Bind extra methods to HERB.
@@ -202,14 +202,16 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
         except openravepy.openrave_exception, e:
             pass
 
-    # Configure the planners.
-    import planner.chomp, planner.cbirrt, planner.jacobian, planner.mk
+    # Configure the planners. This order is specifically tuned for quickly
+    # planning movehandstraight trajectories.
+    import planner.chomp, planner.cbirrt, planner.jacobian, planner.mk, planner.snap
+    robot.snap_planner = planner.snap.SnapPlanner(robot)
     robot.cbirrt_planner = planner.cbirrt.CBiRRTPlanner(robot)
     robot.chomp_planner = planner.chomp.CHOMPPlanner(robot)
     robot.mk_planner = planner.mk.MKPlanner(robot)
     robot.jacobian_planner = planner.jacobian.JacobianPlanner(robot)
-
-    robot.planners = [  robot.jacobian_planner, robot.mk_planner, robot.chomp_planner, robot.cbirrt_planner  ]
+    robot.planners = [ robot.snap_planner, robot.jacobian_planner, robot.mk_planner,
+                       robot.chomp_planner, robot.cbirrt_planner  ]
 
     # Trajectory blending module.
     robot.trajectory_module = prrave.rave.load_module(robot.GetEnv(), 'Trajectory', robot.GetName())
@@ -238,13 +240,15 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     initialize_manipulator(robot, robot.right_arm, openravepy.IkParameterization.Type.Transform6D)
     initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
 
-    # This breaks adding other modules
-    #if head_sim:
-    #    robot.head.StartServoSim()
-    #if right_arm_sim:
-    #    robot.right_arm.StartServoSim()
-    #if left_arm_sim:
-    #    robot.left_arm.StartServoSim()
+    # TODO: Enable the servo simulation after we diagnose the threading issues.
+    '''
+    if head_sim:
+        robot.head.StartServoSim()
+    if right_arm_sim:
+        robot.right_arm.StartServoSim()
+    if left_arm_sim:
+        robot.left_arm.StartServoSim()
+    '''
 
     # Convienence simulation flags for the manipulators.
     # TODO: Can we make a cleaner API for this?
@@ -260,7 +264,6 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     initialize_saved_configs(robot, **kw_args)
     
 def initialize_saved_configs(robot, yaml_path=None):
-    
     if yaml_path is None:
         yaml_path = '%s/config/herb_robot_configs.yaml' % herbpy_package_path
 
@@ -293,7 +296,6 @@ def initialize_saved_configs(robot, yaml_path=None):
                         del robot.configs[config_name]
     except Exception as e:
         raise Exception( 'initialize_saved_configs: Caught exception while loading yaml file \'%s\': %s'%(yaml_path, str(e)) )
-    
 
 def initialize(env_path='environments/pr_kitchen.robot.xml',
                robot_path='robots/herb2_padded.robot.xml',
@@ -315,38 +317,49 @@ def initialize(env_path='environments/pr_kitchen.robot.xml',
     if attach_viewer:
         env.SetViewer('qtcoin')
 
-    initialize_herb(robot, **kw_args)
-
     # Prevent ROS from intercepting Control+C.
     def RaiseKeyboardInterrupt(number, stack_frame):
         raise KeyboardInterrupt
-
     signal.signal(signal.SIGINT, RaiseKeyboardInterrupt)
 
+    #
+    def HandleExit():
+        openravepy.RaveDestroy()
+        rospy.signal_shutdown('')
+        sys.exit(0)
+    atexit.register(HandleExit)
+
+    initialize_herb(robot, **kw_args)
     return env, robot 
 
-def initialize_sim(**kw_args):
+def initialize_sim(left_arm_sim=True, right_arm_sim=True,
+                   left_hand_sim=True, right_hand_sim=True,
+                   head_sim=True, segway_sim=True,
+                   left_ft_sim=True, right_ft_sim=True,
+                   moped_sim=True, talker_sim=True, **kw_args):
     """
     Initialize a simulated HERB. This is a convenience function that is simply
     a thin wrapper around initialize.
     @param **kw_args named parameters for initialize or initialize_herb
     """
-    return initialize(left_arm_sim=True, right_arm_sim=True,
-                      left_hand_sim=True, right_hand_sim=True,
-                      head_sim=True, segway_sim=True,
-                      left_ft_sim=True, right_ft_sim=True,
-                      moped_sim=True, talker_sim=True,
-                      **kw_args)
+    return initialize(left_arm_sim=left_arm_sim, right_arm_sim=right_arm_sim,
+                      left_hand_sim=left_hand_sim, right_hand_sim=right_hand_sim,
+                      head_sim=head_sim, segway_sim=segway_sim,
+                      left_ft_sim=left_ft_sim, right_ft_sim=right_ft_sim,
+                      moped_sim=moped_sim, talker_sim=talker_sim, **kw_args)
 
-def initialize_real(**kw_args):
+def initialize_real(left_arm_sim=False, right_arm_sim=False,
+                    left_hand_sim=False, right_hand_sim=False,
+                    head_sim=False, segway_sim=False,
+                    left_ft_sim=False, right_ft_sim=False,
+                    moped_sim=False, talker_sim=False, **kw_args):
     """
     Initialize the real HERB. This is a convenience function that is simply a
     thin wrapper around initialize.
     @param **kw_args named parameters for initialize or initialize_herb
     """
-    return initialize(left_arm_sim=False, right_arm_sim=False,
-                      left_hand_sim=False, right_hand_sim=False,
-                      head_sim=False, segway_sim=False,
-                      left_ft_sim=False, right_ft_sim=False,
-                      moped_sim=False, talker_sim=False,
-                      **kw_args)
+    return initialize(left_arm_sim=left_arm_sim, right_arm_sim=right_arm_sim,
+                      left_hand_sim=left_hand_sim, right_hand_sim=right_hand_sim,
+                      head_sim=head_sim, segway_sim=segway_sim,
+                      left_ft_sim=left_ft_sim, right_ft_sim=right_ft_sim,
+                      moped_sim=moped_sim, talker_sim=talker_sim, **kw_args)
