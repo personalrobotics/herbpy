@@ -122,7 +122,7 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
                           robot.left_arm.hand_controller, robot.right_arm.hand_controller ]
     robot.multicontroller.finalize()
 
-def initialize_sensors(robot, left_ft_sim, right_ft_sim, moped_sim, talker_sim):
+def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_hand_sim, moped_sim, talker_sim):
     """
     Initialize HERB's sensor plugins.
     @param left_ft_sim simulate the left force/torque sensor
@@ -138,11 +138,21 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, moped_sim, talker_sim):
         robot.left_arm.ft_sensor = openravepy.RaveCreateSensor(env,
             'BarrettFTSensor {0:s} {1:s}'.format(NODE_NAME, LEFT_ARM_NAMESPACE))
         env.Add(robot.left_arm.ft_sensor, True)
+        
+    if not left_hand_sim:
+        robot.left_arm.handstate_sensor = openravepy.RaveCreateSensor(env,
+            'HandstateSensor {0:s} {1:s}'.format(NODE_NAME, LEFT_HAND_NAMESPACE))       
+        env.Add(robot.left_arm.handstate_sensor, True)
 
     if not right_ft_sim:
         robot.right_arm.ft_sensor = openravepy.RaveCreateSensor(env,
             'BarrettFTSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_ARM_NAMESPACE))
         env.Add(robot.right_arm.ft_sensor, True)
+
+    if not right_hand_sim:
+        robot.right_arm.handstate_sensor = openravepy.RaveCreateSensor(env,
+            'HandstateSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_HAND_NAMESPACE))
+        env.Add(robot.right_arm.handstate_sensor, True)
 
     # MOPED.
     if not moped_sim:
@@ -193,7 +203,9 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     initialize_controllers(robot, left_arm_sim=left_arm_sim, right_arm_sim=right_arm_sim,
                                   left_hand_sim=left_hand_sim, right_hand_sim=right_hand_sim,
                                   head_sim=head_sim, segway_sim=segway_sim)
-    initialize_sensors(robot, left_ft_sim=left_ft_sim, right_ft_sim=right_ft_sim, moped_sim=moped_sim, talker_sim=talker_sim)
+    initialize_sensors(robot, left_ft_sim=left_ft_sim, right_ft_sim=right_ft_sim, 
+                       left_hand_sim=left_hand_sim, right_hand_sim=right_hand_sim,
+                       moped_sim=moped_sim, talker_sim=talker_sim)
 
     # Wait for the robot's state to update.
     for controller in robot.controllers:

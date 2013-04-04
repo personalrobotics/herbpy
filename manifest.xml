@@ -18,6 +18,7 @@
     <!-- hardware plugins -->
     <!-- <depend package="or_ros_module"/> -->
     <depend package="or_moped_sensorsystem"/>
+    <depend package="or_handstate_sensor"/>
     <depend package="or_multi_controller"/>
     <depend package="or_owd_controller"/>
     <depend package="or_segway_controller"/>

@@ -146,6 +146,35 @@ def TareForceTorqueSensor(manipulator):
         manipulator.ft_sensor.SendCommand('Tare')
 
 @WamMethod
+def GetStrain(manipulator):
+    """
+    Gets the most recent strain sensor readings.
+    @return a list of strain for each finger
+    """
+
+    strain = [0., 0., 0.]
+    if not manipulator.hand_simulated:
+        sensor_data = manipulator.handstate_sensor.GetSensorData()
+        strain = sensor_data.force # This is because we are overriding the force/torque sensor datatype
+    return strain
+
+@WamMethod
+def GetBreakaway(manipulator):
+    """
+    Gets the most recent breakaway readings for each finger
+    @return a list of breakaway flags for each finger
+    """
+    
+    breakaway = [False, False, False]
+    if not manipulator.hand_simulated:
+        sensor_data = manipulator.handstate_sensor.GetSensorData()
+        breakaway = sensor_data.torque # This is because we are overriding the force/torque sensor datatype
+
+    return breakaway
+
+                     
+
+@WamMethod
 def SetVelocityLimits(manipulator, velocity_limits, min_accel_time):
     """
     Change the OWD velocity limits and acceleration time.
