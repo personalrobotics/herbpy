@@ -21,7 +21,7 @@ class SnapPlanner:
         traj = openravepy.RaveCreateTrajectory(self.env, '')
         config_spec = self.robot.GetActiveConfigurationSpecification()
         traj.Init(config_spec)
-        traj.Insert(0, current_dof_values, config_spec)
-        traj.Insert(1, goal, config_spec)
+        traj.Insert(0, current_dof_values)
+        traj.Insert(1, goal)
         openravepy.planningutils.RetimeTrajectory(traj)
         return traj

@@ -1,5 +1,5 @@
-import numpy, openravepy, types
-import prrave.rave
+import numpy, openravepy, types, time
+import herbpy, prrave.rave
 
 def CreateMethodListDecorator():
     class MethodListDecorator(object):
@@ -44,6 +44,19 @@ def ExtractWorkspaceWaypoints(robot, traj):
                 waypoints.append(hand_pose)
 
     return waypoints
+
+class Timer:
+    def __init__(self, message):
+        self.message = message
+        self.start = 0 
+
+    def __enter__(self):
+        self.start = time.time()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.end = time.time()
+        self.duration = self.end - self.start
+        herbpy.logger.info('%s executed in %.5f seconds.', self.message, self.duration)
 
 class RenderTrajectory:
     """

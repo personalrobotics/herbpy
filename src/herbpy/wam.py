@@ -181,17 +181,32 @@ def SetVelocityLimits(manipulator, velocity_limits, min_accel_time):
     @param velocity_limits individual joint velocity limits
     @param min_accel_time acceleration limit
     """
+    velocity_limits = numpy.array(velocity_limits, dtype='float')
     num_dofs = len(manipulator.GetArmIndices())
     if len(velocity_limits) != num_dofs:
         herbpy.logging.error('Incorrect number of velocity limits; expected {0:d}, got {1:d}.'.format(
                              num_dofs, len(velocity_limits)))
         return False
 
-    args  = [ 'SetSpeed' ]
-    args += [ str(min_accel_time) ]
-    args += [ str(velocity) for velocity in velocity_limits ]
-    args_str = ' '.join(args)
-    manipulator.arm_controller.SendCommand(args_str)
+    # Update the OpenRAVE limits.
+    with manipulator.parent.GetEnv():
+        active_indices = manipulator.GetArmIndices()
+
+        or_velocity_limits = manipulator.parent.GetDOFVelocityLimits()
+        or_velocity_limits[active_indices] = velocity_limits
+        manipulator.parent.SetDOFVelocityLimits(or_velocity_limits)
+
+        or_accel_limits = manipulator.parent.GetDOFAccelerationLimits()
+        or_accel_limits[active_indices] = velocity_limits / min_accel_time
+        manipulator.parent.SetDOFAccelerationLimits(or_accel_limits)
+
+    # Update the OWD limits.
+    if not manipulator.arm_simulated:
+        args  = [ 'SetSpeed' ]
+        args += [ str(min_accel_time) ]
+        args += [ str(velocity) for velocity in velocity_limits ]
+        args_str = ' '.join(args)
+        manipulator.arm_controller.SendCommand(args_str)
     return True
 
 @WamMethod
@@ -200,7 +215,6 @@ def GetTrajectoryStatus(manipulator):
     Gets the status of the current (or previous) trajectory executed by the
     controller.
     '''
-    
     if not manipulator.arm_simulated:
         return manipulator.arm_controller.SendCommand('GetStatus')
     else:
@@ -212,7 +226,7 @@ def GetTrajectoryStatus(manipulator):
 @WamMethod
 def ClearTrajectoryStatus(manipulator):
     '''
-    Clears the status of the trajectory
+    Clears the current trajectory execution status.
     '''
     if not manipulator.arm_simulated:
         manipulator.arm_controller.SendCommand('ClearStatus')
@@ -303,4 +317,3 @@ def ServoSim(manipulator):
                 # Reset time
                 time_start = time()
         sleep(timestep)
-
