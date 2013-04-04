@@ -238,12 +238,14 @@ def initialize_herb(robot, left_arm_sim=False, right_arm_sim=False,
     initialize_manipulator(robot, robot.right_arm, openravepy.IkParameterization.Type.Transform6D)
     initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
 
-    if head_sim:
-        robot.head.StartServoSim()
-    if right_arm_sim:
-        robot.right_arm.StartServoSim()
-    if left_arm_sim:
-        robot.left_arm.StartServoSim()
+    # This breaks adding other modules
+    #if head_sim:
+    #    robot.head.StartServoSim()
+    #if right_arm_sim:
+    #    robot.right_arm.StartServoSim()
+    #if left_arm_sim:
+    #    robot.left_arm.StartServoSim()
+
     # Convienence simulation flags for the manipulators.
     # TODO: Can we make a cleaner API for this?
     robot.left_arm.arm_simulated = left_arm_sim
