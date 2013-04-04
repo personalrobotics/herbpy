@@ -146,7 +146,8 @@ class RenderTrajectory:
                         interp_points.append(hand_pose[0:3, 3])
 
                     interp_points = numpy.array(interp_points)
-                    self.lines_handle = self.env.drawlinestrip(interp_points, self.linewidth, self.color)
+                    if len(interp_points) > 0:
+                           self.lines_handle = self.env.drawlinestrip(interp_points, self.linewidth, self.color)
 
     def __exit__(self, *exc_info):
         with self.env:
