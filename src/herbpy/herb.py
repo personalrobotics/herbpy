@@ -110,42 +110,8 @@ def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
 
 @HerbMethod
 def PlanToNamedConfiguration(robot, name, **kw_args):
-    config_inds = numpy.array(robot.configs[name]['dofs'])
-    config_vals = numpy.array(robot.configs[name]['vals'])
-
-    if len(config_inds) == 0:
-        raise Exception('Failed to find named config: %s'%name)
-
-    # TODO: Hacky. Can we do this better?
-    # Need to parse out left and right manipulator indices
-    # Also do we want to parse out head?
-    all_left = numpy.array(robot.left_arm.GetArmIndices())
-    all_left.sort()    
-    all_right = numpy.array(robot.right_arm.GetArmIndices())
-    all_right.sort()
-
-    left_vals = []
-    left_inds = []
-    right_vals = []
-    right_inds = []
-
-    for dof, val in zip(config_inds, config_vals):
-        if dof in all_left:
-            left_inds.append(dof)
-            left_vals.append(val)
-        if dof in all_right:
-            right_inds.append(dof)
-            right_vals.append(val)
-
-    traj_left = None
-    traj_right = None
-    if len(left_inds) > 0:
-        robot.SetActiveDOFs(left_inds)
-        traj_left = robot.left_arm.PlanToConfiguration(left_vals, **kw_args)
-    if len(right_inds) > 0:
-        robot.SetActiveDOFs(right_inds)
-        traj_right = robot.right_arm.PlanToConfiguration(right_vals, **kw_args)
-
+    traj_left = robot.left_arm.PlanToNamedConfiguration(name, **kw_args)
+    traj_right = robot.right_arm.PlanToNamedConfiguration(name, **kw_args)
     return [ traj_left, traj_right ]
 
 @HerbMethod

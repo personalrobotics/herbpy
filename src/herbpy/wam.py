@@ -172,7 +172,6 @@ def GetBreakaway(manipulator):
 
     return breakaway
 
-                     
 
 @WamMethod
 def SetVelocityLimits(manipulator, velocity_limits, min_accel_time):
@@ -317,3 +316,34 @@ def ServoSim(manipulator):
                 # Reset time
                 time_start = time()
         sleep(timestep)
+
+@WamMethod
+def PlanToNamedConfiguration(manipulator, name, **kw_args):
+    config_inds = numpy.array(manipulator.parent.configs[name]['dofs'])
+    config_vals = numpy.array(manipulator.parent.configs[name]['vals'])
+
+    if len(config_inds) == 0:
+        raise Exception('Failed to find named config: %s'%name)
+    
+
+    # TODO: Hacky. Can we do this better?
+    # Need to parse out left and right manipulator indices
+    # Also do we want to parse out head?
+    arm_indices = numpy.array(manipulator.GetArmIndices())
+    arm_indices.sort()
+
+    arm_vals= []
+    arm_inds = []
+
+
+    for dof, val in zip(config_inds, config_vals):
+        if dof in arm_indices:
+            arm_inds.append(dof)
+            arm_vals.append(val)
+
+    traj = None
+    if len(arm_inds) > 0:
+        manipulator.parent.SetActiveDOFs(arm_inds)
+        traj = manipulator.PlanToConfiguration(arm_vals, **kw_args)
+   
+    return traj
