@@ -1,6 +1,6 @@
 import logging, planner, openravepy
 
-class SnapPlanner:
+class SnapPlanner(planner.Planner):
     def __init__(self, robot):
         self.env = robot.GetEnv()
         self.robot = robot

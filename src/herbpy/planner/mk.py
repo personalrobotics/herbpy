@@ -9,7 +9,7 @@ def JointLimitAvoidance(robot):
     q = robot.GetActiveDOFValues()
     q_min, q_max = robot.GetDOFLimits(robot.GetActiveDOFIndices())
     constant = (q_max - q_min) / (2 * q.shape[0])
-    return constant * (q**2 - q_min * q_max) / ((q_max - q)**2 * (q - q_min)**2)
+    return -constant * (q**2 - q_min * q_max) / ((q_max - q)**2 * (q - q_min)**2)
 
 class MKPlanner(planner.Planner):
     def __init__(self, robot):
@@ -108,5 +108,5 @@ class MKPlanner(planner.Planner):
                     hand_pose = manip.GetEndEffectorTransform()
                     displacement = hand_pose[0:3, 3] - initial_pose[0:3, 3]
                     current_distance = numpy.dot(displacement, direction)
-
+        openravepy.planningutils.RetimeTrajectory(traj)
         return traj

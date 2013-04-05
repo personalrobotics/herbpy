@@ -225,7 +225,7 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     robot.chomp_planner = planner.chomp.CHOMPPlanner(robot)
     robot.mk_planner = planner.mk.MKPlanner(robot)
     robot.jacobian_planner = planner.jacobian.JacobianPlanner(robot)
-    robot.planners = [ robot.snap_planner, robot.jacobian_planner, robot.mk_planner,
+    robot.planners = [ robot.snap_planner, robot.mk_planner, robot.jacobian_planner, 
                        robot.chomp_planner, robot.cbirrt_planner  ]
 
     # Trajectory blending module.
