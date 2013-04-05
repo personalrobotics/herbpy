@@ -12,9 +12,10 @@ import herbpy, exceptions, util
 WamMethod = util.CreateMethodListDecorator()
 
 @WamMethod
-def LookAtHand(manipulator):
+def LookAtHand(manipulator, **kw_args):
     target = manipulator.GetEndEffectorTransform()[0:3, 3]
-    traj = manipulator.parent.LookAt(target, execute=True)
+    return manipulator.parent.LookAt(target, **kw_args)
+    
 
 @WamMethod
 def SetStiffness(manipulator, stiffness):
@@ -283,7 +284,6 @@ def MoveUntilTouch(manipulator, direction, distance, max_force=5, **kw_args):
     except exceptions.TrajectoryAborted:
         return True
 
-
 @WamMethod
 def StartServoSim(manipulator):
     """
@@ -317,6 +317,8 @@ def ServoSim(manipulator):
                 time_start = time()
         sleep(timestep)
 
+
+
 @WamMethod
 def PlanToNamedConfiguration(manipulator, name, **kw_args):
     config_inds = numpy.array(manipulator.parent.configs[name]['dofs'])
@@ -347,3 +349,4 @@ def PlanToNamedConfiguration(manipulator, name, **kw_args):
         traj = manipulator.PlanToConfiguration(arm_vals, **kw_args)
    
     return traj
+
