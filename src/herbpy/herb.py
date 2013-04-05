@@ -28,7 +28,7 @@ def Say(robot, message):
 
 
 @HerbMethod
-def LookAt(robot, target, execute=True):
+def LookAt(robot, target, **kw_args):
     """
     Look at a point in the world frame. This creates and, optionally executes,
     a two-waypoint trajectory that starts at the current configuration and
@@ -37,17 +37,14 @@ def LookAt(robot, target, execute=True):
     @param execute immediately execute the trajectory
     @return trajectory head trajectory
     """
-    # Find an IK solution to look at the point.
-    ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
-    target_dof_values = robot.head.ik_database.manip.FindIKSolution(ik_params, 0)
-    
-    return robot.MoveHeadTo(target_dof_values, execute)
-
-@HerbMethod
-def MoveHeadTo(robot, target_dof_values, execute=True):
-    if target_dof_values == None:
+    target_dof_values = robot.FindHeadDOFs(target)
+    if target_dof_values is not None:
+        return robot.MoveHeadTo(target_dof_values, **kw_args)
+    else:
         return None
 
+@HerbMethod
+def MoveHeadTo(robot, target_dof_values, execute=True, **kw_args):
     # Update the controllers to get new joint values.
     with robot.GetEnv():
         robot.GetController().SimulationStep(0)
@@ -64,25 +61,14 @@ def MoveHeadTo(robot, target_dof_values, execute=True):
 
     # Optionally exeucute the trajectory.
     if execute:
-        return robot.ExecuteTrajectory(traj, retime=True)
+        return robot.ExecuteTrajectory(traj, **kw_args)
     else:
         return traj
 
-
 @HerbMethod
-def LookAtKinBody(robot, body):
-    target = body.GetTransform()[0:3, 3]
-    traj = robot.LookAt(target, execute=True)
-
-@HerbMethod
-def FindHeadDofs(robot, target):
-    # Find an IK solution to look at the point.
+def FindHeadDOFs(robot, target):
     ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
-    target_dof_values = robot.head.ik_database.manip.FindIKSolution(ik_params, 0)
-    if target_dof_values == None:
-        return None
-    return target_dof_values
-
+    return robot.head.ik_database.manip.FindIKSolution(ik_params, 0)
 
 @HerbMethod
 def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
