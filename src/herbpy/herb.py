@@ -132,6 +132,53 @@ def AddNamedConfiguration(robot, name, dofs, vals):
     robot.configs[name]['vals'] = numpy.array( vals )
 
 @HerbMethod
+def RetimeTrajectory(robot, traj, max_jerk=30.0, stop_on_stall=True, stop_on_ft=False,
+                     synchronize=False, force_direction=None, force_magnitude=None, torque=None):
+    '''
+    Retime a generic OpenRAVE trajectory into a timed MacTrajectory.
+    @param traj input trajectory
+    @param max_jerk maximum jerk allowed during retiming
+    @return timed MacTrajectory
+    '''
+    # Create a ConfigurationSpecification containing only joint values.
+    generic_config_spec = traj.GetConfigurationSpecification()
+    generic_angle_group = generic_config_spec.GetGroupFromName('joint_values')
+    path_config_spec = openravepy.ConfigurationSpecification()
+    path_config_spec.AddGroup(generic_angle_group.name, generic_angle_group.dof, 'linear')
+    path_config_spec.AddGroup('owd_blend_radius', 1, 'next')
+
+    # Initialize the MacTrajectory.
+    mac_traj = openravepy.RaveCreateTrajectory(robot.GetEnv(), 'MacTrajectory')
+    mac_traj.Init(path_config_spec)
+
+    # Copy the joint values and blend radii into the MacTrajectory.
+    num_waypoints = traj.GetNumWaypoints()
+    for i in xrange(num_waypoints):
+        waypoint = traj.GetWaypoint(i, path_config_spec)
+        mac_traj.Insert(i, waypoint, path_config_spec)
+
+    # Serialize the planner parameters.
+    params = [ 'max_jerk', str(max_jerk) ]
+    if stop_on_stall:
+        params += [ 'cancel_on_stall' ]
+    if stop_on_ft:
+        force_threshold = force_magnitude * numpy.array(force_direction)
+        params += [ 'cancel_on_ft' ]
+        params += [ 'force_threshold' ] + map(str, force_threshold)
+        params += [ 'torque_threshold' ] + map(str, torque)
+    if synchronize:
+        params += [ 'synchronize' ]
+
+    # Retime the newly-created MacTrajectory.
+    params_str = ' '.join(params)
+    herbpy.logger.info('Created MacTrajectory with flags: %s', params_str)
+    retimer_params = openravepy.Planner.PlannerParameters()
+    retimer_params.SetExtraParameters(params_str)
+    robot.mac_retimer.InitPlan(robot, retimer_params)
+    robot.mac_retimer.PlanPath(mac_traj)
+    return mac_traj
+
+@HerbMethod
 def BlendTrajectory(robot, traj, maxsmoothiter=None, resolution=None,
                     blend_radius=0.2, blend_attempts=4, blend_step_size=0.05,
                     linearity_threshold=0.1, ignore_collisions=None, **kw_args):
@@ -218,8 +265,6 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_
     @param retime retime the trajectory before execution
     @return executed_traj  
     """
-    
-    
     # Retiming the trajectory may be necessary to execute it on an
     # IdealController in simulation. This timing is ignored by OWD.
     with util.Timer("retime"):

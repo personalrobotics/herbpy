@@ -122,6 +122,9 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
                           robot.left_arm.hand_controller, robot.right_arm.hand_controller ]
     robot.multicontroller.finalize()
 
+    # Create the MacTrajectory retimer for OWD.
+    robot.mac_retimer = openravepy.RaveCreatePlanner(robot.GetEnv(), 'MacRetimer')
+
 def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_hand_sim, moped_sim, talker_sim):
     """
     Initialize HERB's sensor plugins.
@@ -346,8 +349,9 @@ def initialize(env_path='environments/pr_kitchen.robot.xml',
 
     #
     def HandleExit():
+        env.Destroy()
         openravepy.RaveDestroy()
-        rospy.signal_shutdown('')
+        rospy.signal_shutdown('herbpy is shutting down')
         sys.exit(0)
     atexit.register(HandleExit)
 
