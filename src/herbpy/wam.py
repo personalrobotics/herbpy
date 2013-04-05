@@ -145,6 +145,7 @@ def TareForceTorqueSensor(manipulator):
     """
     if not manipulator.ft_simulated:
         manipulator.ft_sensor.SendCommand('Tare')
+        sleep(2)
 
 @WamMethod
 def GetStrain(manipulator):
