@@ -40,6 +40,11 @@ def LookAt(robot, target, execute=True):
     # Find an IK solution to look at the point.
     ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
     target_dof_values = robot.head.ik_database.manip.FindIKSolution(ik_params, 0)
+    
+    return robot.MoveHeadTo(target_dof_values, execute)
+
+@HerbMethod
+def MoveHeadTo(robot, target_dof_values, execute=True):
     if target_dof_values == None:
         return None
 
@@ -62,6 +67,7 @@ def LookAt(robot, target, execute=True):
         return robot.ExecuteTrajectory(traj, retime=True)
     else:
         return traj
+
 
 @HerbMethod
 def LookAtKinBody(robot, body):
