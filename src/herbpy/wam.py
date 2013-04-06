@@ -266,20 +266,24 @@ def MoveUntilTouch(manipulator, direction, distance, max_force=5, **kw_args):
     @param **kw_args planner parameters
     @return felt_force flag indicating whether we felt a force.
     """
-    # Compute the expected force direction in the hand frame.
-    direction = numpy.array(direction)
-    hand_pose = manipulator.GetEndEffectorTransform()
-    force_direction = numpy.dot(hand_pose[0:3, 0:3].T, -direction)
+    with manipulator.parent.GetEnv():
+        manipulator.parent.GetController().SimulationStep(0)
 
-    # Plan a straight trajectory.
-    traj = manipulator.PlanToEndEffectorOffset(direction, distance, execute=False, **kw_args)
-    traj = manipulator.parent.AddTrajectoryFlags(traj, stop_on_ft=True, force_direction=force_direction,
-                                                 force_magnitude=max_force, torque=[100,100,100])
+        # Compute the expected force direction in the hand frame.
+        direction = numpy.array(direction)
+        hand_pose = manipulator.GetEndEffectorTransform()
+        force_direction = numpy.dot(hand_pose[0:3, 0:3].T, -direction)
+
+        with manipulator.parent.CreateRobotStateSaver():
+            traj = manipulator.PlanToEndEffectorOffset(direction, distance, execute=False, **kw_args)
+            traj = manipulator.parent.BlendTrajectory(traj)
+            traj = manipulator.parent.RetimeTrajectory(traj, stop_on_ft=True, force_direction=force_direction,
+                                                       force_magnitude=max_force, torque=[100,100,100])
 
     # TODO: Use a simulated force/torque sensor in simulation.
     try:
         manipulator.TareForceTorqueSensor()
-        manipulator.parent.ExecuteTrajectory(traj, execute=True)
+        manipulator.parent.ExecuteTrajectory(traj, execute=True, retime=False, blend=False)
         return False
     # Trajectory is aborted by OWD because we felt a force.
     except exceptions.TrajectoryAborted:
