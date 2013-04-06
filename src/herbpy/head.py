@@ -6,6 +6,7 @@ HeadMethod = util.CreateMethodListDecorator()
 
 @HeadMethod
 def FollowHand(head, traj, manipulator):
+    robot = head.parent
     traj_config_spec = traj.GetConfigurationSpecification()
     head_config_spec = head.GetArmConfigurationSpecification()
     arm_indices = manipulator.GetArmIndices()
@@ -20,7 +21,7 @@ def FollowHand(head, traj, manipulator):
 
     for i in xrange(1, traj.GetNumWaypoints()):
         traj_waypoint = traj.GetWaypoint(i)
-        arm_dof_values = traj_config_spec.ExtractJointValues(traj_waypoint, head.parent, arm_indices)
+        arm_dof_values = traj_config_spec.ExtractJointValues(traj_waypoint, robot, arm_indices)
 
         # Compute the position of the right arm through the FK.
         with robot.CreateRobotStateSaver():
@@ -52,9 +53,8 @@ def FollowHand(head, traj, manipulator):
 
     for i in xrange(0, traj.GetNumWaypoints()):
         waypoint = traj.GetWaypoint(i)
-        merged_config_spec.InsertJointValues(waypoint, head_path[i], head.parent, head_indices, 0)
+        merged_config_spec.InsertJointValues(waypoint, head_path[i], robot, head_indices, 0)
         traj.Insert(i, waypoint, True)
-
 
 # PD gains
 kp = [8, 2]

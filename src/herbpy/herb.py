@@ -273,23 +273,27 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_a
     """
     # Query the active manipulators based on which DOF indices are
     # included in the trajectory.
+    active_indices = util.GetTrajectoryIndices(traj)
     active_manipulators = util.GetTrajectoryManipulators(robot, traj)
 
     # Optionally blend and retime the trajectory before execution. Retiming
     # creates a MacTrajectory that can be directly executed by OWD.
-    if blend:
-        traj = robot.BlendTrajectory(traj)
+    with robot.GetEnv():
+        with robot.CreateRobotStateSaver():
+            robot.SetActiveDOFs(active_indices)
 
-    if retime:
-        needs_synchronization = len(active_manipulators) > 1
-        traj = robot.RetimeTrajectory(traj, synchronize=needs_synchronization, **kw_args)
+            if blend:
+                traj = robot.BlendTrajectory(traj)
 
-    # Reset old trajectory execution flags
-    for manipulator in active_manipulators:
-        manipulator.ClearTrajectoryStatus()
+            if retime:
+                needs_synchronization = len(active_manipulators) > 1
+                traj = robot.RetimeTrajectory(traj, synchronize=needs_synchronization, **kw_args)
+
+            # Reset old trajectory execution flags
+            for manipulator in active_manipulators:
+                manipulator.ClearTrajectoryStatus()
 
     # Wait for the controller to finish execution.
-    # TODO: Figure out why rendering trajectories fails on HERB.
     # TODO: Only wait for the relevant controllers.
     execution_done = False
     with util.RenderTrajectory(robot, traj):
@@ -302,10 +306,11 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_a
         
     # Request the controller status from
     # each manipulator's controller.
-    for manipulator in active_manipulators:
-        status = manipulator.GetTrajectoryStatus()
-        if status == 'aborted':
-            raise exceptions.TrajectoryAborted('Trajectory aborted for %s' % manipulator.GetName())
+    with robot.GetEnv():
+        for manipulator in active_manipulators:
+            status = manipulator.GetTrajectoryStatus()
+            if status == 'aborted':
+                raise exceptions.TrajectoryAborted('Trajectory aborted for %s' % manipulator.GetName())
 
     return traj
 
