@@ -275,6 +275,14 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_a
     # included in the trajectory.
     active_indices = util.GetTrajectoryIndices(traj)
     active_manipulators = util.GetTrajectoryManipulators(robot, traj)
+    needs_synchronization = len(active_manipulators) > 1
+    any_sim = robot.head_sim or robot.right_arm_sim or robot.left_arm_sim
+    all_sim = robot.head_sim and robot.right_arm_sim and robot.left_arm_sim
+
+    if needs_synchronization and any_sim and not all_sim:
+        raise exceptions.SynchronizationException('Unable to execute synchronized trajectory with'
+                      ' mixed simulated and real controllers. (head_sim=%d, right_arm_sim=%d, left_arm_sim=%d)' 
+                      % (robot.head_sim, robot.right_arm_sim, robot.left_arm_sim))
 
     # Optionally blend and retime the trajectory before execution. Retiming
     # creates a MacTrajectory that can be directly executed by OWD.
@@ -286,7 +294,6 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_a
                 traj = robot.BlendTrajectory(traj)
 
             if retime:
-                needs_synchronization = len(active_manipulators) > 1
                 traj = robot.RetimeTrajectory(traj, synchronize=needs_synchronization, **kw_args)
 
             # Reset old trajectory execution flags
