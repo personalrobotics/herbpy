@@ -95,6 +95,10 @@ def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
     if traj is None:
         raise planner.PlanningError('Planning failed with all planners.')
 
+    # Strip all inactive DOFs from the trajectory.
+    config_spec = robot.GetActiveConfigurationSpecification()
+    openravepy.planningutils.ConvertTrajectorySpecification(traj, config_spec)
+
     # Optionally execute the trajectory.
     with util.Timer("Full trajectory execution"):
         if execute:
@@ -103,10 +107,21 @@ def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
             return traj
 
 @HerbMethod
-def PlanToNamedConfiguration(robot, name, **kw_args):
-    traj_left = robot.left_arm.PlanToNamedConfiguration(name, **kw_args)
-    traj_right = robot.right_arm.PlanToNamedConfiguration(name, **kw_args)
-    return [ traj_left, traj_right ]
+def PlanToNamedConfiguration(robot, name, execute=True, **kw_args):
+    config_inds = numpy.array(robot.configs[name]['dofs'])
+    config_vals = numpy.array(robot.configs[name]['vals'])
+
+    with robot.GetEnv():
+        with robot.CreateRobotStateSaver():
+            robot.SetActiveDOFs(config_inds)
+            traj = robot.PlanToConfiguration(config_vals, execute=False, **kw_args)
+            traj = robot.BlendTrajectory(traj)
+
+    if execute:
+        return robot.ExecuteTrajectory(traj, blend=False)
+    else:
+        return traj
+
 
 @HerbMethod
 def AddNamedConfiguration(robot, name, dofs, vals):
@@ -118,20 +133,26 @@ def AddNamedConfiguration(robot, name, dofs, vals):
     robot.configs[name]['vals'] = numpy.array( vals )
 
 @HerbMethod
-def RetimeTrajectory(robot, traj, max_jerk=30.0, stop_on_stall=True, stop_on_ft=False,
-                     synchronize=False, force_direction=None, force_magnitude=None, torque=None):
+def RetimeTrajectory(robot, traj, max_jerk=30.0, synchronize=False,
+                     stop_on_stall=True, stop_on_ft=False, force_direction=None,
+                     force_magnitude=None, torque=None, **kw_args):
     '''
     Retime a generic OpenRAVE trajectory into a timed MacTrajectory.
     @param traj input trajectory
     @param max_jerk maximum jerk allowed during retiming
     @return timed MacTrajectory
     '''
-    # Create a ConfigurationSpecification containing only joint values.
+    # Create a MacTrajectory with timestamps, joint values, velocities,
+    # accelerations, and blend radii.
     generic_config_spec = traj.GetConfigurationSpecification()
     generic_angle_group = generic_config_spec.GetGroupFromName('joint_values')
     path_config_spec = openravepy.ConfigurationSpecification()
-    path_config_spec.AddGroup(generic_angle_group.name, generic_angle_group.dof, 'linear')
+    path_config_spec.AddDeltaTimeGroup()
+    path_config_spec.AddGroup(generic_angle_group.name, generic_angle_group.dof, '')
+    path_config_spec.AddDerivativeGroups(1, False);
+    path_config_spec.AddDerivativeGroups(2, False);
     path_config_spec.AddGroup('owd_blend_radius', 1, 'next')
+    path_config_spec.ResetGroupOffsets()
 
     # Initialize the MacTrajectory.
     mac_traj = openravepy.RaveCreateTrajectory(robot.GetEnv(), 'MacTrajectory')
@@ -175,13 +196,12 @@ def BlendTrajectory(robot, traj, maxsmoothiter=None, resolution=None,
     @return blended_trajectory trajectory with additional blend_radius group
     """
     with robot.GetEnv():
-        saver = robot.CreateRobotStateSaver()
-        return robot.trajectory_module.blendtrajectory(traj=traj, execute=False,
-            maxsmoothiter=maxsmoothiter, resolution=resolution,
-            blend_radius=blend_radius, blend_attempts=blend_attempts,
-            blend_step_size=blend_step_size, linearity_threshold=linearity_threshold,
-            ignore_collisions=ignore_collisions
-        )
+        with robot.CreateRobotStateSaver():
+            return robot.trajectory_module.blendtrajectory(traj=traj, execute=False,
+                    maxsmoothiter=maxsmoothiter, resolution=resolution,
+                    blend_radius=blend_radius, blend_attempts=blend_attempts,
+                    blend_step_size=blend_step_size, linearity_threshold=linearity_threshold,
+                    ignore_collisions=ignore_collisions)
 
 @HerbMethod
 def AddTrajectoryFlags(robot, traj, stop_on_stall=True, stop_on_ft=False,
@@ -238,7 +258,7 @@ def AddTrajectoryFlags(robot, traj, stop_on_stall=True, stop_on_ft=False,
     return annotated_traj
 
 @HerbMethod
-def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_args):
+def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_args):
     """
     Execute a trajectory. By default, this retimes, blends, and adds the
     stop_on_stall flag to all trajectories. Additionally, this function blocks
@@ -251,36 +271,25 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_
     @param retime retime the trajectory before execution
     @return executed_traj  
     """
-    # Retiming the trajectory may be necessary to execute it on an
-    # IdealController in simulation. This timing is ignored by OWD.
-    with util.Timer("retime"):
-        if retime:
-            openravepy.planningutils.RetimeTrajectory(traj)
-
-    # Annotate the trajectory with HERB-specific options.
-    with util.Timer("blend"):
-        if blend:
-            traj = robot.BlendTrajectory(traj)
-
-    # Only add flags if none are present. This is the only way of checking if
-    # the trajectory already has the flags added.
-    try:
-        config_spec = traj.GetConfigurationSpecification()
-        group = config_spec.GetGroupFromName('or_owd_controller')
-    except openravepy.openrave_exception:
-        traj = robot.AddTrajectoryFlags(traj, stop_on_stall=True)
-
     # Query the active manipulators based on which DOF indices are
     # included in the trajectory.
     active_manipulators = []
-    config_spec = traj.GetConfigurationSpecification()
-    group = config_spec.GetGroupFromName('joint_values')
+    group = traj.GetConfigurationSpecification().GetGroupFromName('joint_values')
     traj_indices = set([ int(index) for index in group.name.split()[2:] ])
 
     for manipulator in robot.manipulators:
         manipulator_indices = set(manipulator.GetArmIndices())
         if traj_indices & manipulator_indices:
             active_manipulators.append(manipulator)
+
+    # Optionally blend and retime the trajectory before execution. Retiming
+    # creates a MacTrajectory that can be directly executed by OWD.
+    if blend:
+        traj = robot.BlendTrajectory(traj)
+
+    if retime:
+        needs_synchronization = len(active_manipulators) > 1
+        traj = robot.RetimeTrajectory(traj, synchronize=needs_synchronization, **kw_args)
 
     # Reset old trajectory execution flags
     for manipulator in active_manipulators:
@@ -291,7 +300,7 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=False, **kw_
     # TODO: Only wait for the relevant controllers.
     execution_done = False
     with util.RenderTrajectory(robot, traj):
-        with util.Timer("actual execution"):
+        with util.Timer("Trajectory"):
             robot.GetController().SetPath(traj)
             if timeout == None:
                 execution_done = robot.WaitForController(0)

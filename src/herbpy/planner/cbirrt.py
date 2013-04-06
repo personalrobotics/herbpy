@@ -30,7 +30,6 @@ class CBiRRTPlanner(planner.Planner):
         args += [ 'filename', traj_path ]
         args_str = ' '.join(args)
         
-
         response = self.problem.SendCommand(args_str)
         if int(response) != 1:
             raise planner.PlanningError('Planning with CBiRRT failed.')
@@ -49,7 +48,8 @@ class CBiRRTPlanner(planner.Planner):
                           self.robot.GetActiveDOF(), len(goal_array)))
             raise planner.PlanningError('Incorrect number of DOFs in goal configuration.')
 
-        extra_args = [ 'jointgoals', str(len(goal_array)), ' '.join([ str(x) for x in goal_array ]) ]
+        extra_args = list()
+        extra_args += [ 'jointgoals',  str(len(goal_array)), ' '.join([ str(x) for x in goal_array ]) ]
         return self.Plan(extra_args=extra_args, **kw_args)
 
     def PlanToEndEffectorPose(self, goal_pose, psample=0.1, **kw_args):
