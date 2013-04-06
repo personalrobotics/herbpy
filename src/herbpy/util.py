@@ -45,6 +45,21 @@ def ExtractWorkspaceWaypoints(robot, traj):
 
     return waypoints
 
+def GetTrajectoryIndices(traj):
+    joint_values_group = traj.GetConfigurationSpecification().GetGroupFromName('joint_values')
+    return [ int(index) for index in joint_values_group.name.split()[2:] ]
+
+def GetTrajectoryManipulators(robot, traj):
+    traj_indices = set(GetTrajectoryIndices(traj))
+
+    active_manipulators = []
+    for manipulator in robot.manipulators:
+        manipulator_indices = set(manipulator.GetArmIndices())
+        if traj_indices & manipulator_indices:
+            active_manipulators.append(manipulator)
+
+    return active_manipulators
+
 class Timer:
     def __init__(self, message):
         self.message = message

@@ -273,14 +273,7 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_a
     """
     # Query the active manipulators based on which DOF indices are
     # included in the trajectory.
-    active_manipulators = []
-    group = traj.GetConfigurationSpecification().GetGroupFromName('joint_values')
-    traj_indices = set([ int(index) for index in group.name.split()[2:] ])
-
-    for manipulator in robot.manipulators:
-        manipulator_indices = set(manipulator.GetArmIndices())
-        if traj_indices & manipulator_indices:
-            active_manipulators.append(manipulator)
+    active_manipulators = util.GetTrajectoryManipulators(robot, traj)
 
     # Optionally blend and retime the trajectory before execution. Retiming
     # creates a MacTrajectory that can be directly executed by OWD.
