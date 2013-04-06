@@ -3,7 +3,7 @@ import openrave_exports; openrave_exports.export()
 import rospkg, rospy
 import atexit, functools, logging, numpy, signal, sys, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
-import planner, herb, wam, yaml
+import planner, herb, head, wam, yaml
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
@@ -234,6 +234,7 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
 
     # Bind extra methods onto the OpenRAVE robot and manipulators..
     herb.HerbMethod.Bind(robot)
+    head.HeadMethod.Bind(robot.head)
 
     # Dynamically bind the planners to the robot through the PlanGeneric wrapper.
     for method in planner.PlanningMethod.methods:

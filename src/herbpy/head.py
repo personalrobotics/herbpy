@@ -1,11 +1,60 @@
-import herbpy
-import openravepy
-import numpy
-import planner
-import util
-from time import *
-import math
-import threading
+import numpy, math, openravepy, time, threading
+import herbpy, planner, exceptions, util
+from pr_msgs.srv import AppletCommand
+
+HeadMethod = util.CreateMethodListDecorator()
+
+@HeadMethod
+def FollowHand(head, traj, manipulator):
+    traj_config_spec = traj.GetConfigurationSpecification()
+    head_config_spec = head.GetArmConfigurationSpecification()
+    arm_indices = manipulator.GetArmIndices()
+    head_indices = head.GetArmIndices()
+
+    # Construct a path of head joint values that starts at the current
+    # configuration and tracks the arm at each waypoint. Note that there
+    # may be no IK solution at some waypoints.
+    head_path = list()
+    head_path.append(robot.GetDOFValues(head_indices))
+    last_ik_index = 0
+
+    for i in xrange(1, traj.GetNumWaypoints()):
+        traj_waypoint = traj.GetWaypoint(i)
+        arm_dof_values = traj_config_spec.ExtractJointValues(traj_waypoint, head.parent, arm_indices)
+
+        # Compute the position of the right arm through the FK.
+        with robot.CreateRobotStateSaver():
+            manipulator.SetArmDOFValues(arm_dof_values)
+            hand_pose = manipulator.GetEndEffectorTransform()
+
+        # This will be None if there is no IK solution.
+        head_dof_values = robot.FindHeadDOFs(hand_pose[0:3, 3])
+        head_path.append(head_dof_values)
+        if head_dof_values is not None:
+            final_ik_index = i
+
+    # Propagate the last successful IK solution to all following waypoints.
+    # This lets us avoid some edge cases during interpolation.
+    for i in xrange(final_ik_index + 1, traj.GetNumWaypoints()):
+        head_path[i] = head_path[final_ik_index]
+
+    # Interpolate to fill in IK failures. This is guaranteed to succeed because
+    # the first and last waypoints are always valid.
+    for i in xrange(1, traj.GetNumWaypoints()):
+        # TODO: Fix timestamps on waypoints in MacTrajectory so we can properly
+        # interpolate between waypoints.
+        if head_path[i] is None:
+            head_path[i] = head_path[i - 1]
+
+    # Append the head DOFs to the input trajectory.
+    merged_config_spec = traj_config_spec + head_config_spec
+    openravepy.planningutils.ConvertTrajectorySpecification(traj, merged_config_spec)
+
+    for i in xrange(0, traj.GetNumWaypoints()):
+        waypoint = traj.GetWaypoint(i)
+        merged_config_spec.InsertJointValues(waypoint, head_path[i], head.parent, head_indices, 0)
+        traj.Insert(i, waypoint, True)
+
 
 # PD gains
 kp = [8, 2]
