@@ -23,7 +23,8 @@ def SetStiffness(manipulator, stiffness):
     Set the WAM's stiffness. This enables or disables gravity compensation.
     @param stiffness value between 0.0 and 1.0
     """
-    manipulator.arm_controller.SendCommand('SetStiffness {0:f}'.format(stiffness))
+    if not manipulator.arm_simulated:
+        manipulator.arm_controller.SendCommand('SetStiffness {0:f}'.format(stiffness))
 
 @WamMethod
 def Servo(manipulator, velocities):

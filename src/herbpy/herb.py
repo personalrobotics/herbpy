@@ -365,8 +365,10 @@ def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
     @return felt_force flag indicating whether the action felt a force
     '''
     if robot.segway_sim:
-        raise Exception('DriveStraightUntilForce does not work with a simulated Segway.')
-    elif (robot.left_ft_sim and left_arm) or (robot.right_ft_sim and right_arm):
+        herbpy.logger.warning('DriveStraightUntilForce does not work with a simulated Segway.')
+        return
+
+    if (robot.left_ft_sim and left_arm) or (robot.right_ft_sim and right_arm):
         raise Exception('DriveStraightUntilForce does not work with simulated force/torque sensors.')
 
     with util.Timer("Drive segway until force"):
