@@ -278,7 +278,7 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
 
     # Set the default velocity and acceleration limits.
     # TODO: Move these constants into the robot's XML file.
-    min_accel_time = 0.75
+    min_accel_time = 0.15
     max_jerk = 10 * numpy.pi
     head_velocity_limits = numpy.array([ 1.0, 1.0 ])
     arm_velocity_limits = numpy.array([ 0.75, 0.75, 2.0, 2.0, 2.5, 2.5, 2.5 ])
