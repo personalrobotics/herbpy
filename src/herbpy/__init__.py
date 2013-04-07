@@ -232,7 +232,7 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     robot.trajectory_module = prrave.rave.load_module(robot.GetEnv(), 'Trajectory', robot.GetName())
     manipulation2.trajectory.bind(robot.trajectory_module)
 
-    # Bind extra methods onto the OpenRAVE robot and manipulators..
+    # Bind extra methods onto the OpenRAVE robot and manipulators.
     herb.HerbMethod.Bind(robot)
     head.HeadMethod.Bind(robot.head)
 
@@ -256,6 +256,11 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     initialize_manipulator(robot, robot.right_arm, openravepy.IkParameterization.Type.Transform6D)
     initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
 
+    # Specify offset for rendering trajectories.
+    robot.left_arm.render_offset  = numpy.array([ 0, 0, 0.15, 1 ])
+    robot.right_arm.render_offset = numpy.array([ 0, 0, 0.15, 1 ])
+    robot.head.render_offset      = None
+
     # TODO: Enable the servo simulation after we diagnose the threading issues.
     '''
     if head_sim:
@@ -275,6 +280,7 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     robot.right_arm.hand_simulated = right_hand_sim
     robot.right_arm.ft_simulated = right_ft_sim
     robot.head.arm_simulated = head_sim 
+    robot.talker_simulated = talker_sim
 
     # Set the default velocity and acceleration limits.
     # TODO: Move these constants into the robot's XML file.
@@ -323,7 +329,7 @@ def initialize_saved_configs(robot, yaml_path=None):
     except Exception as e:
         raise Exception( 'initialize_saved_configs: Caught exception while loading yaml file \'%s\': %s'%(yaml_path, str(e)) )
 
-def initialize(env_path='environments/pr_kitchen.robot.xml',
+def initialize(env_path=None,
                robot_path='robots/herb2_padded.robot.xml',
                attach_viewer=False, **kw_args):
     """
@@ -336,7 +342,9 @@ def initialize(env_path='environments/pr_kitchen.robot.xml',
     @return environment,robot
     """
     env = openravepy.Environment()
-    env.Load(env_path)
+    if env_path is not None:
+        env.Load(env_path)
+
     robot = env.ReadRobotXMLFile(robot_path)
     env.Add(robot)
 

@@ -8,9 +8,12 @@ if __name__ == "__main__":
     openravepy.RaveInitialize(True, level=openravepy.DebugLevel.Info)
     openravepy.misc.InitOpenRAVELogging();
 
-    if 'sim' in sys.argv:
-        env, robot = herbpy.initialize_sim()
+    simulated = 'sim' in sys.argv
+    viewer = 'viewer' in sys.argv
+
+    if simulated:
+        env, robot = herbpy.initialize_sim(attach_viewer=viewer)
         herbpy.logger.info('Initialized in simulation mode.')
     else:
-        env, robot = herbpy.initialize_real()
+        env, robot = herbpy.initialize_real(attach_viewer=viewer)
         herbpy.logger.info('Initialized connection with HERB.')

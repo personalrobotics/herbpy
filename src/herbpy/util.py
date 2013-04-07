@@ -77,98 +77,61 @@ class Timer:
 class RenderTrajectory:
     """
     Context manager for rendering trajectories in the OpenRAVE viewer. This
-    class supports rendering the workspace waypoints as spheres and the entire
-    trajectory as a smooth curve. The created objects are removed when the exit
-    handler is called. This class assumes that the trajectory is being executed on
-    the active manipulator.
-    @param robot robot executing the trajectory with its active manipulator
-    @param traj trajectory
-    @param resolution approximate path discretization in meters
-    @param linewidth width of the line passed to the draw function
+    renders a trajectory as a smooth curve. The curve is are removed when the exit
+    handler is called.
+    @param robot robot executing the trajectory
+    @param traj input trajectory
+    @param num_samples number of samples to use for interpolation
     @param radius sphere radius for waypoint indicators
     @param color interpolated line color
     @param interpolation flag to enable or disable path rendering
     @param waypoints flag to enable or disable waypoint rendering
     """
-    def __init__(self, robot, traj, resolution=0.05, linewidth=2, radius=0.01,
-                 color=None, interpolation=True, waypoints=False):
+    def __init__(self, robot, traj, num_samples=20, linewidth=2, color=[1, 0, 0, 1]):
         self.env = robot.GetEnv()
         self.robot = robot
+        self.handles = list()
 
-        # Rendering options
-        self.resolution = resolution
+        # Rendering options.
+        self.num_samples = num_samples
         self.linewidth = linewidth
-        self.sphere_radius = radius
-        self.render_interpolation = interpolation
-        self.render_waypoints = waypoints
-
-        if color is not None:
-            self.color = numpy.array(color)
-        else:
-            self.color = numpy.array([ 1, 0, 0, 1 ], dtype='float')
-
-        # Handles to the created objects.
-        self.lines_handle = None
-        self.sphere_handle = None
+        self.color = numpy.array(color, dtype='float')
 
         # Clone and retime the trajectory.
-        self.traj = openravepy.RaveCreateTrajectory(self.env, '')
+        self.traj = openravepy.RaveCreateTrajectory(self.env, 'GenericTrajectory')
         self.traj.Clone(traj, 0)
         openravepy.planningutils.RetimeTrajectory(self.traj)
 
     def __enter__(self):
-        # TODO: Properly handle bimanual trajectories.
-        config_spec = self.traj.GetConfigurationSpecification()
-        group = config_spec.GetGroupFromName('joint_values')
-        manip = self.robot.GetActiveManipulator()
-        dof_indices = [ int(index) for index in group.name.split()[2:] ]
-
         with self.env:
-            waypoint_poses = ExtractWorkspaceWaypoints(self.robot, self.traj)
+            with self.robot.CreateRobotStateSaver():
+                config_spec = self.traj.GetConfigurationSpecification()
+                manipulators = GetTrajectoryManipulators(self.robot, self.traj)
 
-            if self.render_waypoints:
-                sphere_params = list()
-                for waypoint_pose in waypoint_poses:
-                    sphere_params.append(numpy.hstack((waypoint_pose[0:3, 3], self.sphere_radius)))
+                for manipulator in manipulators:
+                    arm_indices = manipulator.GetArmIndices()
 
-                # Render the trajectory waypoints as spheres.
-                self.sphere_handle = openravepy.RaveCreateKinBody(self.env, '')
-                self.sphere_handle.InitFromSpheres(numpy.array(sphere_params), True)
-                self.sphere_handle.SetName('trajectory')
-                self.sphere_handle.Enable(False)
-                self.env.Add(self.sphere_handle, True)
+                    # Skip manipulators that don't have render_offset set.
+                    render_offset = manipulator.render_offset
+                    if render_offset is None:
+                        continue
 
-            if self.render_interpolation:
-                # Estimate the arclength of the trajectory by connecting waypoints
-                # with piecewise linear segments in the workspace.
-                arclength = 0
-                for waypoint1_pose, waypoint2_pose in zip(waypoint_poses[0:], waypoint_poses[1:]):
-                    arclength += numpy.linalg.norm(waypoint2_pose[0:3, 3] - waypoint1_pose[0:3, 3])
-
-                # Render a line connecting the interpolated trajectory.
-                with self.robot.CreateRobotStateSaver():
-                    self.robot.SetActiveDOFs(dof_indices)
-                    num_samples = numpy.ceil(arclength / self.resolution)
-
-                    interp_points = list()
-                    for t in numpy.linspace(0, self.traj.GetDuration(), num_samples):
-                        # Interpolate the joint values.
+                    # Evenly interpolate joint values throughout the entire trajectory.
+                    interpolated_points = list()
+                    for t in numpy.linspace(0, self.traj.GetDuration(), self.num_samples):
                         waypoint = self.traj.Sample(t)
-                        q = config_spec.ExtractJointValues(waypoint, self.robot, dof_indices)
+                        joint_values = config_spec.ExtractJointValues(waypoint, self.robot, arm_indices)
+                        manipulator.SetArmDOFValues(joint_values)
+                        hand_pose = manipulator.GetEndEffectorTransform()
+                        render_position = numpy.dot(hand_pose, render_offset)
+                        interpolated_points.append(render_position[0:3])
 
-                        # Compute the end-effector pose using the robot's forward-kinematics.
-                        self.robot.SetActiveDOFValues(q)
-                        hand_pose = self.robot.GetActiveManipulator().GetEndEffectorTransform()
-                        interp_points.append(hand_pose[0:3, 3])
-
-                    interp_points = numpy.array(interp_points)
-                    if len(interp_points) > 0:
-                           self.lines_handle = self.env.drawlinestrip(interp_points, self.linewidth, self.color)
+                    # Render a line through the interpolated points.
+                    interpolated_points = numpy.array(interpolated_points)
+                    if len(interpolated_points) > 0:
+                        handle = self.env.drawlinestrip(interpolated_points, self.linewidth, self.color)
+                        self.handles.append(handle)
 
     def __exit__(self, *exc_info):
         with self.env:
-            if self.render_waypoints:
-                self.env.Remove(self.sphere_handle)
-
-            if self.render_interpolation:
-                del self.lines_handle
+            del self.handles
