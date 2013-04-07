@@ -382,16 +382,19 @@ def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
         if not manipulators:
             herbpy.logger.warning('Executing DriveStraightUntilForce with no force/torque sensor for feedback.')
 
-        # Tare the force/torque sensors.
-        for manipulator in manipulators:
-            manipulator.TareForceTorqueSensor()
-
         # Rotate to face the right direction.
         with env:
             robot_pose = robot.GetTransform()
         robot_angle = numpy.arctan2(robot_pose[1, 0], robot_pose[0, 0])
         desired_angle = numpy.arctan2(direction[1], direction[0])
         robot.RotateSegway(desired_angle - robot_angle)
+
+
+        # Soft-tare the force/torque sensors. Tare is too slow.
+        initial_force = dict()
+        for manipulator in manipulators:
+            force, torque = manipulator.GetForceTorque()
+            initial_force[manipulator] = force
         
         try:
             felt_force = False
@@ -401,7 +404,7 @@ def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
                 # Check if we felt a force on any of the force/torque sensors.
                 for manipulator in manipulators:
                     force, torque = manipulator.GetForceTorque()
-                    if numpy.linalg.norm(force) > force_threshold:
+                    if numpy.linalg.norm(initial_force[manipulator] - force) > force_threshold:
                         return True
 
                 # Check if we've exceeded the maximum distance.
