@@ -3,5 +3,4 @@
 # Runs an interactive python terminal that initially imports and initialized 
 # OpenRAVE and herbpy
 # 
-
-ipython -i $(rospack find herbpy)/src/console.py
+ipython -i $(rospack find herbpy)/src/console.py "$@"
