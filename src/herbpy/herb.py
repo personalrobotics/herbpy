@@ -16,16 +16,14 @@ def Say(robot, message):
     Say a message using HERB's text-to-speech engine.
     @param message
     """
+    # XXX: HerbPy should not make direct service calls.
     herbpy.logger.info('Saying "%s".', message)
-
     rospy.wait_for_service('/talkerapplet')
     talk = rospy.ServiceProxy('/talkerapplet', AppletCommand)    
-
     try:
         talk('say', message, 0, 0)
     except rospy.ServiceException, e:
-        herbpy.logger.info('Error talking.')
-
+        herbpy.logger.error('Error talking.')
 
 @HerbMethod
 def LookAt(robot, target, **kw_args):
@@ -55,9 +53,6 @@ def MoveHeadTo(robot, target_dof_values, execute=True, **kw_args):
     traj.Init(config_spec)
     traj.Insert(0, current_dof_values, config_spec)
     traj.Insert(1, target_dof_values, config_spec)
-
-    # Retiming the trajectory is necessary for it play on the IdealController.
-    openravepy.planningutils.RetimeTrajectory(traj)
 
     # Optionally exeucute the trajectory.
     if execute:
@@ -289,10 +284,8 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_a
     with robot.GetEnv():
         with robot.CreateRobotStateSaver():
             robot.SetActiveDOFs(active_indices)
-
             if blend:
                 traj = robot.BlendTrajectory(traj)
-
             if retime:
                 traj = robot.RetimeTrajectory(traj, synchronize=needs_synchronization, **kw_args)
 
@@ -326,7 +319,11 @@ def WaitForObject(robot, obj_name, timeout=None, update_period=0.1):
     start = time.time()
     found_body = None
 
-    robot.moped_sensorsystem.SendCommand('Enable')
+    if not robot.moped_sim:
+        robot.moped_sensorsystem.SendCommand('Enable')
+    else:
+        # Timeout immediately in simulation.
+        timeout = 0
 
     herbpy.logger.info("Waiting for object %s to appear.", obj_name)
     try:
@@ -344,7 +341,8 @@ def WaitForObject(robot, obj_name, timeout=None, update_period=0.1):
 
             time.sleep(update_period)
     finally:
-        robot.moped_sensorsystem.SendCommand('Disable')
+        if not robot.moped_sim:
+            robot.moped_sensorsystem.SendCommand('Disable')
 
 @HerbMethod
 def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
@@ -437,12 +435,11 @@ def DriveAlongVector(robot, direction, goal_pos):
 @HerbMethod
 def DriveSegway(robot, meters, timeout=None):
     with util.Timer("Drive segway"):
-        controller_name = robot.segway_controller.GetXMLId().split()[0]
-        if controller_name == 'IdealController':
-            # in simulation
-            current_pose = robot.GetTransform().copy()
-            current_pose[0:3,3] = current_pose[0:3,3] + meters*current_pose[0:3,0]
-            robot.SetTransform(current_pose)
+        if robot.segway_sim:
+            with robot.GetEnv():
+                current_pose = robot.GetTransform().copy()
+                current_pose[0:3,3] = current_pose[0:3,3] + meters*current_pose[0:3,0]
+                robot.SetTransform(current_pose)
         else:
             robot.segway_controller.SendCommand("Drive " + str(meters))
             if timeout == None:
@@ -452,8 +449,7 @@ def DriveSegway(robot, meters, timeout=None):
 
 @HerbMethod
 def DriveSegwayToNamedPosition(robot, named_position):
-    controller_name = robot.segway_controller.GetXMLId().split()[0]
-    if controller_name == 'IdealController':
+    if robot.segway_sim:
         logger.warm('Drive to named positions not implemented in simulation.')
     else:
         robot.segway_controller.SendCommand("Goto " + named_position)
@@ -461,18 +457,15 @@ def DriveSegwayToNamedPosition(robot, named_position):
 @HerbMethod
 def RotateSegway(robot, angle_rad, timeout=None):
     with util.Timer("Rotate segway"):
-        controller_name = robot.segway_controller.GetXMLId().split()[0]
-        if controller_name == 'IdealController':
-            # in simulation
-            current_pose_in_world = robot.GetTransform().copy()
-            
-            #rotate by the angle around z
-            desired_pose_in_herb = numpy.array([[numpy.cos(angle_rad), -numpy.sin(angle_rad), 0, 0],
-                                                [numpy.sin(angle_rad), numpy.cos(angle_rad), 0, 0],
-                                                [0, 0, 1, 0],
-                                                [0, 0, 0, 1]])
-            desired_pose_in_world = numpy.dot(current_pose_in_world, desired_pose_in_herb)
-            robot.SetTransform(desired_pose_in_world)
+        if robot.segway_sim:
+            with robot.GetEnv():
+                current_pose_in_world = robot.GetTransform().copy()
+                desired_pose_in_herb = numpy.array([[numpy.cos(angle_rad), -numpy.sin(angle_rad), 0, 0],
+                                                    [numpy.sin(angle_rad), numpy.cos(angle_rad), 0, 0],
+                                                    [0, 0, 1, 0],
+                                                    [0, 0, 0, 1]])
+                desired_pose_in_world = numpy.dot(current_pose_in_world, desired_pose_in_herb)
+                robot.SetTransform(desired_pose_in_world)
         else:
             robot.segway_controller.SendCommand("Rotate " + str(angle_rad))
             if timeout == None:

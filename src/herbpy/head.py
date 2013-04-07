@@ -19,20 +19,21 @@ def FollowHand(head, traj, manipulator):
     head_path.append(robot.GetDOFValues(head_indices))
     last_ik_index = 0
 
-    for i in xrange(1, traj.GetNumWaypoints()):
-        traj_waypoint = traj.GetWaypoint(i)
-        arm_dof_values = traj_config_spec.ExtractJointValues(traj_waypoint, robot, arm_indices)
 
-        # Compute the position of the right arm through the FK.
+    with robot.GetEnv():
         with robot.CreateRobotStateSaver():
-            manipulator.SetArmDOFValues(arm_dof_values)
-            hand_pose = manipulator.GetEndEffectorTransform()
+            for i in xrange(1, traj.GetNumWaypoints()):
+                traj_waypoint = traj.GetWaypoint(i)
+                arm_dof_values = traj_config_spec.ExtractJointValues(traj_waypoint, robot, arm_indices)
+                # Compute the position of the right arm through the FK.
+                manipulator.SetArmDOFValues(arm_dof_values)
+                hand_pose = manipulator.GetEndEffectorTransform()
 
-        # This will be None if there is no IK solution.
-        head_dof_values = robot.FindHeadDOFs(hand_pose[0:3, 3])
-        head_path.append(head_dof_values)
-        if head_dof_values is not None:
-            final_ik_index = i
+                # This will be None if there is no IK solution.
+                head_dof_values = robot.FindHeadDOFs(hand_pose[0:3, 3])
+                head_path.append(head_dof_values)
+                if head_dof_values is not None:
+                    final_ik_index = i
 
     # Propagate the last successful IK solution to all following waypoints.
     # This lets us avoid some edge cases during interpolation.
