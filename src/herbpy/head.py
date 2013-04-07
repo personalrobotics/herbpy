@@ -65,7 +65,69 @@ previous_error = None
 dead_zones = [0.04, 0.04]
 
 
-def look_at_hand(robot, manipulator):
+@HeadMethod
+def StitchArmHeadTrajectories(head, manipulator, traj_head, traj_arm):
+    robot = head.parent
+    traj_config_spec = traj.GetConfigurationSpecification()
+    head_config_spec = head.GetArmConfigurationSpecification()
+    arm_indices = manipulator.GetArmIndices()
+    head_indices = head.GetArmIndices()
+
+
+    # find which of the traj has the longest duration
+    longest_duration = 0
+    if traj_arm.GetDuration() > traj_head.GetDuration():
+        longest_duration = traj_arm.GetDuration()
+    else:
+        longest_duration = traj_head.GetDuration()
+
+    waypoints_arm = traj_arm.GetWaypoints(0, traj_arm.GetNumWaypoints())
+    waypoints_head = traj_head.GetWaypoints(0, traj_head.GetNumWaypoints())
+
+    # Create a list of all waypoint times
+    waypoint_list = []
+    for w in waypoints_arm:
+        t = traj_arm.GetConfigurationSpecification().ExtractDeltaTime(w)
+        waypoint_list.append((traj_arm.GetConfigurationSpecification().ExtractDeltaTime(w)*traj_arm.GetDuration())/longest_duration)
+    for w in waypoints_head:
+        waypoint_list.append((traj.GetConfigurationSpecification().ExtractDeltaTime(w)*traj_head.GetDuration())/longest_duration)
+        #traj.ExtractDeltaTime(waypoint)
+
+    # Remove duplicates from list of waypoint times
+    waypoint_times = list(set(waypoint_list))
+    # Sort list of waypoint times
+    waypoint_times.sort()
+    
+    new_arm_waypoints = []
+    new_head_waypoints = []
+    # Resample both trajectories
+    for t in waypoint_times:
+        new_head_waypoints.insert(traj_head.Sample((t*traj_head.GetDuration())/longest_duration))
+        new_arm_waypoints.insert(traj_arm.Sample((t*traj_arm.GetDuration())/longest_duration))
+
+
+    # Create new trajectories with just joint dofs
+    active_indices = numpy.append(robot.right_arm.GetArmIndices(),robot.head.GetArmIndices())
+    robot.SetActiveDOFs(active_indices)
+
+    c = robot.GetActiveConfigurationSpecification()
+    c.AddDeltatimeGroup
+
+    new_traj = RaveCreateTrajectory(env,'')  
+    new_traj.Init(c)
+    
+    for a, h in zip(new_arm_waypoints,new_head_waypoints):
+        dofvalues_arm = traj.GetConfigurationSpecification().ExtractJointValues(a,robot,robot.right_arm.GetArmIndices())
+        dofvalues_head = traj.GetConfigurationSpecification().ExtractJointValues(h,robot,robot.head.GetArmIndices())
+        
+        dofvalues = dofvalues_arm + dofvalues_head
+        
+        new_traj.Insert(index,new_traj.GetNumWaypoints(), dofvalues, robot.GetActiveConfigurationSpecification())
+
+    return new_traj
+
+@HeadMethod
+def LookAtHand(robot, manipulator):
     target = manipulator.GetEndEffectorTransform()[0:3, 3]
     target_dofs = robot.FindHeadDofs(target)
     # Get velocity and constrain
@@ -73,14 +135,14 @@ def look_at_hand(robot, manipulator):
     velocity = constrain_velocity(kp*velocity)
     robot.head.Servo(velocity)
 
-def deadzone_error(error):
+def DeadzoneError(error):
     if abs(error[0]) < dead_zones[0]:
         error[0] = 0
     if abs(error[1]) < dead_zones[1]:
         error[1]= 0
     return error
 
-def look_at_hand_pd(robot, manipulator):
+def LookAtHandPD(robot, manipulator):
     global previous_error
     d_e = 0
     target = manipulator.GetEndEffectorTransform()[0:3, 3]
@@ -96,11 +158,11 @@ def look_at_hand_pd(robot, manipulator):
     robot.head.Servo(velocity)
     previous_error = error
 
-def look_at_hand_traj(robot, manipulator):
+def LookAtHandTraj(robot, manipulator):
     target = manipulator.GetEndEffectorTransform()[0:3, 3]
     traj = robot.LookAt(target, execute=True)
 
-def constrain_velocity(velocity):
+def ConstrainVelocity(velocity):
     vel_limits = robot.GetDOFVelocityLimits(robot.head.GetArmIndices())
     if velocity[0] > vel_limits[0]:
         velocity[0] = vel_limits[0]
@@ -113,7 +175,7 @@ def constrain_velocity(velocity):
         velocity[1] = -1*vel_limits[1]
     return velocity
          
-def pd_loop(robot, manipulator, duration, rate):
+def PDLoop(robot, manipulator, duration, rate):
     start_time = time()
     stop_time = start_time + duration
     while time() < stop_time:
