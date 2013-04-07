@@ -16,14 +16,15 @@ def Say(robot, message):
     Say a message using HERB's text-to-speech engine.
     @param message
     """
-    # XXX: HerbPy should not make direct service calls.
-    herbpy.logger.info('Saying "%s".', message)
-    rospy.wait_for_service('/talkerapplet')
-    talk = rospy.ServiceProxy('/talkerapplet', AppletCommand)    
-    try:
-        talk('say', message, 0, 0)
-    except rospy.ServiceException, e:
-        herbpy.logger.error('Error talking.')
+    if not robot.talker_simulated:
+        # XXX: HerbPy should not make direct service calls.
+        herbpy.logger.info('Saying "%s".', message)
+        rospy.wait_for_service('/talkerapplet')
+        talk = rospy.ServiceProxy('/talkerapplet', AppletCommand)    
+        try:
+            talk('say', message, 0, 0)
+        except rospy.ServiceException, e:
+            herbpy.logger.error('Error talking.')
 
 @HerbMethod
 def LookAt(robot, target, **kw_args):
