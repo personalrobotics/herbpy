@@ -295,15 +295,28 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_a
                 manipulator.ClearTrajectoryStatus()
 
     # Wait for the controller to finish execution.
-    # TODO: Only wait for the relevant controllers.
-    execution_done = False
     with util.RenderTrajectory(robot, traj):
         with util.Timer("Trajectory"):
             robot.GetController().SetPath(traj)
-            if timeout == None:
-                execution_done = robot.WaitForController(0)
-            elif timeout > 0:
-                execution_done = robot.WaitForController(timeout)
+
+            # synchronized implicitely execute on all manipulators
+            if needs_synchronization:
+                running_manipulators = set(robot.manipulators)
+            else:
+                running_manipulators = set(active_manipulators)
+
+            start_time = time.time()
+            while running_manipulators:
+                now = time.time()
+                if timeout is not None and now - start_time > timeout:
+                    break
+                done_manipulators = set()
+                for manipulator in running_manipulators:
+                    if manipulator.arm_controller.IsDone():
+                        done_manipulators.add(manipulator)
+
+                running_manipulators -= done_manipulators
+                time.sleep(0.05)
         
     # Request the controller status from
     # each manipulator's controller.
@@ -312,6 +325,8 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_a
             status = manipulator.GetTrajectoryStatus()
             if status == 'aborted':
                 raise exceptions.TrajectoryAborted('Trajectory aborted for %s' % manipulator.GetName())
+            elif status == 'stalled':
+                raise exceptions.TrajectoryStalled('Trajectory stalled for %s' % manipulator.GetName())
 
     return traj
 
@@ -361,7 +376,7 @@ def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
     @param timeout maximum duration in seconds
     @param left_arm flag to use the left force/torque sensor
     @param right_arm flag to use the right force/torque sensor
-    @return felt_force flag indicating whether the action felt a force
+s    @return felt_force flag indicating whether the action felt a force
     '''
     if robot.segway_sim:
         herbpy.logger.warning('DriveStraightUntilForce does not work with a simulated Segway.')
@@ -476,3 +491,9 @@ def RotateSegway(robot, angle_rad, timeout=None):
                 robot.WaitForController(0)
             elif timeout > 0:
                 robot.WaitForController(timeout)
+
+@HerbMethod
+def StopSegway(robot):
+    if not robot.segway_sim:
+        robot.segway_controller.SendCommand("Stop")
+        
