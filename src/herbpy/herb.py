@@ -69,17 +69,15 @@ def FindHeadDOFs(robot, target):
 @HerbMethod
 def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
     traj = None
+    with robot.GetEnv():
+        # Update the controllers to get new joint values.
+        robot.GetController().SimulationStep(0)
 
-    with util.Timer("Full planning"):
-        with robot.GetEnv():
-            # Update the controllers to get new joint values.
-            robot.GetController().SimulationStep(0)
-
-            # Sequentially try each planner until one succeeds.
-            with robot.CreateRobotStateSaver():
-                for delegate_planner in robot.planners:
+        # Sequentially try each planner until one succeeds.
+        with robot.CreateRobotStateSaver():
+            for delegate_planner in robot.planners:
+                with util.Timer('Planning with %s' % delegate_planner.GetName()):
                     try:
-                        herbpy.logger.info('Trying planner: %s', delegate_planner.GetName())
                         traj = getattr(delegate_planner, command_name)(*args, **kw_args)
                         break
                     except planner.UnsupportedPlanningError, e:
@@ -90,17 +88,19 @@ def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
 
     if traj is None:
         raise planner.PlanningError('Planning failed with all planners.')
+    else:
+        herbpy.logger.info('Planning succeeded with %s.', delegate_planner.GetName())
 
     # Strip all inactive DOFs from the trajectory.
     config_spec = robot.GetActiveConfigurationSpecification()
     openravepy.planningutils.ConvertTrajectorySpecification(traj, config_spec)
 
     # Optionally execute the trajectory.
-    with util.Timer("Full trajectory execution"):
-        if execute:
+    if execute:
+        with util.Timer('Trajectory'):
             return robot.ExecuteTrajectory(traj, **kw_args)
-        else:
-            return traj
+    else:
+        return traj
 
 @HerbMethod
 def PlanToNamedConfiguration(robot, name, execute=True, **kw_args):

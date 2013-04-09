@@ -13,7 +13,7 @@ class CBiRRTPlanner(planner.Planner):
     def GetName(self):
         return 'cbirrt'
 
-    def Plan(self, smoothingitrs=None, timelimit=None, allowlimadj=None, extra_args=None, **kw_args):
+    def Plan(self, smoothingitrs=None, timelimit=None, allowlimadj=0, extra_args=None, **kw_args):
         args = [ 'RunCBiRRT' ]
         if extra_args is not None:
             args += extra_args
@@ -21,14 +21,15 @@ class CBiRRTPlanner(planner.Planner):
             args += [ 'smoothingitrs', str(smoothingitrs) ]
         if timelimit is not None:
             args += [ 'timelimit', str(timelimit) ]
-        if allowlimadj is not None and allowlimadj:
-            args += [ 'allowlimadj', '1' ]
+        if allowlimadj is not None:
+            args += [ 'allowlimadj', str(int(allowlimadj)) ]
 
         # FIXME: Why can't we write to anything other than cmovetraj.txt or
         # /tmp/cmovetraj.txt with CBiRRT?
         traj_path = '/tmp/cmovetraj.txt'
         args += [ 'filename', traj_path ]
         args_str = ' '.join(args)
+        print 'ARGS:', args_str
         
         response = self.problem.SendCommand(args_str)
         if int(response) != 1:

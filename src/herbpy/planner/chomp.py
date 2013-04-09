@@ -2,6 +2,8 @@ import contextlib, logging, rospkg, os
 import openravepy, numpy, orcdchomp.orcdchomp
 import prrave.tsr
 import planner
+import tempfile
+import herbpy
 
 class CHOMPPlanner(planner.Planner):
     def __init__(self, robot):
@@ -18,12 +20,35 @@ class CHOMPPlanner(planner.Planner):
         if not self.initialized:
             raise planner.UnsupportedPlanningError('CHOMP requires a distance field.')
 
-        with self.robot.CreateRobotStateSaver(self.robot):
-            try:
+        try:
+            with self.robot.CreateRobotStateSaver(self.robot):
                 return self.module.runchomp(robot=self.robot, adofgoal=goal,
                                             lambda_=lambda_, n_iter=n_iter, **kw_args)
-            except RuntimeError, e:
-                raise planner.PlanningError(str(e))
+        except RuntimeError, e:
+            try:
+                with tempfile.NamedTemporaryFile(delete=False) as log_file:
+                    # Serialize kinbodies.
+                    for body in self.env.GetBodies():
+                        log_file.write('KINBODY name = "{name:s}", transform = {pose:s}, enabled = {enabled:d}\n'.format(
+                            name = body.GetName(),
+                            pose = repr(body.GetTransform()),
+                            enabled = body.IsEnabled()
+                        ))
+
+                    # Start and goal configurations.
+                    log_file.write('STARTCONFIGURATION {0:s}\n'.format(repr(self.robot.GetDOFValues())))
+                    log_file.write('GOALCONFIGURATION {0:s}\n'.format(repr(goal)))
+
+                    # CHOMP parameters.
+                    log_file.write('LAMBDA {0:f} NITER {1:f}\n'.format(lambda_, n_iter))
+                    log_file.write('OTHERARGS {0:s}\n'.format(repr(kw_args)))
+                    log_file.write('ERROR {0:s}\n'.format(str(e)))
+
+                herbpy.logger.error('Saved CHOMP error log to %s', log_file.name)
+            except:
+                herbpy.logger.error('Saving CHOMP error log failed.')
+
+            raise planner.PlanningError(str(e))
 
     def PlanToEndEffectorPose(self, goal_pose, lambda_=100.0, n_iter=100, goal_tolerance=0.01, **kw_args):
         # CHOMP only supports start sets. Instead, we plan backwards from the

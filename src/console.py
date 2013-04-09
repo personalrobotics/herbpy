@@ -10,6 +10,10 @@ if __name__ == "__main__":
 
     simulated = 'sim' in sys.argv
     viewer = 'viewer' in sys.argv
+    debug = 'debug' in sys.argv
+
+    if debug:
+        openravepy.RaveSetDebugLevel(openravepy.DebugLevel.Debug)
 
     if simulated:
         env, robot = herbpy.initialize_sim(attach_viewer=viewer)
