@@ -68,19 +68,20 @@ def ServoTo(manipulator, target, duration, timeStep = 0.05, collisionChecking= T
 @WamMethod
 def ServoCollisionCheck(manipulator, end_dof):
     with manipulator.GetEnv():
-        robot_saver = manipulator.parent.CreateRobotStateSaver()
-        for i in range(1,steps):
-            q = manipulator.parent.GetDOFValues(manipulator.GetArmIndices)
-            q = q + velocity*timeStep
-            self.herb.SetActiveDOFValues(q)
-            if manipulator.GetEnv().CheckCollision(manipulator.parent):
-                print'Servo motion unable to complete. Detected collision.'
-                return True
-            if manipulator.parent.CheckSelfCollision():
-                print'Servo motion unable to complete. Detected self collision.'
-                return True
-    return False
+        with manipulator.parent:
+            q = manipulator.GetArmDOFValues()
+            for i in xrange(steps):
+                q += velocity * timeStep
+                manipulator.SetArmDOFValues(q)
 
+                if manipulator.GetEnv().CheckCollision(manipulator.parent):
+                    herbpy.logger.info('Servo motion stopped due to collision.')
+                    return True
+                if manipulator.parent.CheckSelfCollision():
+                    herbpy.logger.info('Servo motion stopped due to self collision.')
+                    return True
+
+    return False
 
 @WamMethod
 def MoveHand(manipulator, f1=None, f2=None, f3=None, spread=None, timeout=None):
@@ -275,7 +276,7 @@ def MoveUntilTouch(manipulator, direction, distance, max_force=5, **kw_args):
         hand_pose = manipulator.GetEndEffectorTransform()
         force_direction = numpy.dot(hand_pose[0:3, 0:3].T, -direction)
 
-        with manipulator.parent.CreateRobotStateSaver():
+        with manipulator.parent:
             traj = manipulator.PlanToEndEffectorOffset(direction, distance, execute=False, **kw_args)
             traj = manipulator.parent.BlendTrajectory(traj)
             traj = manipulator.parent.RetimeTrajectory(traj, stop_on_ft=True, force_direction=force_direction,

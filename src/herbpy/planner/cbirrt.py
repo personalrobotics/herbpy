@@ -66,8 +66,7 @@ class CBiRRTPlanner(planner.Planner):
                                 timelimit = 5.0, smoothingitrs = 250, **kw_args):
 
         with self.env:
-            with self.robot.CreateRobotStateSaver():
-                
+            with self.robot:
                 manip = self.robot.GetActiveManipulator()
                 H_world_ee = manip.GetEndEffectorTransform()
 
@@ -110,5 +109,3 @@ class CBiRRTPlanner(planner.Planner):
                 extra_args += [ 'TSRChain', goal_tsr_chain.serialize() ]
                 extra_args += [ 'TSRChain', traj_tsr_chain.serialize() ]
                 return self.Plan(allowlimadj = True, timelimit = timelimit, smoothingitrs = smoothingitrs, extra_args=extra_args, **kw_args)
-
-        

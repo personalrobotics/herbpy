@@ -21,7 +21,7 @@ def FollowHand(head, traj, manipulator):
 
 
     with robot.GetEnv():
-        with robot.CreateRobotStateSaver():
+        with robot:
             for i in xrange(1, traj.GetNumWaypoints()):
                 traj_waypoint = traj.GetWaypoint(i)
                 arm_dof_values = traj_config_spec.ExtractJointValues(traj_waypoint, robot, arm_indices)

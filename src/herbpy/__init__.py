@@ -74,7 +74,7 @@ def initialize_manipulator(robot, manipulator, ik_type):
         def WrapPlan(method):
             @functools.wraps(method)
             def plan_method(manipulator, *args, **kw_args):
-                with robot.CreateRobotStateSaver():
+                with robot:
                     robot.SetActiveManipulator(manipulator)
                     robot.SetActiveDOFs(manipulator.GetArmIndices())
                     return getattr(robot, method.__name__)(*args, **kw_args)

@@ -74,7 +74,7 @@ def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
         robot.GetController().SimulationStep(0)
 
         # Sequentially try each planner until one succeeds.
-        with robot.CreateRobotStateSaver():
+        with robot:
             for delegate_planner in robot.planners:
                 with util.Timer('Planning with %s' % delegate_planner.GetName()):
                     try:
@@ -97,8 +97,7 @@ def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
 
     # Optionally execute the trajectory.
     if execute:
-        with util.Timer('Trajectory'):
-            return robot.ExecuteTrajectory(traj, **kw_args)
+        return robot.ExecuteTrajectory(traj, **kw_args)
     else:
         return traj
 
@@ -283,16 +282,16 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_a
     # Optionally blend and retime the trajectory before execution. Retiming
     # creates a MacTrajectory that can be directly executed by OWD.
     with robot.GetEnv():
-        with robot.CreateRobotStateSaver():
+        with robot:
             robot.SetActiveDOFs(active_indices)
             if blend:
                 traj = robot.BlendTrajectory(traj)
             if retime:
                 traj = robot.RetimeTrajectory(traj, synchronize=needs_synchronization, **kw_args)
 
-            # Reset old trajectory execution flags
-            for manipulator in active_manipulators:
-                manipulator.ClearTrajectoryStatus()
+        # Reset old trajectory execution flags
+        for manipulator in active_manipulators:
+            manipulator.ClearTrajectoryStatus()
 
     # Wait for the controller to finish execution.
     with util.RenderTrajectory(robot, traj):

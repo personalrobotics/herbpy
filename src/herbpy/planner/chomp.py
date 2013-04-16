@@ -21,7 +21,7 @@ class CHOMPPlanner(planner.Planner):
             raise planner.UnsupportedPlanningError('CHOMP requires a distance field.')
 
         try:
-            with self.robot.CreateRobotStateSaver(self.robot):
+            with self.robot:
                 return self.module.runchomp(robot=self.robot, adofgoal=goal,
                                             lambda_=lambda_, n_iter=n_iter, **kw_args)
         except RuntimeError, e:
@@ -62,7 +62,7 @@ class CHOMPPlanner(planner.Planner):
         if not self.initialized:
             raise planner.UnsupportedPlanningError('CHOMP requires a distance field.')
 
-        with self.robot.CreateRobotStateSaver():
+        with self.robot:
             try:
                 traj = self.module.runchomp(robot=self.robot, adofgoal=start_config, start_tsr=goal_tsr)
                 traj = openravepy.planningutils.ReverseTrajectory(traj)
