@@ -14,6 +14,9 @@ LEFT_HAND_NAMESPACE = '/left/bhd'
 RIGHT_HAND_NAMESPACE = '/right/bhd'
 MOPED_NAMESPACE = '/moped'
 TALKER_NAMESPACE = '/talker'
+SERVO_SIM_RATE = 20.0
+SERVO_TIMEOUT = 0.1
+
 rp = rospkg.RosPack()
 herbpy_package_path = rp.get_path(NODE_NAME)
 
@@ -74,10 +77,20 @@ def initialize_manipulator(robot, manipulator, ik_type):
         def WrapPlan(method):
             @functools.wraps(method)
             def plan_method(manipulator, *args, **kw_args):
+                execute = True
+                if 'execute' in kw_args:
+                    execute = kw_args['execute']
+                    del kw_args['execute']
+
                 with robot:
                     robot.SetActiveManipulator(manipulator)
                     robot.SetActiveDOFs(manipulator.GetArmIndices())
-                    return getattr(robot, method.__name__)(*args, **kw_args)
+                    traj = getattr(robot, method.__name__)(*args, execute=False, **kw_args)
+
+                if execute:
+                    return robot.ExecuteTrajectory(traj, **kw_args)
+                else:
+                    return traj
 
             return plan_method
 
@@ -261,16 +274,6 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     robot.right_arm.render_offset = numpy.array([ 0, 0, 0.15, 1 ])
     robot.head.render_offset      = None
 
-    # TODO: Enable the servo simulation after we diagnose the threading issues.
-    '''
-    if head_sim:
-        robot.head.StartServoSim()
-    if right_arm_sim:
-        robot.right_arm.StartServoSim()
-    if left_arm_sim:
-        robot.left_arm.StartServoSim()
-    '''
-
     # Convienence simulation flags for the manipulators.
     # TODO: Can we make a cleaner API for this?
     robot.left_arm.arm_simulated = left_arm_sim
@@ -291,6 +294,12 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     robot.right_arm.SetVelocityLimits(arm_velocity_limits, min_accel_time)
     robot.left_arm.SetVelocityLimits(arm_velocity_limits, min_accel_time)
     robot.head.SetVelocityLimits(head_velocity_limits, min_accel_time)
+
+    # Enable servo simulations.
+    from servo_simulator import ServoSimulator
+    for manipulator in robot.manipulators:
+        if manipulator.arm_simulated:
+            manipulator.servo_simulator = ServoSimulator(manipulator, SERVO_SIM_RATE, SERVO_TIMEOUT)
 
     # Load saved configs
     initialize_saved_configs(robot, **kw_args)
@@ -356,7 +365,6 @@ def initialize(env_path=None,
         raise KeyboardInterrupt
     signal.signal(signal.SIGINT, RaiseKeyboardInterrupt)
 
-    #
     def HandleExit():
         env.Destroy()
         openravepy.RaveDestroy()

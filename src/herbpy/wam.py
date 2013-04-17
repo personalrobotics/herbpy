@@ -37,7 +37,10 @@ def Servo(manipulator, velocities):
         raise ValueError('Incorrect number of joint velocities. Expected {0:d}; got {0:d}.'.format(
                          num_dof, len(velocities)))
 
-    manipulator.arm_controller.SendCommand('Servo ' + ' '.join([ str(qdot) for qdot in velocities ]))
+    if not manipulator.arm_simulated:
+        manipulator.arm_controller.SendCommand('Servo ' + ' '.join([ str(qdot) for qdot in velocities ]))
+    else:
+        manipulator.servo_simulator.SetVelocity(velocities)
 
 
 @WamMethod
