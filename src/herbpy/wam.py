@@ -40,6 +40,7 @@ def Servo(manipulator, velocities):
     if not manipulator.arm_simulated:
         manipulator.arm_controller.SendCommand('Servo ' + ' '.join([ str(qdot) for qdot in velocities ]))
     else:
+        manipulator.arm_controller.Reset(0)
         manipulator.servo_simulator.SetVelocity(velocities)
 
 

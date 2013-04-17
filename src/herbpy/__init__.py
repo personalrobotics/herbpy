@@ -14,8 +14,8 @@ LEFT_HAND_NAMESPACE = '/left/bhd'
 RIGHT_HAND_NAMESPACE = '/right/bhd'
 MOPED_NAMESPACE = '/moped'
 TALKER_NAMESPACE = '/talker'
-SERVO_SIM_RATE = 20.0
-SERVO_TIMEOUT = 0.1
+SERVO_SIM_RATE = 30.0
+SERVO_TIMEOUT = 0.25
 
 rp = rospkg.RosPack()
 herbpy_package_path = rp.get_path(NODE_NAME)

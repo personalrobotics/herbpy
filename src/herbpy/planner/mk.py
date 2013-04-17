@@ -69,7 +69,7 @@ class MKPlanner(planner.Planner):
         direction /= numpy.linalg.norm(direction)
 
         with self.env:
-            with self.robot.CreateRobotStateSaver():
+            with self.robot:
                 manip = self.robot.GetActiveManipulator()
                 traj = openravepy.RaveCreateTrajectory(self.env, '')
                 traj.Init(manip.GetArmConfigurationSpecification())
