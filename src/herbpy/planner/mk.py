@@ -6,7 +6,7 @@ def DoNothing(robot):
     return numpy.zeros(robot.GetActiveDOF())
 
 # Based on Moslem Kazemi's code from ARM-S.
-def JointLimitAvoidance(robot, limit_tolerance=0.2, gain=50):
+def JointLimitAvoidance(robot, limit_tolerance=0.2, gain=100):
     q = robot.GetActiveDOFValues()
     q_min, q_max = robot.GetDOFLimits(robot.GetActiveDOFIndices())
 

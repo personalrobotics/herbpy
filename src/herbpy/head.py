@@ -1,6 +1,5 @@
 import numpy, math, openravepy, time, threading
 import herbpy, planner, exceptions, util
-from pr_msgs.srv import AppletCommand
 
 HeadMethod = util.CreateMethodListDecorator()
 

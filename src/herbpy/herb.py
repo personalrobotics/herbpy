@@ -6,7 +6,6 @@ import planner
 import time
 import util
 import rospy
-from pr_msgs.srv import AppletCommand
 
 HerbMethod = util.CreateMethodListDecorator()
 
@@ -16,6 +15,8 @@ def Say(robot, message):
     Say a message using HERB's text-to-speech engine.
     @param message
     """
+    from pr_msgs.srv import AppletCommand
+
     if not robot.talker_simulated:
         # XXX: HerbPy should not make direct service calls.
         herbpy.logger.info('Saying "%s".', message)
@@ -137,6 +138,13 @@ def RetimeTrajectory(robot, traj, max_jerk=30.0, synchronize=False,
     @param max_jerk maximum jerk allowed during retiming
     @return timed MacTrajectory
     '''
+    # Fall back on the standard OpenRAVE retimer if MacTrajectory is not
+    # available.
+    if robot.mac_retimer is None:
+        herbpy.logger.warning('MacTrajectory is not available. Falling back to RetimeTrajectory.')
+        openravepy.planningutils.RetimeTrajectory(traj)
+        return traj
+
     # Create a MacTrajectory with timestamps, joint values, velocities,
     # accelerations, and blend radii.
     generic_config_spec = traj.GetConfigurationSpecification()

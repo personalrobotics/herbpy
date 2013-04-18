@@ -146,7 +146,7 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
     dependency_manager.export_paths('or_mac_trajectory')
     robot.mac_retimer = openravepy.RaveCreatePlanner(robot.GetEnv(), 'MacRetimer')
     if robot.mac_retimer is None:
-        raise Exception('Unable to create MAC trajectory retimer.')
+        logger.warning('Unable to create MAC trajectory retimer.')
 
 def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_hand_sim, moped_sim, talker_sim):
     """
