@@ -8,7 +8,6 @@
     <license>BSD</license>
 
     <depend package="rospy"/>
-    <depend package="rospack"/>
     <!-- OpenRAVE -->
     <depend package="openrave"/>
     <depend package="openrave_exports"/>
@@ -21,10 +20,13 @@
     <depend package="or_handstate_sensor"/>
     <depend package="or_multi_controller"/>
     <depend package="or_owd_controller"/>
-    <depend package="or_segway_controller"/>
+    <depend package="or_mac_trajectory"/>
     <depend package="or_barrett_ft_sensor"/>
     <depend package="or_handstate_sensor"/>
+    <!--
+    <depend package="or_segway_controller"/>
     <depend package="or_talker_module"/>
+    -->
     <!-- planner plugins -->
     <depend package="cbirrt2"/>
     <depend package="orcdchomp"/>

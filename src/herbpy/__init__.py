@@ -3,7 +3,7 @@ import openrave_exports; openrave_exports.export()
 import rospkg, rospy
 import atexit, functools, logging, numpy, signal, sys, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
-import planner, herb, head, wam, yaml
+import dependency_manager, planner, herb, head, wam, yaml
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
@@ -22,6 +22,7 @@ herbpy_package_path = rp.get_path(NODE_NAME)
 
 def initialize_logging():
     logger = logging.getLogger('herbpy')
+    logger.propagate = False
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter('{%(name)s:%(filename)s:%(lineno)d}:%(funcName)s: %(levelname)s - %(message)s')
     handler = logging.StreamHandler(sys.stdout)
@@ -32,7 +33,8 @@ def initialize_logging():
 
 logger = initialize_logging()
 
-def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, simulation):
+def attach_controller(robot, name, controller_args, controller_pkg,
+                      dof_indices, affine_dofs, simulation):
     """
     Attach a controller to some of HERB DOFs. If in simulation, the specified
     controller is replaced with an IdealController.
@@ -45,8 +47,13 @@ def attach_controller(robot, name, controller_args, dof_indices, affine_dofs, si
     """
     if simulation:
         controller_args = 'IdealController'
+    else:
+        dependency_manager.export_paths(controller_pkg)
 
     delegate_controller = openravepy.RaveCreateController(robot.GetEnv(), controller_args)
+    if delegate_controller is None:
+        raise Exception('Creating the controller failed.')
+
     robot.multicontroller.attach(name, delegate_controller, dof_indices, affine_dofs)
     return delegate_controller
 
@@ -124,19 +131,22 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
 
     # Controllers.
     robot.multicontroller = or_multi_controller.MultiControllerWrapper(robot)
-    robot.head.arm_controller = attach_controller(robot, 'head', head_args, head_dofs, 0, head_sim)
-    robot.left_arm.arm_controller = attach_controller(robot, 'left_arm', left_arm_args, left_arm_dofs, 0, left_arm_sim)
-    robot.right_arm.arm_controller = attach_controller(robot, 'right_arm', right_arm_args, right_arm_dofs, 0, right_arm_sim)
-    robot.left_arm.hand_controller = attach_controller(robot, 'left_hand', left_hand_args, left_hand_dofs, 0, left_hand_sim)
-    robot.right_arm.hand_controller = attach_controller(robot, 'right_hand', right_hand_args, right_hand_dofs, 0, right_hand_sim)
-    robot.segway_controller = attach_controller(robot, 'base', base_args, [], openravepy.DOFAffine.Transform, segway_sim)
+    robot.head.arm_controller = attach_controller(robot, 'head', 'or_owd_controller', head_args, head_dofs, 0, head_sim)
+    robot.left_arm.arm_controller = attach_controller(robot, 'left_arm', 'or_owd_controller', left_arm_args, left_arm_dofs, 0, left_arm_sim)
+    robot.right_arm.arm_controller = attach_controller(robot, 'right_arm', 'or_owd_controller', right_arm_args, right_arm_dofs, 0, right_arm_sim)
+    robot.left_arm.hand_controller = attach_controller(robot, 'left_hand', 'or_owd_controller', left_hand_args, left_hand_dofs, 0, left_hand_sim)
+    robot.right_arm.hand_controller = attach_controller(robot, 'right_hand', 'or_owd_controller', right_hand_args, right_hand_dofs, 0, right_hand_sim)
+    robot.segway_controller = attach_controller(robot, 'base', 'or_segway_controller', base_args, [], openravepy.DOFAffine.Transform, segway_sim)
     robot.controllers = [ robot.head.arm_controller, robot.segway_controller,
                           robot.left_arm.arm_controller, robot.right_arm.arm_controller,
                           robot.left_arm.hand_controller, robot.right_arm.hand_controller ]
     robot.multicontroller.finalize()
 
     # Create the MacTrajectory retimer for OWD.
+    dependency_manager.export_paths('or_mac_trajectory')
     robot.mac_retimer = openravepy.RaveCreatePlanner(robot.GetEnv(), 'MacRetimer')
+    if robot.mac_retimer is None:
+        raise Exception('Unable to create MAC trajectory retimer.')
 
 def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_hand_sim, moped_sim, talker_sim):
     """
@@ -151,34 +161,62 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
     # TODO: Move this into the manipulator initialization function.
     # TODO: Why is SetName missing for sensors in the Python bindings?
     if not left_ft_sim:
-        robot.left_arm.ft_sensor = openravepy.RaveCreateSensor(env,
-            'BarrettFTSensor {0:s} {1:s}'.format(NODE_NAME, LEFT_ARM_NAMESPACE))
+        dependency_manager.export_paths('or_barrett_ft_sensor')
+        args = 'BarrettFTSensor {0:s} {1:s}'.format(NODE_NAME, LEFT_ARM_NAMESPACE)
+        robot.left_arm.ft_sensor = openravepy.RaveCreateSensor(env, args)
+
+        if robot.left_arm.ft_sensor is None:
+            raise Exception('Creating the left force/torque sensor failed.')
+
         env.Add(robot.left_arm.ft_sensor, True)
         
     if not left_hand_sim:
-        robot.left_arm.handstate_sensor = openravepy.RaveCreateSensor(env,
-            'HandstateSensor {0:s} {1:s}'.format(NODE_NAME, LEFT_HAND_NAMESPACE))       
+        dependency_manager.export_paths('or_handstate_sensor')
+        args = 'HandstateSensor {0:s} {1:s}'.format(NODE_NAME, LEFT_HAND_NAMESPACE)
+        robot.left_arm.handstate_sensor = openravepy.RaveCreateSensor(env, args)
+
+        if robot.left_arm.handstate_sensor is None:
+            raise Exception('Creating the left handstate sensor failed.')
+
         env.Add(robot.left_arm.handstate_sensor, True)
 
     if not right_ft_sim:
-        robot.right_arm.ft_sensor = openravepy.RaveCreateSensor(env,
-            'BarrettFTSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_ARM_NAMESPACE))
+        dependency_manager.export_paths('or_barrett_ft_sensor')
+        args = 'BarrettFTSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_ARM_NAMESPACE)
+        robot.right_arm.ft_sensor = openravepy.RaveCreateSensor(env, args)
+
+        if robot.right_arm.ft_sensor is None:
+            raise Exception('Creating the right force/torque sensor failed.')
+
         env.Add(robot.right_arm.ft_sensor, True)
 
     if not right_hand_sim:
-        robot.right_arm.handstate_sensor = openravepy.RaveCreateSensor(env,
-            'HandstateSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_HAND_NAMESPACE))
+        dependency_manager.export_paths('or_handstate_sensor')
+        args = 'HandstateSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_HAND_NAMESPACE)
+        robot.right_arm.handstate_sensor = openravepy.RaveCreateSensor(env, args)
+
+        if robot.right_arm.handstate_sensor is None:
+            raise Exception('Creating the right handstate sensor failed.')
+
         env.Add(robot.right_arm.handstate_sensor, True)
 
     # MOPED.
     if not moped_sim:
-        moped_args = 'MOPEDSensorSystem {0:s} {1:s} {2:s}'.format(NODE_NAME, MOPED_NAMESPACE, OPENRAVE_FRAME_ID)
-        robot.moped_sensorsystem = openravepy.RaveCreateSensorSystem(env, moped_args)
+        dependency_manager.export_paths('or_moped_sensorsystem')
+        args = 'MOPEDSensorSystem {0:s} {1:s} {2:s}'.format(NODE_NAME, MOPED_NAMESPACE, OPENRAVE_FRAME_ID)
+        robot.moped_sensorsystem = openravepy.RaveCreateSensorSystem(env, args)
+
+        if robot.moped_sensorsystem is None:
+            raise Exception('Creating the MOPED sensorsystem failed.')
 
     # Talker.
     if not talker_sim:
+        dependency_manager.export_paths('or_talker_module')
         talker_args = 'TalkerModule {0:s} {1:s}'.format(NODE_NAME, TALKER_NAMESPACE)
         robot.talker_module = openravepy.RaveCreateModule(env, talker_args)
+
+        if robot.talker_module is None:
+            raise Exception('Creating the talker module failed.')
 
 def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
                            left_hand_sim=True, right_hand_sim=True,
