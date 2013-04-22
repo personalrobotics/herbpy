@@ -261,6 +261,30 @@ def SetArmDOFValues(manipulator, dof_values):
     manipulator.parent.SetDOFValues(dof_values, manipulator.GetArmIndices())
 
 @WamMethod
+def GetHandIndices(manipulator):
+    """
+    Gets this manipulator's hand DOF indices.
+    @return dof_indices hand DOF indices in ascending order
+    """
+    return numpy.array(sorted(manipulator.GetChildDOFIndices()))
+
+@WamMethod
+def GetHandDOFValues(manipulator):
+    """
+    Gets this manipulator's hand preshape.
+    @return dof_values current hand DOF values
+    """
+    return manipulator.parent.GetDOFValues(manipulator.GetHandIndices())
+
+@WamMethod
+def SetHandDOFValues(manipulator, dof_values):
+    """
+    Sets this manipulator's hand preshape.
+    @param dof_values new hand DOF values
+    """
+    manipulator.parent.SetDOFValues(dof_values, manipulator.GetHandIndices())
+
+@WamMethod
 def MoveUntilTouch(manipulator, direction, distance, max_force=5, **kw_args):
     """
     Execute a straight move-until-touch action. This action stops when a
@@ -294,41 +318,6 @@ def MoveUntilTouch(manipulator, direction, distance, max_force=5, **kw_args):
     # Trajectory is aborted by OWD because we felt a force.
     except exceptions.TrajectoryAborted:
         return True
-
-@WamMethod
-def StartServoSim(manipulator):
-    """
-    Starts a new thread with the ServoSim method
-    """
-    t = threading.Thread(target=ServoSim, args=[manipulator])
-    t.start()
-
-@WamMethod
-def ServoSim(manipulator):
-    """
-    Simulates servo commands for the given manipulator
-    """
-    manipulator.servo_velocity = numpy.zeros(len(manipulator.GetArmIndices()))
-    manipulator.servo_timestamp = 0
-    timestep = 0.025
-    time_start = time()
-    while True:
-        with manipulator.parent.GetEnv():
-            # Check for timeout
-            if abs(time_start - manipulator.servo_timestamp)>0.1:
-                manipulator.servo_velocity = numpy.zeros(len(manipulator.GetArmIndices()))
-                time_start = time()
-            else:
-                # Set robot's dof
-                current_dofs = numpy.array(manipulator.parent.GetDOFValues(manipulator.GetArmIndices()))
-                vel = numpy.array(manipulator.servo_velocity)
-                dof_indices = manipulator.GetArmIndices()
-                manipulator.parent.SetDOFValues(current_dofs + vel*timestep, dof_indices)
-                # Reset time
-                time_start = time()
-        sleep(timestep)
-
-
 
 @WamMethod
 def PlanToNamedConfiguration(manipulator, name, **kw_args):
