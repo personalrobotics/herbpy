@@ -1,5 +1,19 @@
-import functools, numpy, openravepy, types, time
+import collections, functools, numpy, openravepy, types, time, logging, termcolor
 import herbpy, prrave.rave
+
+class ColoredFormatter(logging.Formatter):
+    def __init__(self, default):
+        self._default_formatter = default
+        self._color_table = collections.defaultdict(lambda: list())
+        self._color_table[logging.CRITICAL] = [ 'red' ]
+        self._color_table[logging.ERROR] = [ 'red' ]
+        self._color_table[logging.WARNING] = [ 'yellow' ]
+        self._color_table[logging.DEBUG] = [ 'green' ]
+
+    def format(self, record):
+        color_options = self._color_table[record.levelno]
+        message = self._default_formatter.format(record)
+        return termcolor.colored(message, *color_options)
 
 class Deprecated(object):
     def __init__(self, message):

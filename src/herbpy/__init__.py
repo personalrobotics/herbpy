@@ -26,10 +26,11 @@ def initialize_logging():
     logger = logging.getLogger('herbpy')
     logger.propagate = False
     logger.setLevel(logging.INFO)
-    formatter = logging.Formatter('[%(name)s:%(filename)s:%(lineno)d]:%(funcName)s: %(levelname)s - %(message)s')
+    base_formatter = logging.Formatter('[%(name)s:%(filename)s:%(lineno)d]:%(funcName)s: %(levelname)s - %(message)s')
+    color_formatter = util.ColoredFormatter(base_formatter)
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.INFO)
-    handler.setFormatter(formatter)
+    handler.setFormatter(color_formatter)
     logger.addHandler(handler)
     return logger
 
