@@ -1,11 +1,5 @@
-import herbpy
-import exceptions
-import openravepy
-import numpy
-import planner
-import time
-import util
-import rospy
+import numpy, openravepy, rospy, time
+import herbpy, exceptions, planner, util
 
 HerbMethod = util.CreateMethodListDecorator()
 
@@ -503,4 +497,3 @@ def RotateSegway(robot, angle_rad, timeout=None):
 def StopSegway(robot):
     if not robot.segway_sim:
         robot.segway_controller.SendCommand("Stop")
-        

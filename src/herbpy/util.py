@@ -1,5 +1,21 @@
-import numpy, openravepy, types, time
+import functools, numpy, openravepy, types, time
 import herbpy, prrave.rave
+
+class Deprecated(object):
+    def __init__(self, message):
+        self._message = message
+
+    # TODO: Set the help text and name to the wrapped function.
+    def __call__(self, f):
+        @functools.wraps(f)
+        def wrapped_function(*args, **kw_args):
+            if self._message is None:
+                herbpy.logger.warning('%s is deprecated.', f.__name__)
+            else:
+                herbpy.logger.warning('%s is deprecated: %s', f.__name__, self._message)
+
+            return f(*args, **kw_args)
+        return wrapped_function
 
 def CreateMethodListDecorator():
     class MethodListDecorator(object):
@@ -22,6 +38,18 @@ def CreateMethodListDecorator():
                 setattr(instance, method.__name__, bound_method)
 
     return MethodListDecorator
+
+def intercept_bind(cls, callback):
+    def intercept(self, name):
+        try:
+            object.__getattribute__(self, '_intercepted')
+        except AttributeError:
+            self._intercepted = True
+            callback(self)
+
+        return object.__getattribute__(self, name)
+
+    cls.__getattribute__ = intercept
 
 def ExtractWorkspaceWaypoints(robot, traj):
     # Extract the DOF indices from the trajectory.

@@ -1,21 +1,9 @@
-import herbpy
-import openravepy
-import numpy
-import util
-from planner import PlanningError 
-import math
-from time import sleep, time
-import threading
-import math, numpy, openravepy
+import math, numpy, openravepy, threading, time
 import herbpy, exceptions, util
+from planner import PlanningError 
+from util import Deprecated
 
 WamMethod = util.CreateMethodListDecorator()
-
-@WamMethod
-def LookAtHand(manipulator, **kw_args):
-    target = manipulator.GetEndEffectorTransform()[0:3, 3]
-    return manipulator.parent.LookAt(target, **kw_args)
-    
 
 @WamMethod
 def SetStiffness(manipulator, stiffness):
@@ -43,7 +31,6 @@ def Servo(manipulator, velocities):
         manipulator.arm_controller.Reset(0)
         manipulator.servo_simulator.SetVelocity(velocities)
 
-
 @WamMethod
 def ServoTo(manipulator, target, duration, timeStep = 0.05, collisionChecking= True):
     """
@@ -68,118 +55,6 @@ def ServoTo(manipulator, target, duration, timeStep = 0.05, collisionChecking= T
         new_dofs = manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
         return True
     return False
-
-@WamMethod
-def ServoCollisionCheck(manipulator, end_dof):
-    with manipulator.GetEnv():
-        with manipulator.parent:
-            q = manipulator.GetArmDOFValues()
-            for i in xrange(steps):
-                q += velocity * timeStep
-                manipulator.SetArmDOFValues(q)
-
-                if manipulator.GetEnv().CheckCollision(manipulator.parent):
-                    herbpy.logger.info('Servo motion stopped due to collision.')
-                    return True
-                if manipulator.parent.CheckSelfCollision():
-                    herbpy.logger.info('Servo motion stopped due to self collision.')
-                    return True
-
-    return False
-
-@WamMethod
-def MoveHand(manipulator, f1=None, f2=None, f3=None, spread=None, timeout=None):
-    """
-    Change the hand preshape. This function blocks until trajectory execution
-    finishes. This can be changed by changing the timeout parameter to a
-    maximum number of seconds. Pass zero to return instantantly.
-    @param f1 finger 1 angle
-    @param f2 finger 2 angle
-    @param f3 finger 3 angle
-    @param spread spread angle
-    @param timeout blocking execution timeout
-    """
-    # Default any None's to the current DOF values.
-    hand_indices = sorted(manipulator.GetChildDOFIndices())
-    preshape = manipulator.parent.GetDOFValues(hand_indices)
-
-    if f1     is not None: preshape[0] = f1
-    if f2     is not None: preshape[1] = f2
-    if f3     is not None: preshape[2] = f3
-    if spread is not None: preshape[3] = spread
-
-    manipulator.hand_controller.SetDesired(preshape)
-    if timeout == None:
-        manipulator.parent.WaitForController(0)
-    elif timeout > 0:
-        manipulator.parent.WaitForController(timeout)
-
-@WamMethod
-def OpenHand(manipulator, spread=None, timeout=None):
-    """
-    Open the hand with a fixed spread.
-    @param spread hand spread
-    @param timeout blocking execution timeout
-    """
-    # TODO: Load this angle from somewhere.
-    manipulator.MoveHand(f1=0.0, f2=0.0, f3=0.0, spread=spread, timeout=timeout)
-
-@WamMethod
-def CloseHand(manipulator, spread=None, timeout=None):
-    """
-    Close the hand with a fixed spread.
-    @param spread hand spread
-    @param timeout blocking execution timeout
-    """
-    # TODO: Load this angle from somewhere.
-    manipulator.MoveHand(f1=3.2, f2=3.2, f3=3.2, spread=spread, timeout=timeout)
-
-@WamMethod
-def GetForceTorque(manipulator):
-    """
-    Gets the most recent force/torque sensor reading in the hand frame.
-    @return force,torque force/torque in the hand frame
-    """
-    sensor_data = manipulator.ft_sensor.GetSensorData()
-    return sensor_data.force, sensor_data.torque
-
-@WamMethod
-def TareForceTorqueSensor(manipulator):
-    """
-    Tare the force/torque sensor. This is necessary before using the sensor
-    whenever the arm configuration has changed.
-    """
-    if not manipulator.ft_simulated:
-        manipulator.ft_sensor.SendCommand('Tare')
-        sleep(2)
-
-@WamMethod
-def GetStrain(manipulator):
-    """
-    Gets the most recent strain sensor readings.
-    @return a list of strain for each finger
-    """
-
-    strain = [0., 0., 0.]
-    if not manipulator.hand_simulated:
-        sensor_data = manipulator.handstate_sensor.GetSensorData()
-        strain = sensor_data.force # This is because we are overriding the force/torque sensor datatype
-    return strain
-
-@WamMethod
-def GetBreakaway(manipulator):
-    """
-    Gets the most recent breakaway readings for each finger
-    @return a list of breakaway flags for each finger
-    """
-    
-    breakaway = [False, False, False]
-    if not manipulator.hand_simulated:
-        sensor_data = manipulator.handstate_sensor.GetSensorData()
-        breakaway = sensor_data.torque # This is because we are overriding the force/torque sensor datatype
-
-    return breakaway
-
 
 @WamMethod
 def SetVelocityLimits(manipulator, velocity_limits, min_accel_time):
@@ -247,17 +122,11 @@ def SetActive(manipulator):
     manipulator.parent.SetActiveDOFs(manipulator.GetArmIndices())
 
 @WamMethod
-def GetArmDOFValues(manipulator):
-    '''
-    Gets this manipulator's DOF values.
-    ''' 
+def GetDOFValues(manipulator):
     return manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
 
 @WamMethod
-def SetArmDOFValues(manipulator, dof_values):
-    '''
-    Sets this manipulator's DOF values.
-    ''' 
+def SetDOFValues(manipulator, dof_values):
     manipulator.parent.SetDOFValues(dof_values, manipulator.GetArmIndices())
 
 @WamMethod
@@ -350,3 +219,53 @@ def PlanToNamedConfiguration(manipulator, name, **kw_args):
    
     return traj
 
+# Deprecated methods that were moved to the hand class.
+@WamMethod
+@Deprecated('Use GetDOFValues instead.')
+def GetArmDOFValues(manipulator):
+    return manipulator.GetDOFValues()
+
+@WamMethod
+@Deprecated('Use SetDOFValues instead.')
+def SetArmDOFValues(manipulator, dof_values):
+    return manipulator.SetDOFValues(dof_values)
+
+@WamMethod
+@Deprecated('Use hand.OpenHand instead.')
+def OpenHand(manipulator, *args, **kw_args):
+    return manipulator.hand.OpenHand(*args, **kw_args)
+
+@WamMethod
+@Deprecated('Use hand.CloseHand instead.')
+def CloseHand(manipulator, spread=None, timeout=None):
+    return manipulator.hand.CloseHand(*args, **kw_args)
+
+@WamMethod
+@Deprecated('Use hand.MoveHand instead.')
+def MoveHand(manipulator, *args, **kw_args):
+    return manipulator.hand.MoveHand(*args, **kw_args)
+
+@WamMethod
+@Deprecated('Use hand.GetForceTorque instead.')
+def GetForceTorque(manipulator, *args, **kw_args):
+    return manipulator.hand.GetForceTorque(*args, **kw_args)
+
+@WamMethod
+@Deprecated('Use hand.TareForceTorqueSensor instead.')
+def TareForceTorqueSensor(manipulator, *args, **kw_args):
+    return manipulator.hand.TareForceTorqueSensor()
+
+@WamMethod
+@Deprecated('Use hand.GetStrain.')
+def GetStrain(manipulator, *args, **kw_args):
+    return manipulator.hand.GetStrain(*args, **kw_args)
+
+@WamMethod
+@Deprecated('Use hand.GetBreakaway.')
+def GetBreakaway(manipulator, *args, **kw_args):
+    return manipulator.hand.GetBreakaway(*args, **kw_args)
+
+@WamMethod
+@Deprecated('Use hand.LookAtHand.')
+def LookAtHand(manipulator, **kw_args):
+    return manipulator.hand.LookAtHand(*args, **kw_args)

@@ -3,7 +3,8 @@ import openrave_exports; openrave_exports.export()
 import rospkg, rospy
 import atexit, functools, logging, numpy, signal, sys, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
-import dependency_manager, planner, herb, head, wam, yaml
+import dependency_manager, planner, hand, herb, head, wam, yaml
+import new
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
@@ -16,6 +17,7 @@ MOPED_NAMESPACE = '/moped'
 TALKER_NAMESPACE = '/talker'
 SERVO_SIM_RATE = 30.0
 SERVO_TIMEOUT = 0.25
+BOUND_TYPES = [ openravepy.Robot, openravepy.Robot.Manipulator, openravepy.Robot.Link ]
 
 rp = rospkg.RosPack()
 herbpy_package_path = rp.get_path(NODE_NAME)
@@ -24,7 +26,7 @@ def initialize_logging():
     logger = logging.getLogger('herbpy')
     logger.propagate = False
     logger.setLevel(logging.INFO)
-    formatter = logging.Formatter('{%(name)s:%(filename)s:%(lineno)d}:%(funcName)s: %(levelname)s - %(message)s')
+    formatter = logging.Formatter('[%(name)s:%(filename)s:%(lineno)d]:%(funcName)s: %(levelname)s - %(message)s')
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.INFO)
     handler.setFormatter(formatter)
@@ -32,6 +34,24 @@ def initialize_logging():
     return logger
 
 logger = initialize_logging()
+instances = dict()
+
+####
+def intercept(self, name):
+    try:
+        true_instance = object.__getattribute__(self, '_true_instance')
+        return object.__getattribute__(true_instance, name)
+    except AttributeError:
+        if self in instances:
+            true_instance = instances[self]
+            self._true_instance = true_instance
+            return object.__getattribute__(true_instance, name)
+
+    return object.__getattribute__(self, name)
+
+for bound_type in BOUND_TYPES:
+    bound_type.__getattribute__ = intercept
+####
 
 def attach_controller(robot, name, controller_args, controller_pkg,
                       dof_indices, affine_dofs, simulation):
@@ -132,14 +152,14 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
     # Controllers.
     robot.multicontroller = or_multi_controller.MultiControllerWrapper(robot)
     robot.head.arm_controller = attach_controller(robot, 'head', 'or_owd_controller', head_args, head_dofs, 0, head_sim)
-    robot.left_arm.arm_controller = attach_controller(robot, 'left_arm', 'or_owd_controller', left_arm_args, left_arm_dofs, 0, left_arm_sim)
-    robot.right_arm.arm_controller = attach_controller(robot, 'right_arm', 'or_owd_controller', right_arm_args, right_arm_dofs, 0, right_arm_sim)
-    robot.left_arm.hand_controller = attach_controller(robot, 'left_hand', 'or_owd_controller', left_hand_args, left_hand_dofs, 0, left_hand_sim)
-    robot.right_arm.hand_controller = attach_controller(robot, 'right_hand', 'or_owd_controller', right_hand_args, right_hand_dofs, 0, right_hand_sim)
+    robot.left_arm.controller = attach_controller(robot, 'left_arm', 'or_owd_controller', left_arm_args, left_arm_dofs, 0, left_arm_sim)
+    robot.right_arm.controller = attach_controller(robot, 'right_arm', 'or_owd_controller', right_arm_args, right_arm_dofs, 0, right_arm_sim)
+    robot.left_arm.hand.controller = attach_controller(robot, 'left_hand', 'or_owd_controller', left_hand_args, left_hand_dofs, 0, left_hand_sim)
+    robot.right_arm.hand.controller = attach_controller(robot, 'right_hand', 'or_owd_controller', right_hand_args, right_hand_dofs, 0, right_hand_sim)
     robot.segway_controller = attach_controller(robot, 'base', 'or_segway_controller', base_args, [], openravepy.DOFAffine.Transform, segway_sim)
     robot.controllers = [ robot.head.arm_controller, robot.segway_controller,
-                          robot.left_arm.arm_controller, robot.right_arm.arm_controller,
-                          robot.left_arm.hand_controller, robot.right_arm.hand_controller ]
+                          robot.left_arm.controller, robot.right_arm.controller,
+                          robot.left_arm.hand.controller, robot.right_arm.hand.controller ]
     robot.multicontroller.finalize()
 
     # Create the MacTrajectory retimer for OWD.
@@ -168,7 +188,7 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
         if robot.left_arm.ft_sensor is None:
             raise Exception('Creating the left force/torque sensor failed.')
 
-        env.Add(robot.left_arm.ft_sensor, True)
+        env.Add(robot.left_arm.hand.ft_sensor, True)
         
     if not left_hand_sim:
         dependency_manager.export_paths('or_handstate_sensor')
@@ -178,7 +198,7 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
         if robot.left_arm.handstate_sensor is None:
             raise Exception('Creating the left handstate sensor failed.')
 
-        env.Add(robot.left_arm.handstate_sensor, True)
+        env.Add(robot.left_arm.hand.handstate_sensor, True)
 
     if not right_ft_sim:
         dependency_manager.export_paths('or_barrett_ft_sensor')
@@ -188,17 +208,17 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
         if robot.right_arm.ft_sensor is None:
             raise Exception('Creating the right force/torque sensor failed.')
 
-        env.Add(robot.right_arm.ft_sensor, True)
+        env.Add(robot.right_arm.hand.ft_sensor, True)
 
     if not right_hand_sim:
         dependency_manager.export_paths('or_handstate_sensor')
         args = 'HandstateSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_HAND_NAMESPACE)
-        robot.right_arm.handstate_sensor = openravepy.RaveCreateSensor(env, args)
+        robot.right_arm.hand.handstate_sensor = openravepy.RaveCreateSensor(env, args)
 
         if robot.right_arm.handstate_sensor is None:
             raise Exception('Creating the right handstate sensor failed.')
 
-        env.Add(robot.right_arm.handstate_sensor, True)
+        env.Add(robot.right_arm.hand.handstate_sensor, True)
 
     # MOPED.
     if not moped_sim:
@@ -217,6 +237,18 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
 
         if robot.talker_module is None:
             raise Exception('Creating the talker module failed.')
+
+def initialize_planners(robot):
+    # Configure the planners. This order is specifically tuned for quickly
+    # planning movehandstraight trajectories.
+    import planner.chomp, planner.cbirrt, planner.jacobian, planner.mk, planner.snap
+    robot.snap_planner = planner.snap.SnapPlanner(robot)
+    robot.cbirrt_planner = planner.cbirrt.CBiRRTPlanner(robot)
+    robot.chomp_planner = planner.chomp.CHOMPPlanner(robot)
+    robot.mk_planner = planner.mk.MKPlanner(robot)
+    robot.jacobian_planner = planner.jacobian.JacobianPlanner(robot)
+    robot.planners = [ robot.snap_planner, robot.mk_planner, robot.jacobian_planner, 
+                       robot.chomp_planner, robot.cbirrt_planner  ]
 
 def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
                            left_hand_sim=True, right_hand_sim=True,
@@ -239,8 +271,16 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     """
     robot.left_arm = robot.GetManipulator('left_wam')
     robot.right_arm = robot.GetManipulator('right_wam')
+    robot.left_arm.hand = robot.left_arm.GetEndEffector()
+    robot.right_arm.hand = robot.right_arm.GetEndEffector()
     robot.head = robot.GetManipulator('head_wam')
     robot.manipulators = [ robot.left_arm, robot.right_arm, robot.head ]
+
+    # TODO: Where should I put this?
+    robot.left_arm.hand.robot = robot
+    robot.right_arm.hand.robot = robot
+    robot.left_arm.hand.manipulator = robot.left_arm
+    robot.right_arm.hand.manipulator = robot.right_arm
 
     # Simulation flags.
     robot.left_arm_sim = left_arm_sim 
@@ -286,6 +326,8 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     # Bind extra methods onto the OpenRAVE robot and manipulators.
     herb.HerbMethod.Bind(robot)
     head.HeadMethod.Bind(robot.head)
+    hand.HandMethod.Bind(robot.left_arm.hand)
+    hand.HandMethod.Bind(robot.right_arm.hand)
 
     # Dynamically bind the planners to the robot through the PlanGeneric wrapper.
     for method in planner.PlanningMethod.methods:
@@ -341,6 +383,13 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
 
     # Load saved configs
     initialize_saved_configs(robot, **kw_args)
+
+    instances[robot] = robot
+    instances[robot.head] = robot.head
+    instances[robot.left_arm] = robot.left_arm
+    instances[robot.right_arm] = robot.right_arm
+    instances[robot.left_arm.hand] = robot.left_arm.hand
+    instances[robot.right_arm.hand] = robot.right_arm.hand
     
 def initialize_saved_configs(robot, yaml_path=None):
     if yaml_path is None:
