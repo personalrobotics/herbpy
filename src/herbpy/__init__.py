@@ -152,13 +152,13 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
 
     # Controllers.
     robot.multicontroller = or_multi_controller.MultiControllerWrapper(robot)
-    robot.head.arm_controller = attach_controller(robot, 'head', 'or_owd_controller', head_args, head_dofs, 0, head_sim)
+    robot.head.controller = attach_controller(robot, 'head', 'or_owd_controller', head_args, head_dofs, 0, head_sim)
     robot.left_arm.controller = attach_controller(robot, 'left_arm', 'or_owd_controller', left_arm_args, left_arm_dofs, 0, left_arm_sim)
     robot.right_arm.controller = attach_controller(robot, 'right_arm', 'or_owd_controller', right_arm_args, right_arm_dofs, 0, right_arm_sim)
     robot.left_arm.hand.controller = attach_controller(robot, 'left_hand', 'or_owd_controller', left_hand_args, left_hand_dofs, 0, left_hand_sim)
     robot.right_arm.hand.controller = attach_controller(robot, 'right_hand', 'or_owd_controller', right_hand_args, right_hand_dofs, 0, right_hand_sim)
     robot.segway_controller = attach_controller(robot, 'base', 'or_segway_controller', base_args, [], openravepy.DOFAffine.Transform, segway_sim)
-    robot.controllers = [ robot.head.arm_controller, robot.segway_controller,
+    robot.controllers = [ robot.head.controller, robot.segway_controller,
                           robot.left_arm.controller, robot.right_arm.controller,
                           robot.left_arm.hand.controller, robot.right_arm.hand.controller ]
     robot.multicontroller.finalize()

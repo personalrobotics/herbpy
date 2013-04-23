@@ -163,7 +163,7 @@ class RenderTrajectory:
                     for t in numpy.linspace(0, self.traj.GetDuration(), self.num_samples):
                         waypoint = self.traj.Sample(t)
                         joint_values = config_spec.ExtractJointValues(waypoint, self.robot, arm_indices)
-                        manipulator.SetArmDOFValues(joint_values)
+                        manipulator.SetDOFValues(joint_values)
                         hand_pose = manipulator.GetEndEffectorTransform()
                         render_position = numpy.dot(hand_pose, render_offset)
                         interpolated_points.append(render_position[0:3])

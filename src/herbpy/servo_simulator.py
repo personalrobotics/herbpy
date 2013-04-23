@@ -49,7 +49,7 @@ class ServoSimulator:
 
             if running:
                 with self.manip.parent.GetEnv():
-                    q  = self.manip.GetArmDOFValues()
+                    q  = self.manip.GetDOFValues()
                     q += self.period * q_dot
 
                     # Check joint limits.

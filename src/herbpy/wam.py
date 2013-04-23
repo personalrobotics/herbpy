@@ -12,7 +12,7 @@ def SetStiffness(manipulator, stiffness):
     @param stiffness value between 0.0 and 1.0
     """
     if not manipulator.arm_simulated:
-        manipulator.arm_controller.SendCommand('SetStiffness {0:f}'.format(stiffness))
+        manipulator.controller.SendCommand('SetStiffness {0:f}'.format(stiffness))
 
 @WamMethod
 def Servo(manipulator, velocities):
@@ -26,9 +26,9 @@ def Servo(manipulator, velocities):
                          num_dof, len(velocities)))
 
     if not manipulator.arm_simulated:
-        manipulator.arm_controller.SendCommand('Servo ' + ' '.join([ str(qdot) for qdot in velocities ]))
+        manipulator.controller.SendCommand('Servo ' + ' '.join([ str(qdot) for qdot in velocities ]))
     else:
-        manipulator.arm_controller.Reset(0)
+        manipulator.controller.Reset(0)
         manipulator.servo_simulator.SetVelocity(velocities)
 
 @WamMethod
@@ -88,7 +88,7 @@ def SetVelocityLimits(manipulator, velocity_limits, min_accel_time):
         args += [ str(min_accel_time) ]
         args += [ str(velocity) for velocity in velocity_limits ]
         args_str = ' '.join(args)
-        manipulator.arm_controller.SendCommand(args_str)
+        manipulator.controller.SendCommand(args_str)
     return True
 
 @WamMethod
@@ -98,9 +98,9 @@ def GetTrajectoryStatus(manipulator):
     controller.
     '''
     if not manipulator.arm_simulated:
-        return manipulator.arm_controller.SendCommand('GetStatus')
+        return manipulator.controller.SendCommand('GetStatus')
     else:
-        if manipulator.arm_controller.IsDone():
+        if manipulator.controller.IsDone():
             return 'done'
         else:
             return 'active'
@@ -111,7 +111,7 @@ def ClearTrajectoryStatus(manipulator):
     Clears the current trajectory execution status.
     '''
     if not manipulator.arm_simulated:
-        manipulator.arm_controller.SendCommand('ClearStatus')
+        manipulator.controller.SendCommand('ClearStatus')
 
 @WamMethod
 def SetActive(manipulator):

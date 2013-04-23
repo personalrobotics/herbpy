@@ -313,7 +313,7 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_a
                     break
                 done_manipulators = set()
                 for manipulator in running_manipulators:
-                    if manipulator.arm_controller.IsDone():
+                    if manipulator.controller.IsDone():
                         done_manipulators.add(manipulator)
 
                 running_manipulators -= done_manipulators
