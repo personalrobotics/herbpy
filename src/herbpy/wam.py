@@ -130,30 +130,6 @@ def SetDOFValues(manipulator, dof_values):
     manipulator.parent.SetDOFValues(dof_values, manipulator.GetArmIndices())
 
 @WamMethod
-def GetHandIndices(manipulator):
-    """
-    Gets this manipulator's hand DOF indices.
-    @return dof_indices hand DOF indices in ascending order
-    """
-    return numpy.array(sorted(manipulator.GetChildDOFIndices()))
-
-@WamMethod
-def GetHandDOFValues(manipulator):
-    """
-    Gets this manipulator's hand preshape.
-    @return dof_values current hand DOF values
-    """
-    return manipulator.parent.GetDOFValues(manipulator.GetHandIndices())
-
-@WamMethod
-def SetHandDOFValues(manipulator, dof_values):
-    """
-    Sets this manipulator's hand preshape.
-    @param dof_values new hand DOF values
-    """
-    manipulator.parent.SetDOFValues(dof_values, manipulator.GetHandIndices())
-
-@WamMethod
 def MoveUntilTouch(manipulator, direction, distance, max_force=5, **kw_args):
     """
     Execute a straight move-until-touch action. This action stops when a
