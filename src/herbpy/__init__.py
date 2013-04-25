@@ -39,16 +39,39 @@ instances = dict()
 
 ####
 def intercept(self, name):
+    # Return the canonical reference stored in the object.
     try:
         true_instance = object.__getattribute__(self, '_true_instance')
-        return object.__getattribute__(true_instance, name)
     except AttributeError:
+        # Retrieve the canonical instance from the global dictionary if it is
+        # not already set. This should only occur once, after which the
+        # _true_instance field is populated.
         if self in instances:
             true_instance = instances[self]
             self._true_instance = true_instance
-            return object.__getattribute__(true_instance, name)
+        # There is no canonical instance associated with the object.
+        else:
+            true_instance = self
 
-    return object.__getattribute__(self, name)
+    # Print a warning if the attribute is deprecated.
+    try:
+        deprecated = object.__getattribute__(self, '_deprecated')
+        if name in deprecated:
+            value, message = deprecated[name]
+            if message is None:
+                logger.warning('%s is deprecated.', name)
+            else:
+                logger.warning('%s is deprecated: %s', name, message)
+            return value
+    except AttributeError:
+        pass
+
+    return object.__getattribute__(true_instance, name)
+
+def deprecate(self, attribute_name, value, message=None):
+    if not hasattr(self, '_deprecated'):
+        self._deprecated = dict()
+    self._deprecated[attribute_name] = (value, message)
 
 for bound_type in BOUND_TYPES:
     bound_type.__getattribute__ = intercept
@@ -162,6 +185,12 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
                           robot.left_arm.controller, robot.right_arm.controller,
                           robot.left_arm.hand.controller, robot.right_arm.hand.controller ]
     robot.multicontroller.finalize()
+
+    # Deprecated methods of accessing controllers.
+    deprecate(robot.left_arm, 'arm_controller', robot.left_arm.controller, 'Use controller.')
+    deprecate(robot.right_arm, 'arm_controller', robot.right_arm.controller, 'Use controller.')
+    deprecate(robot.left_arm, 'hand_controller', robot.left_arm.hand.controller, 'Use hand.controller.')
+    deprecate(robot.right_arm, 'hand_controller', robot.right_arm.hand.controller, 'Use hand.controller.')
 
     # Create the MacTrajectory retimer for OWD.
     dependency_manager.export_paths('or_mac_trajectory')
@@ -357,14 +386,21 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
 
     # Convienence simulation flags for the manipulators.
     # TODO: Can we make a cleaner API for this?
-    robot.left_arm.arm_simulated = left_arm_sim
-    robot.left_arm.hand_simulated = left_hand_sim
-    robot.left_arm.ft_simulated = left_ft_sim
-    robot.right_arm.arm_simulated = right_arm_sim
-    robot.right_arm.hand_simulated = right_hand_sim
-    robot.right_arm.ft_simulated = right_ft_sim
-    robot.head.arm_simulated = head_sim 
+    robot.left_arm.simulated = left_arm_sim
+    robot.left_arm.hand.simulated = left_hand_sim
+    robot.left_arm.hand.ft_simulated = left_ft_sim
+    robot.right_arm.simulated = right_arm_sim
+    robot.right_arm.hand.simulated = right_hand_sim
+    robot.right_arm.hand.ft_simulated = right_ft_sim
+    robot.head.simulated = head_sim 
     robot.talker_simulated = talker_sim
+
+    # Deprecated simulation flags.
+    deprecate(robot.left_arm, 'arm_simulated', robot.left_arm.simulated, 'Use simulated.')
+    deprecate(robot.right_arm, 'arm_simulated', robot.right_arm.simulated, 'Use simulated.')
+    deprecate(robot.left_arm, 'hand_simulated', robot.left_arm.hand.simulated, 'Use hand.simulated.')
+    deprecate(robot.right_arm, 'hand_simulated', robot.right_arm.hand.simulated, 'Use hand.simulated.')
+    deprecate(robot.head, 'arm_simulated', robot.head.simulated, 'Use head.simulated.')
 
     # Set the default velocity and acceleration limits.
     # TODO: Move these constants into the robot's XML file.
@@ -372,14 +408,16 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     max_jerk = 10 * numpy.pi
     head_velocity_limits = numpy.array([ 1.0, 1.0 ])
     arm_velocity_limits = numpy.array([ 0.75, 0.75, 2.0, 2.0, 2.5, 2.5, 2.5 ])
+    '''
     robot.right_arm.SetVelocityLimits(arm_velocity_limits, min_accel_time)
     robot.left_arm.SetVelocityLimits(arm_velocity_limits, min_accel_time)
     robot.head.SetVelocityLimits(head_velocity_limits, min_accel_time)
+    '''
 
     # Enable servo simulations.
     from servo_simulator import ServoSimulator
     for manipulator in robot.manipulators:
-        if manipulator.arm_simulated:
+        if manipulator.simulated:
             manipulator.servo_simulator = ServoSimulator(manipulator, SERVO_SIM_RATE, SERVO_TIMEOUT)
 
     # Load saved configs

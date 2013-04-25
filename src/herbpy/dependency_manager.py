@@ -43,9 +43,11 @@ def export_paths(package_name):
 
         # Process the OpenRAVE export tags. 
         for plugin_path in manifest.get_export('openrave', 'plugins'):
+            herbpy.logger.info('Adding %s to OPENRAVE_PLUGINS.', plugin_path)
             plugin_paths = append_to_env('OPENRAVE_PLUGINS', plugin_path)
 
         for data_path in manifest.get_export('openrave', 'data'):
+            herbpy.logger.info('Adding %s to OPENRAVE_DATA.', data_path)
             data_paths = append_to_env('OPENRAVE_DATA', data_path)
 
     return True

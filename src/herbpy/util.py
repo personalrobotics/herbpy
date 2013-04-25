@@ -1,4 +1,4 @@
-import collections, functools, numpy, openravepy, types, time, logging, termcolor
+import collections, functools, inspect, numpy, openravepy, types, time, logging, termcolor
 import herbpy, prrave.rave
 
 class ColoredFormatter(logging.Formatter):
@@ -48,7 +48,11 @@ def CreateMethodListDecorator():
         @classmethod
         def Bind(cls, instance):
             for method in cls.methods:
-                bound_method = types.MethodType(method, instance, type(instance))
+                if inspect.isfunction(method):
+                    bound_method = types.MethodType(method, instance, type(instance))
+                else:
+                    print method
+                    bound_method = method
                 setattr(instance, method.__name__, bound_method)
 
     return MethodListDecorator
