@@ -58,7 +58,7 @@ class ServoSimulator:
                         q_min, q_max = self.manip.parent.GetActiveDOFLimits()
 
                     if ((q_min <= q).all() and (q <= q_max).all()):
-                        self.manip.SetArmDOFValues(q)
+                        self.manip.SetDOFValues(q)
                     else:
                         self.running = False 
                         herbpy.logger.warn('Servo motion hit a joint limit.')

@@ -11,7 +11,7 @@ def SetStiffness(manipulator, stiffness):
     Set the WAM's stiffness. This enables or disables gravity compensation.
     @param stiffness value between 0.0 and 1.0
     """
-    if not manipulator.arm_simulated:
+    if not manipulator.simulated:
         manipulator.controller.SendCommand('SetStiffness {0:f}'.format(stiffness))
 
 @WamMethod
@@ -25,7 +25,7 @@ def Servo(manipulator, velocities):
         raise ValueError('Incorrect number of joint velocities. Expected {0:d}; got {0:d}.'.format(
                          num_dof, len(velocities)))
 
-    if not manipulator.arm_simulated:
+    if not manipulator.simulated:
         manipulator.controller.SendCommand('Servo ' + ' '.join([ str(qdot) for qdot in velocities ]))
     else:
         manipulator.controller.Reset(0)
@@ -83,7 +83,7 @@ def SetVelocityLimits(manipulator, velocity_limits, min_accel_time):
         manipulator.parent.SetDOFAccelerationLimits(or_accel_limits)
 
     # Update the OWD limits.
-    if not manipulator.arm_simulated:
+    if not manipulator.simulated:
         args  = [ 'SetSpeed' ]
         args += [ str(min_accel_time) ]
         args += [ str(velocity) for velocity in velocity_limits ]
@@ -97,7 +97,7 @@ def GetTrajectoryStatus(manipulator):
     Gets the status of the current (or previous) trajectory executed by the
     controller.
     '''
-    if not manipulator.arm_simulated:
+    if not manipulator.simulated:
         return manipulator.controller.SendCommand('GetStatus')
     else:
         if manipulator.controller.IsDone():
@@ -110,7 +110,7 @@ def ClearTrajectoryStatus(manipulator):
     '''
     Clears the current trajectory execution status.
     '''
-    if not manipulator.arm_simulated:
+    if not manipulator.simulated:
         manipulator.controller.SendCommand('ClearStatus')
 
 @WamMethod
