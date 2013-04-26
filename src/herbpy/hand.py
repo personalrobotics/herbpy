@@ -1,3 +1,4 @@
+import time
 import herbpy, numpy, openravepy, util
 
 class BarrettHand(openravepy.Robot.Link):
@@ -98,4 +99,4 @@ class BarrettHand(openravepy.Robot.Link):
         """
         if not hand.ft_simulated:
             hand.ft_sensor.SendCommand('Tare')
-            sleep(2)
+            time.sleep(2)
