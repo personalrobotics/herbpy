@@ -1,14 +1,19 @@
-class TrajectoryAborted(Exception):
+class HerbPyException(Exception):
+    """
+    Generic HerbPy exception.
+    """
+
+class TrajectoryAborted(HerbPyException):
     """
     Trajectory was aborted.
     """
 
-class TrajectoryStalled(Exception):
+class TrajectoryStalled(HerbPyException):
     """
     Trajectory stalled.
     """
 
-class SynchronizationException(Exception):
+class SynchronizationException(HerbPyException):
     """
     Controller synchronization failed.
     """

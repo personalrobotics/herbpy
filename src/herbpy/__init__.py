@@ -1,10 +1,9 @@
 import roslib; roslib.load_manifest('herbpy')
-import dependency_manager
+import dependency_manager; dependency_manager.export_optional('herbpy')
 import rospkg, rospy
 import atexit, functools, logging, numpy, signal, sys, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
 import dependency_manager, planner, hand, herb, head, wam, yaml
-
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
@@ -21,24 +20,26 @@ BOUND_TYPES = [ openravepy.Robot, openravepy.Robot.Manipulator, openravepy.Robot
 
 rp = rospkg.RosPack()
 herbpy_package_path = rp.get_path(NODE_NAME)
-
-def initialize_logging():
-    logger = logging.getLogger('herbpy')
-    logger.propagate = False
-    logger.setLevel(logging.INFO)
-    base_formatter = logging.Formatter('[%(name)s:%(filename)s:%(lineno)d]:%(funcName)s: %(levelname)s - %(message)s')
-    color_formatter = util.ColoredFormatter(base_formatter)
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.INFO)
-    handler.setFormatter(color_formatter)
-    logger.addHandler(handler)
-    return logger
-
-logger = initialize_logging()
-dependency_manager.export_optional('herbpy')
+logger = logging.getLogger()
 instances = dict()
 
-####
+def initialize_logging():
+    base_formatter = logging.Formatter('[%(levelname)s] [%(name)s:%(filename)s:%(lineno)d]:%(funcName)s: %(message)s')
+    color_formatter = util.ColoredFormatter(base_formatter)
+
+    # Remove all of the existing handlers.
+    base_logger = logging.getLogger()
+    for handler in base_logger.handlers:
+        base_logger.removeHandler(handler)
+
+    # Add the custom handler.
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(color_formatter)
+    base_logger.addHandler(handler)
+    base_logger.setLevel(logging.INFO)
+    return base_logger
+
 def intercept(self, name):
     # Return the canonical reference stored in the object.
     try:
@@ -282,11 +283,13 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     @param moped_sim simulate MOPED
     @param talker_sim simulate talker
     """
+    robot.head = robot.GetManipulator('head_wam')
     robot.left_arm = robot.GetManipulator('left_wam')
     robot.right_arm = robot.GetManipulator('right_wam')
-    robot.left_arm.hand = robot.left_arm.GetEndEffector()
-    robot.right_arm.hand = robot.right_arm.GetEndEffector()
-    robot.head = robot.GetManipulator('head_wam')
+    robot.left_hand = robot.left_arm.GetEndEffector()
+    robot.left_arm.hand = robot.left_hand
+    robot.right_hand = robot.right_arm.GetEndEffector()
+    robot.right_arm.hand = robot.right_hand
     robot.manipulators = [ robot.left_arm, robot.right_arm, robot.head ]
 
     # TODO: Where should I put this?
@@ -461,6 +464,8 @@ def initialize(env_path=None,
     @param **kw_args named parameters for initialize_herb
     @return environment,robot
     """
+    initialize_logging()
+
     env = openravepy.Environment()
     if env_path is not None:
         env.Load(env_path)
