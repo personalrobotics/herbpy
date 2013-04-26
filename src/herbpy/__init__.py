@@ -491,8 +491,17 @@ def initialize(env_path=None,
     signal.signal(signal.SIGINT, RaiseKeyboardInterrupt)
 
     def HandleExit():
+        # Manually stop the viewer thread. This is necessary for OpenRAVE to
+        # exit cleanly.
+        viewer = env.GetViewer()
+        if viewer is not None:
+            viewer.quitmainloop()
+
+        # Destroy the OpenRAVE environment.
         env.Destroy()
         openravepy.RaveDestroy()
+
+        # Shutdown the ROS node.
         rospy.signal_shutdown('herbpy is shutting down')
         sys.exit(0)
     atexit.register(HandleExit)
