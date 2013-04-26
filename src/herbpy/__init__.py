@@ -217,6 +217,7 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
             raise Exception('Creating the left force/torque sensor failed.')
 
         env.Add(robot.left_arm.hand.ft_sensor, True)
+        deprecate(robot.left_arm, 'ft_sensor', robot.left_arm.hand.ft_sensor, 'Use hand.ft_sensor')
         
     if not left_hand_sim:
         args = 'HandstateSensor {0:s} {1:s}'.format(NODE_NAME, LEFT_HAND_NAMESPACE)
@@ -226,6 +227,7 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
             raise Exception('Creating the left handstate sensor failed.')
 
         env.Add(robot.left_arm.hand.handstate_sensor, True)
+        deprecate(robot.left_arm, 'handstate_sensor', robot.left_arm.hand.handstate_sensor, 'Use hand.handstate_sensor')
 
     if not right_ft_sim:
         args = 'BarrettFTSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_ARM_NAMESPACE)
@@ -235,6 +237,7 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
             raise Exception('Creating the right force/torque sensor failed.')
 
         env.Add(robot.right_arm.hand.ft_sensor, True)
+        deprecate(robot.right_arm, 'ft_sensor', robot.right_arm.hand.ft_sensor, 'Use hand.ft_sensor')
 
     if not right_hand_sim:
         args = 'HandstateSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_HAND_NAMESPACE)
@@ -244,6 +247,7 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
             raise Exception('Creating the right handstate sensor failed.')
 
         env.Add(robot.right_arm.hand.handstate_sensor, True)
+        deprecate(robot.right_arm, 'handstate_sensor', robot.right_arm.hand.handstate_sensor, 'Use hand.handstate_sensor')
 
     # MOPED.
     if not moped_sim:
@@ -260,11 +264,6 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
 
         if robot.talker_module is None:
             raise Exception('Creating the talker module failed.')
-
-    deprecate(robot.left_arm, 'ft_sensor', robot.left_arm.hand.ft_sensor, 'Use hand.ft_sensor')
-    deprecate(robot.right_arm, 'ft_sensor', robot.right_arm.hand.ft_sensor, 'Use hand.ft_sensor')
-    deprecate(robot.left_arm, 'handstate_sensor', robot.left_arm.hand.handstate_sensor, 'Use hand.handstate_sensor')
-    deprecate(robot.right_arm, 'handstate_sensor', robot.right_arm.hand.handstate_sensor, 'Use hand.handstate_sensor')
 
 def initialize_planners(robot):
     # Configure the planners. This order is specifically tuned for quickly
@@ -463,7 +462,7 @@ def initialize_saved_configs(robot, yaml_path=None):
         raise Exception( 'initialize_saved_configs: Caught exception while loading yaml file \'%s\': %s'%(yaml_path, str(e)) )
 
 def initialize(env_path=None,
-               robot_path='robots/herb2_padded.robot.xml',
+               robot_path='robots/herb2_padded_nosensors.robot.xml',
                attach_viewer=False, **kw_args):
     """
     Load an environment, HERB to it, and optionally create a viewer. This
