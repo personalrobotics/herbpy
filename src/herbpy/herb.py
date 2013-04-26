@@ -303,6 +303,7 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_a
     robot.GetController().SetPath(traj)
 
     # Wait for trajectory execution to finish.
+    start_time = time.time()
     while running_manipulators:
         # Check for a timeout.
         now = time.time()
