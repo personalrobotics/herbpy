@@ -56,6 +56,47 @@ def FollowHand(head, traj, manipulator):
         merged_config_spec.InsertJointValues(waypoint, head_path[i], robot, head_indices, 0)
         traj.Insert(i, waypoint, True)
 
+@HeadMethod
+def LookAt(head, target, **kw_args):
+    """
+    Look at a point in the world frame. This creates and, optionally executes,
+    a two-waypoint trajectory that starts at the current configuration and
+    moves to a goal configuration found through the neck's inverse kinematics.
+    @param target point in the world frame.
+    @param execute immediately execute the trajectory
+    @return trajectory head trajectory
+    """
+    dof_values = head.FindIK(target)
+    if dof_values is not None:
+        return robot.MoveHeadTo(dof_values, **kw_args)
+    else:
+        herbpy.logger.error('There is no IK solution available.')
+
+@HeadMethod
+def MoveHeadTo(robot, target_dof_values, execute=True, **kw_args):
+    # Update the controllers to get new joint values.
+    with robot.GetEnv():
+        robot.GetController().SimulationStep(0)
+        current_dof_values = robot.GetDOFValues(robot.head.GetArmIndices())
+
+    config_spec = robot.head.GetArmConfigurationSpecification()
+    traj = openravepy.RaveCreateTrajectory(robot.GetEnv(), '')
+    traj.Init(config_spec)
+    traj.Insert(0, current_dof_values, config_spec)
+    traj.Insert(1, target_dof_values, config_spec)
+
+    # Optionally exeucute the trajectory.
+    if execute:
+        return robot.ExecuteTrajectory(traj, **kw_args)
+    else:
+        return traj
+
+@HeadMethod
+def FindIK(robot, target):
+    ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
+    return robot.head.ik_database.manip.FindIKSolution(ik_params, 0)
+
+
 # PD gains
 kp = [8, 2]
 kd = 0

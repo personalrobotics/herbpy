@@ -6,28 +6,29 @@
     </description>
     <author>Michael Koval, Pras Velagapudi</author>
     <license>BSD</license>
-
     <depend package="rospy"/>
-    <!-- OpenRAVE -->
-    <depend package="openrave"/>
-    <depend package="openrave_exports"/>
-    <depend package="manipulation2"/>
-    <depend package="pr_ordata"/>
     <depend package="prrave"/>
-    <!-- hardware plugins -->
+    <depend package="openrave"/>
+    <depend package="manipulation2"/>
     <depend package="or_multi_controller"/>
-    <!-- These are now optional dependencies.
-    <depend package="or_ros_module"/>
-    <depend package="or_moped_sensorsystem"/>
-    <depend package="or_handstate_sensor"/>
-    <depend package="or_owd_controller"/>
-    <depend package="or_mac_trajectory"/>
-    <depend package="or_barrett_ft_sensor"/>
-    <depend package="or_handstate_sensor"/>
-    <depend package="or_segway_controller"/>
-    <depend package="or_talker_module"/>
-    -->
-    <!-- planner plugins -->
+    <!-- TODO: make these optional -->
     <depend package="cbirrt2"/>
     <depend package="orcdchomp"/>
+    <export>
+        <!-- planners -->
+        <openrave optional="cbirrt2"/>
+        <openrave optional="orcdchomp"/>
+        <!-- controllers -->
+        <openrave optional="or_owd_controller"/>
+        <openrave optional="or_segway_controller"/>
+        <!-- sensors -->
+        <openrave optional="or_handstate_sensor"/>
+        <openrave optional="or_moped_sensorsystem"/>
+        <openrave optional="or_handstate_sensor"/>
+        <openrave optional="or_barrett_ft_sensor"/>
+        <!-- utilities -->
+        <openrave optional="pr_ordata"/>
+        <openrave optional="or_talker_module"/>
+        <openrave optional="or_mac_trajectory"/>
+    </export>
 </package>

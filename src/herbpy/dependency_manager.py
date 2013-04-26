@@ -24,21 +24,20 @@ def append_to_env(variable, new_path, separator=':'):
 
     return paths 
 
-def export_paths(package_name):
-    pkg = rospkg.RosPack()
+def export_paths(pkg, package_name):
     try:
-        dependencies = pkg.get_depends(package_name)
+        packages = pkg.get_depends(package_name)
+        packages.append(package_name)
     except rospkg.ResourceNotFound:
         return False
 
     plugin_paths = list()
     data_paths = list()
-    for package in dependencies:
+    for package in packages:
         # Load the package manifest.
         try:
-            manifest = pkg.get_manifest(package_name)
+            manifest = pkg.get_manifest(package)
         except rospkg.ResourceNotFound:
-            herbpy.logger.warning('Dependency %s was not found.', package_name)
             return False
 
         # Process the OpenRAVE export tags. 
@@ -49,3 +48,22 @@ def export_paths(package_name):
             data_paths = append_to_env('OPENRAVE_DATA', data_path)
 
     return True
+
+def export_optional(package_name):
+    pkg = rospkg.RosPack()
+    manifest = pkg.get_manifest(package_name)
+
+    # Required dependencies.
+    if not export_paths(pkg, package_name):
+        raise Exception('Unable to load required dependencies.')
+
+    # Optional dependencies.
+    missing_packages = list()
+    for optional_package in manifest.get_export('openrave', 'optional'):
+        if not export_paths(pkg, optional_package):
+            missing_packages.append(optional_package)
+
+    if missing_packages:
+        missing_packages.sort()
+        herbpy.logger.warning('Missing optional dependencies: %s', ' '.join(missing_packages))
+    return missing_packages

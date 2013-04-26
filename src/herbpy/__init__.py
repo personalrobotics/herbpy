@@ -1,10 +1,10 @@
 import roslib; roslib.load_manifest('herbpy')
-import openrave_exports; openrave_exports.export()
+import dependency_manager
 import rospkg, rospy
 import atexit, functools, logging, numpy, signal, sys, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
 import dependency_manager, planner, hand, herb, head, wam, yaml
-import new
+
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
@@ -35,6 +35,7 @@ def initialize_logging():
     return logger
 
 logger = initialize_logging()
+dependency_manager.export_optional('herbpy')
 instances = dict()
 
 ####
@@ -55,7 +56,7 @@ def intercept(self, name):
 
     # Print a warning if the attribute is deprecated.
     try:
-        deprecated = object.__getattribute__(self, '_deprecated')
+        deprecated = object.__getattribute__(true_instance, '_deprecated')
         if name in deprecated:
             value, message = deprecated[name]
             if message is None:
@@ -77,7 +78,7 @@ for bound_type in BOUND_TYPES:
     bound_type.__getattribute__ = intercept
 ####
 
-def attach_controller(robot, name, controller_args, controller_pkg,
+def attach_controller(robot, name, controller_pkg, controller_args,
                       dof_indices, affine_dofs, simulation):
     """
     Attach a controller to some of HERB DOFs. If in simulation, the specified
@@ -91,12 +92,11 @@ def attach_controller(robot, name, controller_args, controller_pkg,
     """
     if simulation:
         controller_args = 'IdealController'
-    else:
-        dependency_manager.export_paths(controller_pkg)
 
     delegate_controller = openravepy.RaveCreateController(robot.GetEnv(), controller_args)
     if delegate_controller is None:
-        raise Exception('Creating the controller failed.')
+        raise Exception("Creating controller '%s' of type %s failed."
+                        % (name, controller_args.split()[0]))
 
     robot.multicontroller.attach(name, delegate_controller, dof_indices, affine_dofs)
     return delegate_controller
@@ -193,7 +193,6 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
     deprecate(robot.right_arm, 'hand_controller', robot.right_arm.hand.controller, 'Use hand.controller.')
 
     # Create the MacTrajectory retimer for OWD.
-    dependency_manager.export_paths('or_mac_trajectory')
     robot.mac_retimer = openravepy.RaveCreatePlanner(robot.GetEnv(), 'MacRetimer')
     if robot.mac_retimer is None:
         logger.warning('Unable to create MAC trajectory retimer.')
@@ -211,48 +210,43 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
     # TODO: Move this into the manipulator initialization function.
     # TODO: Why is SetName missing for sensors in the Python bindings?
     if not left_ft_sim:
-        dependency_manager.export_paths('or_barrett_ft_sensor')
         args = 'BarrettFTSensor {0:s} {1:s}'.format(NODE_NAME, LEFT_ARM_NAMESPACE)
-        robot.left_arm.ft_sensor = openravepy.RaveCreateSensor(env, args)
+        robot.left_arm.hand.ft_sensor = openravepy.RaveCreateSensor(env, args)
 
-        if robot.left_arm.ft_sensor is None:
+        if robot.left_arm.hand.ft_sensor is None:
             raise Exception('Creating the left force/torque sensor failed.')
 
         env.Add(robot.left_arm.hand.ft_sensor, True)
         
     if not left_hand_sim:
-        dependency_manager.export_paths('or_handstate_sensor')
         args = 'HandstateSensor {0:s} {1:s}'.format(NODE_NAME, LEFT_HAND_NAMESPACE)
-        robot.left_arm.handstate_sensor = openravepy.RaveCreateSensor(env, args)
+        robot.left_arm.hand.handstate_sensor = openravepy.RaveCreateSensor(env, args)
 
-        if robot.left_arm.handstate_sensor is None:
+        if robot.left_arm.hand.handstate_sensor is None:
             raise Exception('Creating the left handstate sensor failed.')
 
         env.Add(robot.left_arm.hand.handstate_sensor, True)
 
     if not right_ft_sim:
-        dependency_manager.export_paths('or_barrett_ft_sensor')
         args = 'BarrettFTSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_ARM_NAMESPACE)
-        robot.right_arm.ft_sensor = openravepy.RaveCreateSensor(env, args)
+        robot.right_arm.hand.ft_sensor = openravepy.RaveCreateSensor(env, args)
 
-        if robot.right_arm.ft_sensor is None:
+        if robot.right_arm.hand.ft_sensor is None:
             raise Exception('Creating the right force/torque sensor failed.')
 
         env.Add(robot.right_arm.hand.ft_sensor, True)
 
     if not right_hand_sim:
-        dependency_manager.export_paths('or_handstate_sensor')
         args = 'HandstateSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_HAND_NAMESPACE)
         robot.right_arm.hand.handstate_sensor = openravepy.RaveCreateSensor(env, args)
 
-        if robot.right_arm.handstate_sensor is None:
+        if robot.right_arm.hand.handstate_sensor is None:
             raise Exception('Creating the right handstate sensor failed.')
 
         env.Add(robot.right_arm.hand.handstate_sensor, True)
 
     # MOPED.
     if not moped_sim:
-        dependency_manager.export_paths('or_moped_sensorsystem')
         args = 'MOPEDSensorSystem {0:s} {1:s} {2:s}'.format(NODE_NAME, MOPED_NAMESPACE, OPENRAVE_FRAME_ID)
         robot.moped_sensorsystem = openravepy.RaveCreateSensorSystem(env, args)
 
@@ -261,12 +255,16 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
 
     # Talker.
     if not talker_sim:
-        dependency_manager.export_paths('or_talker_module')
         talker_args = 'TalkerModule {0:s} {1:s}'.format(NODE_NAME, TALKER_NAMESPACE)
         robot.talker_module = openravepy.RaveCreateModule(env, talker_args)
 
         if robot.talker_module is None:
             raise Exception('Creating the talker module failed.')
+
+    deprecate(robot.left_arm, 'ft_sensor', robot.left_arm.hand.ft_sensor, 'Use hand.ft_sensor')
+    deprecate(robot.right_arm, 'ft_sensor', robot.right_arm.hand.ft_sensor, 'Use hand.ft_sensor')
+    deprecate(robot.left_arm, 'handstate_sensor', robot.left_arm.hand.handstate_sensor, 'Use hand.handstate_sensor')
+    deprecate(robot.right_arm, 'handstate_sensor', robot.right_arm.hand.handstate_sensor, 'Use hand.handstate_sensor')
 
 def initialize_planners(robot):
     # Configure the planners. This order is specifically tuned for quickly
@@ -481,6 +479,8 @@ def initialize(env_path=None,
         env.Load(env_path)
 
     robot = env.ReadRobotXMLFile(robot_path)
+    if robot is None:
+        raise Exception('Unable to load robot from path %s' % robot_path)
     env.Add(robot)
 
     if attach_viewer:

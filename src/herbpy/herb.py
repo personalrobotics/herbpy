@@ -1,5 +1,6 @@
 import numpy, openravepy, rospy, time
 import herbpy, exceptions, planner, util
+from util import Deprecated
 
 HerbMethod = util.CreateMethodListDecorator()
 
@@ -20,46 +21,6 @@ def Say(robot, message):
             talk('say', message, 0, 0)
         except rospy.ServiceException, e:
             herbpy.logger.error('Error talking.')
-
-@HerbMethod
-def LookAt(robot, target, **kw_args):
-    """
-    Look at a point in the world frame. This creates and, optionally executes,
-    a two-waypoint trajectory that starts at the current configuration and
-    moves to a goal configuration found through the neck's inverse kinematics.
-    @param target point in the world frame.
-    @param execute immediately execute the trajectory
-    @return trajectory head trajectory
-    """
-    target_dof_values = robot.FindHeadDOFs(target)
-    if target_dof_values is not None:
-        return robot.MoveHeadTo(target_dof_values, **kw_args)
-    else:
-        return None
-
-@HerbMethod
-def MoveHeadTo(robot, target_dof_values, execute=True, **kw_args):
-    # Update the controllers to get new joint values.
-    with robot.GetEnv():
-        robot.GetController().SimulationStep(0)
-        current_dof_values = robot.GetDOFValues(robot.head.GetArmIndices())
-
-    config_spec = robot.head.GetArmConfigurationSpecification()
-    traj = openravepy.RaveCreateTrajectory(robot.GetEnv(), '')
-    traj.Init(config_spec)
-    traj.Insert(0, current_dof_values, config_spec)
-    traj.Insert(1, target_dof_values, config_spec)
-
-    # Optionally exeucute the trajectory.
-    if execute:
-        return robot.ExecuteTrajectory(traj, **kw_args)
-    else:
-        return traj
-
-@HerbMethod
-def FindHeadDOFs(robot, target):
-    ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
-    return robot.head.ik_database.manip.FindIKSolution(ik_params, 0)
 
 @HerbMethod
 def PlanGeneric(robot, command_name, args, execute=True, **kw_args):
@@ -497,3 +458,18 @@ def RotateSegway(robot, angle_rad, timeout=None):
 def StopSegway(robot):
     if not robot.segway_sim:
         robot.segway_controller.SendCommand("Stop")
+
+@HerbMethod
+@Deprecated('Use head.MoveHeadTo instead.')
+def MoveHeadTo(robot, target_values, execute=True, **kw_args):
+    return robot.head.MoveHeadTo(robot, target_values, execute, **kw_args)
+
+@HerbMethod
+@Deprecated('Use head.FindIK instad.')
+def FindHeadDOFs(robot, target):
+    return robot.head.FindIK(target)
+
+@HerbMethod
+@Deprecated('Use head.LookAt instead.')
+def LookAt(robot, target, **kw_args):
+    return robot.head.LookAt(robot, target, **kw_args)
