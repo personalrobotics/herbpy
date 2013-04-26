@@ -118,30 +118,16 @@ def initialize_manipulator(robot, manipulator, ik_type):
             logger.info('Generating IK database for {0:s}.'.format(manipulator.GetName()))
             manipulator.ik_database.autogenerate()
 
-    # Bind extra methods for the manipulator.
-    # TODO: Don't bind MoveHand for the head.
-    wam.WamMethod.Bind(manipulator)
-
     # Dynamically wrap all of the planning functions such that they ignore the
     # active DOFs and plan using this manipulator.
     for method in planner.PlanningMethod.methods:
         def WrapPlan(method):
             @functools.wraps(method)
             def plan_method(manipulator, *args, **kw_args):
-                execute = True
-                if 'execute' in kw_args:
-                    execute = kw_args['execute']
-                    del kw_args['execute']
-
-                with robot:
-                    robot.SetActiveManipulator(manipulator)
-                    robot.SetActiveDOFs(manipulator.GetArmIndices())
-                    traj = getattr(robot, method.__name__)(*args, execute=False, **kw_args)
-
-                if execute:
-                    return robot.ExecuteTrajectory(traj, **kw_args)
-                else:
-                    return traj
+                p = openravepy.KinBody.SaveParameters
+                with manipulator.GetRobot().CreateRobotStateSaver(p.ActiveDOF | p.ActiveManipulator):
+                    manipulator.SetActive()
+                    return getattr(robot, method.__name__)(*args, **kw_args)
 
             return plan_method
 
@@ -350,12 +336,6 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     robot.trajectory_module = prrave.rave.load_module(robot.GetEnv(), 'Trajectory', robot.GetName())
     manipulation2.trajectory.bind(robot.trajectory_module)
 
-    # Bind extra methods onto the OpenRAVE robot and manipulators.
-    herb.HerbMethod.Bind(robot)
-    head.HeadMethod.Bind(robot.head)
-    hand.HandMethod.Bind(robot.left_arm.hand)
-    hand.HandMethod.Bind(robot.right_arm.hand)
-
     # Dynamically bind the planners to the robot through the PlanGeneric wrapper.
     for method in planner.PlanningMethod.methods:
         # Wrapping this in a factory function is necessary to create a new
@@ -364,11 +344,12 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
         def WrapPlan(method):
             @functools.wraps(method)
             def plan_method(robot, *args, **kw_args):
-                return herb.PlanGeneric(robot, method.__name__, args, **kw_args)
+                logger.info('PlanGenericWrapper: %s, %s, %s', method.__name__, args, kw_args)
+                return robot.PlanGeneric(method.__name__, *args, **kw_args)
 
             return plan_method
 
-        bound_method = types.MethodType(WrapPlan(method), robot, type(robot))
+        bound_method = types.MethodType(WrapPlan(method), robot, herb.Herb)
         setattr(robot, method.__name__, bound_method)
 
     # Bind extra methods to the manipulators.
@@ -426,6 +407,13 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     instances[robot.right_arm] = robot.right_arm
     instances[robot.left_arm.hand] = robot.left_arm.hand
     instances[robot.right_arm.hand] = robot.right_arm.hand
+
+    robot.__class__ = herb.Herb
+    robot.head.__class__ = head.Pantilt
+    robot.left_arm.__class__ = wam.WAM
+    robot.right_arm.__class__ = wam.WAM
+    robot.left_arm.hand.__class__ = hand.BarrettHand
+    robot.right_arm.hand.__class__ = hand.BarrettHand
     
 def initialize_saved_configs(robot, yaml_path=None):
     if yaml_path is None:
