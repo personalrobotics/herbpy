@@ -283,44 +283,42 @@ def ExecuteTrajectory(robot, traj, timeout=None, blend=True, retime=True, **kw_a
 
     # Optionally blend and retime the trajectory before execution. Retiming
     # creates a MacTrajectory that can be directly executed by OWD.
-    with robot.GetEnv():
-        with robot:
-            robot.SetActiveDOFs(active_indices)
-            if blend:
-                traj = robot.BlendTrajectory(traj)
-            if retime:
-                traj = robot.RetimeTrajectory(traj, synchronize=needs_synchronization, **kw_args)
+    with robot:
+        robot.SetActiveDOFs(active_indices)
+        if blend:
+            traj = robot.BlendTrajectory(traj)
+        if retime:
+            traj = robot.RetimeTrajectory(traj, synchronize=needs_synchronization, **kw_args)
 
-        # Reset old trajectory execution flags
-        for manipulator in active_manipulators:
-            manipulator.ClearTrajectoryStatus()
+    # Synchronization implicitly executes on all manipulators.
+    if needs_synchronization:
+        running_manipulators = set(robot.manipulators)
+    else:
+        running_manipulators = set(active_manipulators)
 
-    # Wait for the controller to finish execution.
-    with util.RenderTrajectory(robot, traj):
-        with util.Timer("Trajectory"):
-            robot.GetController().SetPath(traj)
+    # Reset old trajectory execution flags
+    for manipulator in active_manipulators:
+        manipulator.ClearTrajectoryStatus()
 
-            # synchronized implicitely execute on all manipulators
-            if needs_synchronization:
-                running_manipulators = set(robot.manipulators)
-            else:
-                running_manipulators = set(active_manipulators)
+    robot.GetController().SetPath(traj)
 
-            start_time = time.time()
-            while running_manipulators:
-                now = time.time()
-                if timeout is not None and now - start_time > timeout:
-                    break
-                done_manipulators = set()
-                for manipulator in running_manipulators:
-                    if manipulator.controller.IsDone():
-                        done_manipulators.add(manipulator)
+    # Wait for trajectory execution to finish.
+    while running_manipulators:
+        # Check for a timeout.
+        now = time.time()
+        if timeout is not None and now - start_time > timeout:
+            break
 
-                running_manipulators -= done_manipulators
-                time.sleep(0.05)
+        # Check if the trajectory is done.
+        done_manipulators = set()
+        for manipulator in running_manipulators:
+            if manipulator.controller.IsDone():
+                done_manipulators.add(manipulator)
+
+        running_manipulators -= done_manipulators
+        time.sleep(0.05)
         
-    # Request the controller status from
-    # each manipulator's controller.
+    # Request the controller status from each manipulator.
     with robot.GetEnv():
         for manipulator in active_manipulators:
             status = manipulator.GetTrajectoryStatus()
@@ -455,17 +453,18 @@ def DriveAlongVector(robot, direction, goal_pos):
 @HerbMethod
 def DriveSegway(robot, meters, timeout=None):
     with util.Timer("Drive segway"):
-        if robot.segway_sim:
-            with robot.GetEnv():
-                current_pose = robot.GetTransform().copy()
-                current_pose[0:3,3] = current_pose[0:3,3] + meters*current_pose[0:3,0]
-                robot.SetTransform(current_pose)
-        else:
+        if not robot.segway_sim:
             robot.segway_controller.SendCommand("Drive " + str(meters))
             if timeout == None:
                 robot.WaitForController(0)
             elif timeout > 0:
                 robot.WaitForController(timeout)
+        # Create and execute base trajectory in simulation.
+        else:
+            with robot.GetEnv():
+                current_pose = robot.GetTransform().copy()
+                current_pose[0:3,3] = current_pose[0:3,3] + meters*current_pose[0:3,0]
+                robot.SetTransform(current_pose)
 
 @HerbMethod
 def DriveSegwayToNamedPosition(robot, named_position):
