@@ -116,8 +116,9 @@ class WAM(openravepy.Robot.Manipulator):
     def GetDOFValues(manipulator):
         return manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
 
-    def SetDOFValues(manipulator, dof_values):
-        manipulator.parent.SetDOFValues(dof_values, manipulator.GetArmIndices())
+    def SetDOFValues(manipulator, dof_values,
+                     limits_action=openravepy.KinBody.CheckLimitsAction.CheckLimits):
+        manipulator.parent.SetDOFValues(dof_values, manipulator.GetArmIndices(), limits_action)
 
     def MoveUntilTouch(manipulator, direction, distance, max_force=5, **kw_args):
         """

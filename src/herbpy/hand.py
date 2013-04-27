@@ -8,8 +8,9 @@ class BarrettHand(openravepy.Robot.Link):
     def GetDOFValues(hand):
         return hand.robot.GetDOFValues(hand.GetIndices())
 
-    def SetDOFValues(hand, dof_values):
-        hand.robot.SetDOFValues(dof_values, hand.GetIndices())
+    def SetDOFValues(hand, dof_values,
+                     limits_action=openravepy.KinBody.CheckLimitsAction.CheckLimits):
+        hand.robot.SetDOFValues(dof_values, hand.GetIndices(), limits_action)
 
     def LookAt(hand, **kw_args):
         target = hand.GetTransform()[0:3, 3]
@@ -37,7 +38,7 @@ class BarrettHand(openravepy.Robot.Link):
         if timeout == None:
             hand.robot.WaitForController(0)
         elif timeout > 0:
-            hand.robot.WaitForController(timeout)
+            hand.robot.WaitForController(timeout) 
 
     def OpenHand(hand, spread=None, timeout=None):
         """
