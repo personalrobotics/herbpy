@@ -1,5 +1,4 @@
-import numpy, openravepy, threading, time
-import herbpy
+import logging, numpy, openravepy, threading, time
 
 class ServoSimulator:
     def __init__(self, manip, rate, watchdog_timeout):
@@ -45,7 +44,7 @@ class ServoSimulator:
                 if running and now - self.watchdog > self.watchdog_timeout:
                     self.q_dot = numpy.zeros(self.num_dofs)
                     self.running = False
-                    herbpy.logger.warn('Servo motion timed out in %.3f seconds.', now - self.watchdog)
+                    logging.warning('Servo motion timed out in %.3f seconds.', now - self.watchdog)
 
             if running:
                 with self.manip.parent.GetEnv():
@@ -61,6 +60,6 @@ class ServoSimulator:
                         self.manip.SetDOFValues(q)
                     else:
                         self.running = False 
-                        herbpy.logger.warn('Servo motion hit a joint limit.')
+                        logging.warning('Servo motion hit a joint limit.')
 
             time.sleep(self.period)

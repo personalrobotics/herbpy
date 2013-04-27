@@ -1,5 +1,5 @@
-import math, numpy, openravepy, threading, time
-import herbpy, exceptions, util
+import logging, math, numpy, openravepy, threading, time
+import exceptions, util
 from planner import PlanningError 
 from util import Deprecated
 
@@ -61,8 +61,8 @@ class WAM(openravepy.Robot.Manipulator):
         velocity_limits = numpy.array(velocity_limits, dtype='float')
         num_dofs = len(manipulator.GetArmIndices())
         if len(velocity_limits) != num_dofs:
-            herbpy.logging.error('Incorrect number of velocity limits; expected {0:d}, got {1:d}.'.format(
-                                 num_dofs, len(velocity_limits)))
+            logging.error('Incorrect number of velocity limits; expected {0:d}, got {1:d}.'.format(
+                          num_dofs, len(velocity_limits)))
             return False
 
         # Update the OpenRAVE limits.

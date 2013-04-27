@@ -24,9 +24,9 @@ class Deprecated(object):
         @functools.wraps(f)
         def wrapped_function(*args, **kw_args):
             if self._message is None:
-                herbpy.logger.warning('%s is deprecated.', f.__name__)
+                logging.warning('%s is deprecated.', f.__name__)
             else:
-                herbpy.logger.warning('%s is deprecated: %s', f.__name__, self._message)
+                logging.warning('%s is deprecated: %s', f.__name__, self._message)
 
             return f(*args, **kw_args)
         return wrapped_function
@@ -112,13 +112,13 @@ class Timer:
         self.start = 0 
 
     def __enter__(self):
-        herbpy.logger.info('%s started execution.', self.message)
+        logging.info('%s started execution.', self.message)
         self.start = time.time()
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.end = time.time()
         self.duration = self.end - self.start
-        herbpy.logger.info('%s executed in %.5f seconds.', self.message, self.duration)
+        logging.info('%s executed in %.5f seconds.', self.message, self.duration)
 
 class RenderTrajectory:
     """

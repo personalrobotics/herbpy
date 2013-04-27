@@ -1,5 +1,5 @@
-import time
-import herbpy, numpy, openravepy, util
+import numpy, time, openravepy
+import util
 
 class BarrettHand(openravepy.Robot.Link):
     def GetIndices(hand):
