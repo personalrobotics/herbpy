@@ -13,7 +13,7 @@ class CBiRRTPlanner(planner.Planner):
     def GetName(self):
         return 'cbirrt'
 
-    def Plan(self, smoothingitrs=None, timelimit=None, allowlimadj=0, extra_args=None, **kw_args):
+    def Plan(self, smoothingitrs=None, timelimit=None, allowlimadj=0, start_config=None, extra_args=None, **kw_args):
         args = [ 'RunCBiRRT' ]
         if extra_args is not None:
             args += extra_args
@@ -23,6 +23,9 @@ class CBiRRTPlanner(planner.Planner):
             args += [ 'timelimit', str(timelimit) ]
         if allowlimadj is not None:
             args += [ 'allowlimadj', str(int(allowlimadj)) ]
+        if start_config is not None:
+            args += [ 'jointstarts', str(len(start_config)), ' '.join([ str(x) for x in start_config ]) ]
+
 
         # FIXME: Why can't we write to anything other than cmovetraj.txt or
         # /tmp/cmovetraj.txt with CBiRRT?
@@ -51,6 +54,7 @@ class CBiRRTPlanner(planner.Planner):
 
         extra_args = list()
         extra_args += [ 'jointgoals',  str(len(goal_array)), ' '.join([ str(x) for x in goal_array ]) ]
+
         return self.Plan(extra_args=extra_args, **kw_args)
 
     def PlanToEndEffectorPose(self, goal_pose, psample=0.1, **kw_args):
