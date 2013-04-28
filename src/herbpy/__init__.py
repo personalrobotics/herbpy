@@ -14,7 +14,7 @@ LEFT_HAND_NAMESPACE = '/left/bhd'
 RIGHT_HAND_NAMESPACE = '/right/bhd'
 MOPED_NAMESPACE = '/moped'
 TALKER_NAMESPACE = '/talker'
-SERVO_SIM_RATE = 30.0
+SERVO_SIM_RATE = 20.0
 SERVO_TIMEOUT = 0.25
 BOUND_TYPES = [ openravepy.Robot, openravepy.Robot.Manipulator, openravepy.Robot.Link ]
 
