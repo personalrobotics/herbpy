@@ -1,4 +1,4 @@
-import numpy, openravepy, rospy, time
+import logging, numpy, openravepy, rospy, time
 import herbpy, exceptions, planner, util
 from util import Deprecated
 
@@ -21,8 +21,6 @@ class Herb(openravepy.Robot):
                 herbpy.logger.error('Error talking.')
 
     def PlanGeneric(robot, command_name, *args, **kw_args):
-        herbpy.logger.info('PlanGeneric %s %s %s %s', robot, command_name, args, kw_args)
-
         traj = None
         with robot.GetEnv():
             # Update the controllers to get new joint values.
@@ -33,8 +31,6 @@ class Herb(openravepy.Robot):
                 for delegate_planner in robot.planners:
                     with util.Timer('Planning with %s' % delegate_planner.GetName()):
                         try:
-                            herbpy.logger.info('planning_command = %s', getattr(delegate_planner, command_name))
-                            herbpy.logger.info('planning_arguments = %s %s', args, kw_args)
                             traj = getattr(delegate_planner, command_name)(*args, **kw_args)
                             break
                         except planner.UnsupportedPlanningError, e:
@@ -59,7 +55,6 @@ class Herb(openravepy.Robot):
             return traj
 
     def PlanToNamedConfiguration(robot, name, execute=True, **kw_args):
-        herbpy.logger.info('PlanToNamedConfiguration: %s, %s, %d, %s', robot, name, execute, kw_args)
         config_inds = numpy.array(robot.configs[name]['dofs'])
         config_vals = numpy.array(robot.configs[name]['vals'])
 
@@ -68,7 +63,7 @@ class Herb(openravepy.Robot):
             traj = robot.PlanToConfiguration(config_vals, execute=False, **kw_args)
 
         if execute:
-            return robot.ExecuteTrajectory(traj)
+            return robot.ExecuteTrajectory(traj, **kw_args)
         else:
             return traj
 
@@ -257,30 +252,18 @@ class Herb(openravepy.Robot):
         robot.GetController().SetPath(traj)
 
         # Wait for trajectory execution to finish.
-        start_time = time.time()
-        while running_manipulators:
-            # Check for a timeout.
-            now = time.time()
-            if timeout is not None and now - start_time > timeout:
-                break
-
-            # Check if the trajectory is done.
-            done_manipulators = set()
-            for manipulator in running_manipulators:
-                if manipulator.controller.IsDone():
-                    done_manipulators.add(manipulator)
-
-            running_manipulators -= done_manipulators
-            time.sleep(0.05)
+        running_controllers = [ manipulator.controller for manipulator in running_manipulators ]
+        is_done = util.WaitForControllers(running_controllers, timeout=timeout)
             
         # Request the controller status from each manipulator.
-        with robot.GetEnv():
-            for manipulator in active_manipulators:
-                status = manipulator.GetTrajectoryStatus()
-                if status == 'aborted':
-                    raise exceptions.TrajectoryAborted('Trajectory aborted for %s' % manipulator.GetName())
-                elif status == 'stalled':
-                    raise exceptions.TrajectoryStalled('Trajectory stalled for %s' % manipulator.GetName())
+        if is_done:
+            with robot.GetEnv():
+                for manipulator in active_manipulators:
+                    status = manipulator.GetTrajectoryStatus()
+                    if status == 'aborted':
+                        raise exceptions.TrajectoryAborted('Trajectory aborted for %s' % manipulator.GetName())
+                    elif status == 'stalled':
+                        raise exceptions.TrajectoryStalled('Trajectory stalled for %s' % manipulator.GetName())
 
         return traj
 

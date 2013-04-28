@@ -19,5 +19,5 @@ if __name__ == "__main__":
         env, robot = herbpy.initialize_sim(attach_viewer=viewer)
         herbpy.logger.info('Initialized in simulation mode.')
     else:
-        env, robot = herbpy.initialize_real(attach_viewer=viewer)
+        env, robot = herbpy.initialize_real(attach_viewer=viewer, moped_sim=True)
         herbpy.logger.info('Initialized connection with HERB.')

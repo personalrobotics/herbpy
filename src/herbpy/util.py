@@ -106,6 +106,28 @@ def GetTrajectoryManipulators(robot, traj):
 
     return active_manipulators
 
+def WaitForControllers(controllers, timeout=None, rate=20):
+    running_controllers = set(controllers)
+    start_time = time.time()
+    timestep = 1.0 / rate
+
+    while running_controllers:
+        # Check for a timeout.
+        now_time = time.time()
+        if timeout is not None and now_time - start_time > timeout:
+            return False
+
+        # Check if the trajectory is done.
+        done_controllers = set()
+        for controller in running_controllers:
+            if controller.IsDone():
+                done_controllers.add(controller)
+
+        running_controllers -= done_controllers
+        time.sleep(timestep)
+
+    return True
+
 class Timer:
     def __init__(self, message):
         self.message = message

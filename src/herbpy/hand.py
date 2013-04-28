@@ -1,4 +1,4 @@
-import numpy, time, openravepy
+import logging, numpy, time, openravepy
 import util
 
 class BarrettHand(openravepy.Robot.Link):
@@ -35,10 +35,7 @@ class BarrettHand(openravepy.Robot.Link):
         if spread is not None: preshape[3] = spread
 
         hand.controller.SetDesired(preshape)
-        if timeout == None:
-            hand.robot.WaitForController(0)
-        elif timeout > 0:
-            hand.robot.WaitForController(timeout) 
+        util.WaitForControllers([ hand.controller ], timeout=timeout)
 
     def OpenHand(hand, spread=None, timeout=None):
         """
