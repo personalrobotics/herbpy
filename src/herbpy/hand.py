@@ -43,8 +43,18 @@ class BarrettHand(openravepy.Robot.Link):
         @param spread hand spread
         @param timeout blocking execution timeout
         """
-        # TODO: Load this angle from somewhere.
-        hand.MoveHand(f1=0.0, f2=0.0, f3=0.0, spread=spread, timeout=timeout)
+        if hand.simulated:
+            robot = hand.GetParent()
+            p = openravepy.KinBody.SaveParameters
+
+            with robot.CreateRobotStateSaver(p.ActiveDOF | p.ActiveManipulator):
+                hand.manipulator.SetActive()
+                robot.task_manipulation.ReleaseFingers()
+
+            util.WaitForControllers([ hand.controller ], timeout=timeout)
+        else:
+            # TODO: Load this angle from somewhere.
+            hand.MoveHand(f1=0.0, f2=0.0, f3=0.0, spread=spread, timeout=timeout)
 
     def CloseHand(hand, spread=None, timeout=None):
         """
@@ -52,8 +62,18 @@ class BarrettHand(openravepy.Robot.Link):
         @param spread hand spread
         @param timeout blocking execution timeout
         """
-        # TODO: Load this angle from somewhere.
-        hand.MoveHand(f1=3.2, f2=3.2, f3=3.2, spread=spread, timeout=timeout)
+        if hand.simulated:
+            robot = hand.GetParent()
+            p = openravepy.KinBody.SaveParameters
+
+            with robot.CreateRobotStateSaver(p.ActiveDOF | p.ActiveManipulator):
+                hand.manipulator.SetActive()
+                robot.task_manipulation.CloseFingers()
+
+            util.WaitForControllers([ hand.controller ], timeout=timeout)
+        else:
+            # TODO: Load this angle from somewhere.
+            hand.MoveHand(f1=3.2, f2=3.2, f3=3.2, spread=spread, timeout=timeout)
 
     def GetStrain(hand):
         """

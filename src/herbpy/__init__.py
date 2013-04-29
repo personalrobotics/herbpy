@@ -179,6 +179,10 @@ def initialize_controllers(robot, left_arm_sim, right_arm_sim, left_hand_sim, ri
     deprecate(robot.left_arm, 'hand_controller', robot.left_arm.hand.controller, 'Use hand.controller.')
     deprecate(robot.right_arm, 'hand_controller', robot.right_arm.hand.controller, 'Use hand.controller.')
 
+    # Create a TaskManipulation module for simulating grasps.
+    if left_hand_sim or right_hand_sim:
+        robot.task_manipulation = openravepy.interfaces.TaskManipulation(robot)
+
     # Create the MacTrajectory retimer for OWD.
     robot.mac_retimer = openravepy.RaveCreatePlanner(robot.GetEnv(), 'MacRetimer')
     if robot.mac_retimer is None:
@@ -291,6 +295,10 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     robot.right_hand = robot.right_arm.GetEndEffector()
     robot.right_arm.hand = robot.right_hand
     robot.manipulators = [ robot.left_arm, robot.right_arm, robot.head ]
+
+    # Parent references.
+    robot.left_hand.manipulator = robot.left_arm
+    robot.right_hand.manipulator = robot.right_arm
 
     # TODO: Where should I put this?
     robot.left_arm.hand.robot = robot
