@@ -492,6 +492,10 @@ def initialize(env_path=None,
     signal.signal(signal.SIGINT, RaiseKeyboardInterrupt)
 
     def HandleExit():
+        # Remove the reference to moped_sensorsystem so its thread gets cleaned up.
+        if not robot.moped_sim:
+            del robot.moped_sensorsystem
+
         # Manually stop the viewer thread. This is necessary for OpenRAVE to
         # exit cleanly.
         viewer = env.GetViewer()
