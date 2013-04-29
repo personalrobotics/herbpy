@@ -34,8 +34,11 @@ class BarrettHand(openravepy.Robot.Link):
         if f3     is not None: preshape[2] = f3
         if spread is not None: preshape[3] = spread
 
-        hand.controller.SetDesired(preshape)
-        util.WaitForControllers([ hand.controller ], timeout=timeout)
+        if not hand.simulated:
+            hand.controller.SetDesired(preshape)
+            util.WaitForControllers([ hand.controller ], timeout=timeout) 
+        else:
+            hand.SetDOFValues(preshape)
 
     def OpenHand(hand, spread=None, timeout=None):
         """
