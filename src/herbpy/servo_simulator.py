@@ -1,5 +1,7 @@
 import logging, numpy, openravepy, threading, time
 
+logger = logging.getLogger('herbpy')
+
 class ServoSimulator:
     def __init__(self, manip, rate, watchdog_timeout):
         self.manip = manip
@@ -24,7 +26,7 @@ class ServoSimulator:
         if not (numpy.abs(q_dot) <= q_dot_limits).all():
             raise openravepy.openrave_exception('Desired velocity exceeds limits.')
 
-        logging.debug('DD Acquiring')
+        logger.debug('DD Acquiring')
         with self.mutex:
             if (q_dot != numpy.zeros(self.num_dofs)).any():
                 self.q_dot = numpy.array(q_dot, dtype='float')
@@ -32,11 +34,11 @@ class ServoSimulator:
                 self.running = True
             else:
                 self.running = False
-        logging.debug('DD Releasing')
+        logger.debug('DD Releasing')
 
     def Step(self):
         while True:
-            logging.debug('CC Acquiring')
+            logger.debug('CC Acquiring')
             with self.mutex:
                 # Copy the velocity for thread safety.
                 q_dot = self.q_dot.copy()
@@ -47,27 +49,27 @@ class ServoSimulator:
                 if running and now - self.watchdog > self.watchdog_timeout:
                     self.q_dot = numpy.zeros(self.num_dofs)
                     self.running = False
-                    logging.warning('Servo motion timed out in %.3f seconds.', now - self.watchdog)
-            logging.debug('CC Releasing')
+                    logger.warning('Servo motion timed out in %.3f seconds.', now - self.watchdog)
+            logger.debug('CC Releasing')
 
             if running:
-                logging.debug('AA Acquiring')
+                logger.debug('AA Acquiring')
                 with self.manip.parent.GetEnv():
                     q  = self.manip.GetDOFValues()
                     q += self.period * q_dot
 
                     # Check joint limits.
-                    logging.debug('BB Acquiring')
+                    logger.debug('BB Acquiring')
                     with self.manip.parent.CreateRobotStateSaver():
                         self.manip.SetActive()
                         q_min, q_max = self.manip.parent.GetActiveDOFLimits()
-                    logging.debug('BB Releasing')
+                    logger.debug('BB Releasing')
 
                     if ((q_min <= q).all() and (q <= q_max).all()):
                         self.manip.SetDOFValues(q)
                     else:
                         self.running = False 
-                        logging.warning('Servo motion hit a joint limit.')
-                logging.debug('AA Releasing')
+                        logger.warning('Servo motion hit a joint limit.')
+                logger.debug('AA Releasing')
 
             time.sleep(self.period)

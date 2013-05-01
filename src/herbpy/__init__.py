@@ -4,6 +4,7 @@ import rospkg, rospy
 import atexit, functools, logging, numpy, signal, sys, types
 import openravepy, manipulation2.trajectory, prrave.rave, or_multi_controller
 import dependency_manager, planner, hand, herb, head, wam, yaml
+from util import Deprecated
 
 NODE_NAME = 'herbpy'
 OPENRAVE_FRAME_ID = '/openrave'
@@ -20,7 +21,7 @@ BOUND_TYPES = [ openravepy.Robot, openravepy.Robot.Manipulator, openravepy.Robot
 
 rp = rospkg.RosPack()
 herbpy_package_path = rp.get_path(NODE_NAME)
-logger = logging.getLogger()
+logger = logging.getLogger('herbpy')
 instances = dict()
 
 def initialize_logging():
@@ -462,7 +463,7 @@ def initialize_saved_configs(robot, yaml_path=None):
 
 def initialize(env_path=None,
                robot_path='robots/herb2_padded_nosensors.robot.xml',
-               attach_viewer=False, **kw_args):
+               attach_viewer=False, sim=True, **kw_args):
     """
     Load an environment, HERB to it, and optionally create a viewer. This
     accepts the same named parameters as initialize_herb.
@@ -474,15 +475,36 @@ def initialize(env_path=None,
     """
     initialize_logging()
 
+    # Parse the simulation flags.
+    sim_args = {
+        'left_arm_sim':   sim,
+        'right_arm_sim':  sim,
+        'left_hand_sim':  sim,
+        'right_hand_sim': sim,
+        'head_sim':       sim,
+        'segway_sim':     sim,
+        'left_ft_sim':    sim,
+        'right_ft_sim':   sim,
+        'moped_sim':      sim,
+        'talker_sim':     sim
+    }
+    sim_args.update(kw_args)
+
+    # Create the environment.
     env = openravepy.Environment()
     if env_path is not None:
-        env.Load(env_path)
+        if not env.Load(env_path):
+            raise Exception('Unable to load environment from path %s' % env_path)
 
+    # Load the robot.
     robot = env.ReadRobotXMLFile(robot_path)
     if robot is None:
         raise Exception('Unable to load robot from path %s' % robot_path)
-    env.Add(robot)
 
+    env.Add(robot)
+    initialize_herb(robot, **sim_args)
+
+    # Add a viewer.
     if attach_viewer:
         env.SetViewer('qtcoin')
 
@@ -491,6 +513,8 @@ def initialize(env_path=None,
         raise KeyboardInterrupt
     signal.signal(signal.SIGINT, RaiseKeyboardInterrupt)
 
+    # Cleanup on exit. This is a hack to prevent the Python instance from
+    # indefinitely hanging on exit.
     def HandleExit():
         # Remove the reference to moped_sensorsystem so its thread gets cleaned up.
         if not robot.moped_sim:
@@ -511,37 +535,22 @@ def initialize(env_path=None,
         sys.exit(0)
     atexit.register(HandleExit)
 
-    initialize_herb(robot, **kw_args)
     return env, robot 
 
-def initialize_sim(left_arm_sim=True, right_arm_sim=True,
-                   left_hand_sim=True, right_hand_sim=True,
-                   head_sim=True, segway_sim=True,
-                   left_ft_sim=True, right_ft_sim=True,
-                   moped_sim=True, talker_sim=True, **kw_args):
+@Deprecated('Use initialize(sim=True) instead.')
+def initialize_sim(**kw_args):
     """
     Initialize a simulated HERB. This is a convenience function that is simply
     a thin wrapper around initialize.
     @param **kw_args named parameters for initialize or initialize_herb
     """
-    return initialize(left_arm_sim=left_arm_sim, right_arm_sim=right_arm_sim,
-                      left_hand_sim=left_hand_sim, right_hand_sim=right_hand_sim,
-                      head_sim=head_sim, segway_sim=segway_sim,
-                      left_ft_sim=left_ft_sim, right_ft_sim=right_ft_sim,
-                      moped_sim=moped_sim, talker_sim=talker_sim, **kw_args)
+    return initialize(sim=True, **kw_args)
 
-def initialize_real(left_arm_sim=False, right_arm_sim=False,
-                    left_hand_sim=False, right_hand_sim=False,
-                    head_sim=False, segway_sim=False,
-                    left_ft_sim=False, right_ft_sim=False,
-                    moped_sim=False, talker_sim=False, **kw_args):
+@Deprecated('Use initialize(sim=False) instead.')
+def initialize_real(**kw_args):
     """
     Initialize the real HERB. This is a convenience function that is simply a
     thin wrapper around initialize.
     @param **kw_args named parameters for initialize or initialize_herb
     """
-    return initialize(left_arm_sim=left_arm_sim, right_arm_sim=right_arm_sim,
-                      left_hand_sim=left_hand_sim, right_hand_sim=right_hand_sim,
-                      head_sim=head_sim, segway_sim=segway_sim,
-                      left_ft_sim=left_ft_sim, right_ft_sim=right_ft_sim,
-                      moped_sim=moped_sim, talker_sim=talker_sim, **kw_args)
+    return initialize(sim=False, **kw_args)

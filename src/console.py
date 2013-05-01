@@ -15,9 +15,4 @@ if __name__ == "__main__":
     if debug:
         openravepy.RaveSetDebugLevel(openravepy.DebugLevel.Debug)
 
-    if simulated:
-        env, robot = herbpy.initialize_sim(attach_viewer=viewer)
-        herbpy.logger.info('Initialized in simulation mode.')
-    else:
-        env, robot = herbpy.initialize_real(attach_viewer=viewer)
-        herbpy.logger.info('Initialized connection with HERB.')
+    env, robot = herbpy.initialize(sim=simulated, attach_viewer=viewer)

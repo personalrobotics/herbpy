@@ -1,6 +1,8 @@
 import logging, numpy, math, openravepy, time
 import planner, exceptions, util, wam
 
+logger = logging.getLogger('herbpy')
+
 class Pantilt(wam.WAM):
     def FollowHand(head, traj, manipulator):
         robot = head.GetRobot()
@@ -66,7 +68,7 @@ class Pantilt(wam.WAM):
         if dof_values is not None:
             return head.MoveHeadTo(dof_values, **kw_args)
         else:
-            logging.error('There is no IK solution available.')
+            logger.error('There is no IK solution available.')
 
     def MoveHeadTo(head, target_dof_values, execute=True, **kw_args):
         # Update the controllers to get new joint values.

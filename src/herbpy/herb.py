@@ -2,6 +2,8 @@ import logging, numpy, openravepy, rospy, time
 import herbpy, exceptions, planner, util
 from util import Deprecated
 
+logger = logging.getLogger('herbpy')
+
 class Herb(openravepy.Robot):
     def Say(robot, message):
         """
@@ -12,13 +14,13 @@ class Herb(openravepy.Robot):
 
         if not robot.talker_simulated:
             # XXX: HerbPy should not make direct service calls.
-            herbpy.logger.info('Saying "%s".', message)
+            logger.info('Saying "%s".', message)
             rospy.wait_for_service('/talkerapplet')
             talk = rospy.ServiceProxy('/talkerapplet', AppletCommand)    
             try:
                 talk('say', message, 0, 0)
             except rospy.ServiceException, e:
-                herbpy.logger.error('Error talking.')
+                logger.error('Error talking.')
 
     def PlanGeneric(robot, command_name, *args, **kw_args):
         traj = None
@@ -34,15 +36,15 @@ class Herb(openravepy.Robot):
                             traj = getattr(delegate_planner, command_name)(*args, **kw_args)
                             break
                         except planner.UnsupportedPlanningError, e:
-                            herbpy.logger.debug('Unable to plan with {0:s}: {1:s}'.format(delegate_planner.GetName(), e))
+                            logger.debug('Unable to plan with {0:s}: {1:s}'.format(delegate_planner.GetName(), e))
                         except planner.PlanningError, e:
-                            herbpy.logger.warning('Planning with {0:s} failed: {1:s}'.format(delegate_planner.GetName(), e))
+                            logger.warning('Planning with {0:s} failed: {1:s}'.format(delegate_planner.GetName(), e))
                             # TODO: Log the scene and planner parameters to a file.
 
         if traj is None:
             raise planner.PlanningError('Planning failed with all planners.')
         else:
-            herbpy.logger.info('Planning succeeded with %s.', delegate_planner.GetName())
+            logger.info('Planning succeeded with %s.', delegate_planner.GetName())
 
         # Strip all inactive DOFs from the trajectory.
         config_spec = robot.GetActiveConfigurationSpecification()
@@ -87,7 +89,7 @@ class Herb(openravepy.Robot):
         # Fall back on the standard OpenRAVE retimer if MacTrajectory is not
         # available.
         if robot.mac_retimer is None:
-            herbpy.logger.warning('MacTrajectory is not available. Falling back to RetimeTrajectory.')
+            logger.warning('MacTrajectory is not available. Falling back to RetimeTrajectory.')
             openravepy.planningutils.RetimeTrajectory(traj)
             return traj
 
@@ -127,7 +129,7 @@ class Herb(openravepy.Robot):
 
         # Retime the newly-created MacTrajectory.
         params_str = ' '.join(params)
-        herbpy.logger.info('Created MacTrajectory with flags: %s', params_str)
+        logger.info('Created MacTrajectory with flags: %s', params_str)
         retimer_params = openravepy.Planner.PlannerParameters()
         retimer_params.SetExtraParameters(params_str)
         robot.mac_retimer.InitPlan(robot, retimer_params)
@@ -171,19 +173,19 @@ class Herb(openravepy.Robot):
 
         if stop_on_ft:
             if force_direction is None:
-                herbpy.logger.error('Force direction must be specified if stop_on_ft is true.')
+                logger.error('Force direction must be specified if stop_on_ft is true.')
                 return None
             elif force_magnitude is None:
-                herbpy.logger.error('Force magnitude must be specified if stop_on_ft is true.')
+                logger.error('Force magnitude must be specified if stop_on_ft is true.')
                 return None 
             elif torque is None:
-                herbpy.logger.error('Torque must be specified if stop_on_ft is true.')
+                logger.error('Torque must be specified if stop_on_ft is true.')
                 return None 
             elif len(force_direction) != 3:
-                herbpy.logger.error('Force direction must be a three-dimensional vector.')
+                logger.error('Force direction must be a three-dimensional vector.')
                 return None
             elif len(torque) != 3:
-                herbpy.logger.error('Torque must be a three-dimensional vector.')
+                logger.error('Torque must be a three-dimensional vector.')
                 return None
 
             flags += [ 'force_direction' ] + [ str(x) for x in force_direction ]
@@ -277,7 +279,7 @@ class Herb(openravepy.Robot):
             # Timeout immediately in simulation.
             timeout = 0
 
-        herbpy.logger.info("Waiting for object %s to appear.", obj_name)
+        logger.info("Waiting for object %s to appear.", obj_name)
         try:
             while True:
                 # Check for an object with the appropriate name in the environment.
@@ -288,7 +290,7 @@ class Herb(openravepy.Robot):
 
                 # Check for a timeout.
                 if timeout is not None and time.time() - start >= timeout:
-                    herbpy.logger.info("Timed out without finding object.")
+                    logger.info("Timed out without finding object.")
                     return None
 
                 time.sleep(update_period)
@@ -314,7 +316,7 @@ class Herb(openravepy.Robot):
         @return felt_force flag indicating whether the action felt a force
         """
         if robot.segway_sim:
-            herbpy.logger.warning('DriveStraightUntilForce does not work with a simulated Segway.')
+            logger.warning('DriveStraightUntilForce does not work with a simulated Segway.')
             return
 
         if (robot.left_ft_sim and left_arm) or (robot.right_ft_sim and right_arm):
@@ -331,7 +333,7 @@ class Herb(openravepy.Robot):
                 manipulators.append(robot.right_arm)
 
             if not manipulators:
-                herbpy.logger.warning('Executing DriveStraightUntilForce with no force/torque sensor for feedback.')
+                logger.warning('Executing DriveStraightUntilForce with no force/torque sensor for feedback.')
 
             # Rotate to face the right direction.
             with env:
