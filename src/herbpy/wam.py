@@ -200,7 +200,7 @@ class WAM(openravepy.Robot.Manipulator):
         return manipulator.hand.OpenHand(*args, **kw_args)
 
     @Deprecated('Use hand.CloseHand instead.')
-    def CloseHand(manipulator, spread=None, timeout=None):
+    def CloseHand(manipulator, *args, **kw_args):
         return manipulator.hand.CloseHand(*args, **kw_args)
 
     @Deprecated('Use hand.MoveHand instead.')
