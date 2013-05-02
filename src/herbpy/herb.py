@@ -25,9 +25,6 @@ class Herb(openravepy.Robot):
     def PlanGeneric(robot, command_name, *args, **kw_args):
         traj = None
         with robot.GetEnv():
-            # Update the controllers to get new joint values.
-            robot.GetController().SimulationStep(0)
-
             # Sequentially try each planner until one succeeds.
             with robot:
                 for delegate_planner in robot.planners:
