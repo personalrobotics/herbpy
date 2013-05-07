@@ -68,7 +68,7 @@ class WamTest(unittest.TestCase):
 
     def test_SetDOFValues_SetsValues(self):
         robot.SetDOFValues(self._zeros, self._indices)
-        dof_values = 0.1 * self._ones
+        dof_values = 0.6 * self._ones
         self._wam.SetDOFValues(dof_values)
         numpy.testing.assert_array_almost_equal(self._robot.GetDOFValues(self._indices), dof_values)
 
