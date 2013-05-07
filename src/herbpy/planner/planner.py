@@ -52,3 +52,12 @@ class Planner:
         @return trajectory
         """
         raise UnsupportedPlanningError('This planner does not support PlanToEndEffectorOffset.')
+
+    @PlanningMethod
+    def PlanToTSR(self, tsrchains, **kw_args):
+        """
+        Plan to a TSR
+        @param tsrchains A list of tsr chains
+        @return trajectory
+        """
+        raise UnsupportedPlanningError('This planner does not support PlanToTSR.')
