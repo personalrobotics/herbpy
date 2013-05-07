@@ -224,5 +224,5 @@ class WAM(openravepy.Robot.Manipulator):
         return manipulator.hand.GetBreakaway(*args, **kw_args)
 
     @Deprecated('Use hand.LookAtHand.')
-    def LookAtHand(manipulator, **kw_args):
-        return manipulator.hand.LookAtHand(*args, **kw_args)
+    def LookAtHand(manipulator, *args, **kw_args):
+        return manipulator.hand.LookAt(*args, **kw_args)

@@ -89,9 +89,9 @@ class Pantilt(wam.WAM):
         else:
             return traj
 
-    def FindIK(robot, target):
+    def FindIK(head, target):
         ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
-        return robot.head.ik_database.manip.FindIKSolution(ik_params, 0)
+        return head.ik_database.manip.FindIKSolution(ik_params, 0)
 
 # PD gains
 kp = [8, 2]
