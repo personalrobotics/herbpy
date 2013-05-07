@@ -11,6 +11,9 @@ class WAM(openravepy.Robot.Manipulator):
         Set the WAM's stiffness. This enables or disables gravity compensation.
         @param stiffness value between 0.0 and 1.0
         """
+        if not (0 <= stiffness <= 1):
+            raise Exception('Stiffness must in the range [0, 1]; got %f.' % stiffness)
+
         if not manipulator.simulated:
             manipulator.controller.SendCommand('SetStiffness {0:f}'.format(stiffness))
 
