@@ -99,6 +99,7 @@ class BarrettHand(openravepy.Robot.Link):
             # This is because we are overriding the force/torque sensor datatype.
             sensor_data = hand.handstate_sensor.GetSensorData()
             breakaway = sensor_data.torque 
+            return breakaway
         else:
             return [ False, False, False ]
 
