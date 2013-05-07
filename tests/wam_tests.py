@@ -12,10 +12,6 @@ class WamTest(unittest.TestCase):
         self._wam = robot.right_arm
         self._indices = self._wam.GetArmIndices()
         self._num_dofs = len(self._indices)
-        self._zeros = numpy.zeros(self._num_dofs)
-        self._ones = numpy.ones(self._num_dofs)
-        self._small_ones = numpy.ones(self._num_dofs - 1)
-        self._large_ones = numpy.ones(self._num_dofs + 1)
 
     def test_SetStiffness_DoesNotThrow(self):
         self._wam.SetStiffness(0.0)
@@ -26,35 +22,41 @@ class WamTest(unittest.TestCase):
         self.assertRaises(Exception, self._wam.SetStiffness, (-0.2,))
         self.assertRaises(Exception, self._wam.SetStiffness, ( 1.2,))
 
-    def test_Servo_IncorrectSizeThrows(self):
-        self._wam.Servo(0.1 * self._ones)
+    def test_Servo_DoesNotThrow(self):
+        self._wam.Servo(0.1 * numpy.ones(self._num_dofs))
 
     def test_Servo_IncorrectSizeThrows(self):
-        num_dofs = len(self._wam.GetArmIndices())
-        self.assertRaises(Exception, self._wam.Servo, (0.1 * self._small_ones,))
-        self.assertRaises(Exception, self._wam.Servo, (0.1 * self._large_ones,))
+        velocity_small = 0.1 * numpy.ones(self._num_dofs - 1)
+        velocity_large = 0.1 * numpy.ones(self._num_dofs + 1)
+        self.assertRaises(Exception, self._wam.Servo, (velocity_small,))
+        self.assertRaises(Exception, self._wam.Servo, (velocity_large,))
 
     def test_Servo_ExceedsVelocityLimitThrows(self):
         velocity_limits = self._robot.GetDOFVelocityLimits(self._indices)
-        min_accel_time = 0.3
-        self.assertRaises(Exception, self._wam.Servo, (+velocity_limits + 0.1 * self._ones, min_accel_time))
-        self.assertRaises(Exception, self._wam.Servo, (-velocity_limits - 0.1 * self._ones, min_accel_time))
+        velocity_limits_small = -velocity_limits - 0.1 * numpy.ones(self._num_dofs)
+        velocity_limits_large =  velocity_limits + 0.1 * numpy.ones(self._num_dofs)
+        self.assertRaises(Exception, self._wam.Servo, (velocity_limits_small, 0.3))
+        self.assertRaises(Exception, self._wam.Servo, (velocity_limits_large, 0.3))
 
     def test_Servo_InvalidAccelTimeThrows(self):
-        self.assertRaises(Exception, self._wam.Servo, (0.1 * self._ones, -0.1))
-        self.assertRaises(Exception, self._wam.Servo, (0.1 * self._ones,  0.0))
+        velocity_limits = 0.1 * numpy.ones(self._num_dofs)
+        self.assertRaises(Exception, self._wam.Servo, (velocity_limits, -0.1))
+        self.assertRaises(Exception, self._wam.Servo, (velocity_limits,  0.0))
 
     def test_SetVelocityLimits_SetsLimits(self):
-        self._wam.SetVelocityLimits(self._ones, 0.3)
-        velocity_limits = self._robot.GetDOFVelocityLimits(self._indices)
-        numpy.testing.assert_array_almost_equal(velocity_limits, self._ones)
+        velocity_limits = 0.1 * numpy.ones(self._num_dofs)
+        self._wam.SetVelocityLimits(velocity_limits, 0.3)
+        numpy.testing.assert_array_almost_equal(self._robot.GetDOFVelocityLimits(self._indices), velocity_limits)
 
     def test_SetVelocityLimits_IncorrectSizeThrows(self):
-        self.assertRaises(Exception, self._wam.SetVelocityLimits, (0.1 * self._small_ones,))
-        self.assertRaises(Exception, self._wam.SetVelocityLimits, (0.1 * self._large_ones,))
+        velocity_limits_small = 0.1 * numpy.ones(self._num_dofs - 1)
+        velocity_limits_large = 0.1 * numpy.ones(self._num_dofs + 1)
+        self.assertRaises(Exception, self._wam.SetVelocityLimits, (velocity_limits_small,))
+        self.assertRaises(Exception, self._wam.SetVelocityLimits, (velocity_limits_large,))
 
     def test_SetVelocityLimits_NegativeLimitThrows(self):
-        self.assertRaises(Exception, self._wam.SetVelocityLimits, (-self._ones,))
+        velocity_limits = -numpy.ones(self._num_dofs)
+        self.assertRaises(Exception, self._wam.SetVelocityLimits, (velocity_limits,))
 
     def test_SetActive_SetsActiveManipulator(self):
         self._robot.SetActiveManipulator('head_wam')
@@ -67,8 +69,8 @@ class WamTest(unittest.TestCase):
         numpy.testing.assert_array_almost_equal(self._robot.GetActiveDOFIndices(), self._indices)
 
     def test_SetDOFValues_SetsValues(self):
-        robot.SetDOFValues(self._zeros, self._indices)
-        dof_values = 0.6 * self._ones
+        robot.SetDOFValues(numpy.zeros(self._num_dofs), self._indices)
+        dof_values = 0.6 * numpy.ones(self._num_dofs)
         self._wam.SetDOFValues(dof_values)
         numpy.testing.assert_array_almost_equal(self._robot.GetDOFValues(self._indices), dof_values)
 
