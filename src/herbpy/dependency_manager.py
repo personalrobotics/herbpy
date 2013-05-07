@@ -1,4 +1,4 @@
-import herbpy, rospkg, os
+import herbpy, rospkg, os, sys
 
 def append_to_env(variable, new_path, separator=':'):
     paths = os.environ.get(variable, '')
@@ -47,6 +47,10 @@ def export_paths(pkg, package_name):
         for data_path in manifest.get_export('openrave', 'data'):
             data_paths = append_to_env('OPENRAVE_DATA', data_path)
 
+        # Add the appropriate directories to PYTHONPATH.
+        # TODO: This is a hack. Should I parsing a Python export instead?
+        sys.path.append(pkg.get_path(package) + '/src')
+
     return True
 
 def export_optional(package_name):
@@ -57,7 +61,6 @@ def export_optional(package_name):
     if not export_paths(pkg, package_name):
         raise Exception('Unable to load required dependencies.')
 
-    # Optional dependencies.
     missing_packages = list()
     for optional_package in manifest.get_export('openrave', 'optional'):
         if not export_paths(pkg, optional_package):

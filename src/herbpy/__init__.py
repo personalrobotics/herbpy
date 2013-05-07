@@ -198,9 +198,6 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
     """
     env = robot.GetEnv()
 
-    # Force/torque sensors.
-    # TODO: Move this into the manipulator initialization function.
-    # TODO: Why is SetName missing for sensors in the Python bindings?
     if not left_ft_sim:
         args = 'BarrettFTSensor {0:s} {1:s}'.format(NODE_NAME, LEFT_ARM_NAMESPACE)
         robot.left_arm.hand.ft_sensor = openravepy.RaveCreateSensor(env, args)
@@ -210,8 +207,9 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
 
         env.Add(robot.left_arm.hand.ft_sensor, True)
         deprecate(robot.left_arm, 'ft_sensor', robot.left_arm.hand.ft_sensor, 'Use hand.ft_sensor')
-        
+
     if not left_hand_sim:
+        # Strain gauges and breakaway.
         args = 'HandstateSensor {0:s} {1:s}'.format(NODE_NAME, LEFT_HAND_NAMESPACE)
         robot.left_arm.hand.handstate_sensor = openravepy.RaveCreateSensor(env, args)
 
@@ -220,6 +218,10 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
 
         env.Add(robot.left_arm.hand.handstate_sensor, True)
         deprecate(robot.left_arm, 'handstate_sensor', robot.left_arm.hand.handstate_sensor, 'Use hand.handstate_sensor')
+
+        # Tactile array.
+        from or_owd_controller import BHTactileSensor
+        robot.left_arm.hand.tactile_sensor = BHTactileSensor(env, NODE_NAME, LEFT_ARM_NAMESPACE, robot, '/left/')
 
     if not right_ft_sim:
         args = 'BarrettFTSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_ARM_NAMESPACE)
@@ -232,6 +234,7 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
         deprecate(robot.right_arm, 'ft_sensor', robot.right_arm.hand.ft_sensor, 'Use hand.ft_sensor')
 
     if not right_hand_sim:
+        # Strain gauges and breakaway.
         args = 'HandstateSensor {0:s} {1:s}'.format(NODE_NAME, RIGHT_HAND_NAMESPACE)
         robot.right_arm.hand.handstate_sensor = openravepy.RaveCreateSensor(env, args)
 
@@ -240,6 +243,10 @@ def initialize_sensors(robot, left_ft_sim, right_ft_sim, left_hand_sim, right_ha
 
         env.Add(robot.right_arm.hand.handstate_sensor, True)
         deprecate(robot.right_arm, 'handstate_sensor', robot.right_arm.hand.handstate_sensor, 'Use hand.handstate_sensor')
+
+        # Tactile array.
+        from or_owd_controller import BHTactileSensor
+        robot.right_arm.hand.tactile_sensor = BHTactileSensor(env, NODE_NAME, RIGHT_ARM_NAMESPACE, robot, '/right/')
 
     # MOPED.
     if not moped_sim:
@@ -462,7 +469,7 @@ def initialize_saved_configs(robot, yaml_path=None):
         raise Exception( 'initialize_saved_configs: Caught exception while loading yaml file \'%s\': %s'%(yaml_path, str(e)) )
 
 def initialize(env_path=None,
-               robot_path='robots/herb2_padded_nosensors.robot.xml',
+               robot_path='robots/herb2/herb2_modular.robot.xml',
                attach_viewer=False, sim=True, **kw_args):
     """
     Load an environment, HERB to it, and optionally create a viewer. This
