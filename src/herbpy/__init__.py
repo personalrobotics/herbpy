@@ -469,7 +469,7 @@ def initialize_saved_configs(robot, yaml_path=None):
         raise Exception( 'initialize_saved_configs: Caught exception while loading yaml file \'%s\': %s'%(yaml_path, str(e)) )
 
 def initialize(env_path=None,
-               robot_path='robots/herb2/herb2_modular.robot.xml',
+               robot_path='robots/herb2_padded_nosensors.robot.xml',
                attach_viewer=False, sim=True, **kw_args):
     """
     Load an environment, HERB to it, and optionally create a viewer. This
