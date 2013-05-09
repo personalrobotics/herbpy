@@ -24,11 +24,11 @@ class Pantilt(wam.WAM):
                     traj_waypoint = traj.GetWaypoint(i)
                     arm_dof_values = traj_config_spec.ExtractJointValues(traj_waypoint, robot, arm_indices)
                     # Compute the position of the right arm through the FK.
-                    manipulator.SetArmDOFValues(arm_dof_values)
+                    manipulator.SetDOFValues(arm_dof_values)
                     hand_pose = manipulator.GetEndEffectorTransform()
 
                     # This will be None if there is no IK solution.
-                    head_dof_values = robot.FindHeadDOFs(hand_pose[0:3, 3])
+                    head_dof_values = robot.head.FindIK(hand_pose[0:3, 3])
                     head_path.append(head_dof_values)
                     if head_dof_values is not None:
                         final_ik_index = i
