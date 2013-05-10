@@ -264,6 +264,9 @@ class Herb(openravepy.Robot):
                     elif status == 'stalled':
                         raise exceptions.TrajectoryStalled('Trajectory stalled for %s' % manipulator.GetName())
 
+                    if manipulator.simulated:
+                        manipulator.controller.Reset()
+
         return traj
 
     def WaitForObject(robot, obj_name, timeout=None, update_period=0.1):
