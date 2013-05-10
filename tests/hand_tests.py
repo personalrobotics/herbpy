@@ -40,17 +40,26 @@ class BarrettHandTest(unittest.TestCase):
 
     def test_MoveHand_MovesOneFinger(self):
         for i in xrange(self._num_dofs):
-            before = numpy.zeros(4)
-            after = numpy.zeros(4)
+            before = numpy.zeros(self._num_dofs)
+            after = numpy.zeros(self._num_dofs)
             after[i] = 0.1
 
-            desired = [ None ] * 4
+            desired = [ None ] * self._num_dofs
             desired[i] = after[i]
 
             self._robot.SetDOFValues(before, self._indices)
             self._hand.MoveHand(*desired)
             self._robot.WaitForController(0)
             numpy.testing.assert_array_almost_equal(self._robot.GetDOFValues(self._indices), after)
+
+    def test_MoveHand_MovesAllFingers(self):
+        before = numpy.zeros(self._num_dofs)
+        after = numpy.arange(self._num_dofs)
+
+        self._robot.SetDOFValues(before, self._indices)
+        self._hand.MoveHand(*after)
+        self._robot.WaitForController(0)
+        numpy.testing.assert_array_almost_equal(self._robot.GetDOFValues(self._indices), after)
 
 if __name__ == '__main__':
     import rosunit
