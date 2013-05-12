@@ -404,7 +404,7 @@ class Herb(openravepy.Robot):
 
     def DriveSegwayToNamedPosition(robot, named_position):
         if robot.segway_sim:
-            logger.warm('Drive to named positions not implemented in simulation.')
+            raise Exception('Driving to named positions is not supported in simulation.')
         else:
             robot.segway_controller.SendCommand("Goto " + named_position)
 
