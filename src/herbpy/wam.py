@@ -152,7 +152,7 @@ class WAM(openravepy.Robot.Manipulator):
 
         # TODO: Use a simulated force/torque sensor in simulation.
         try:
-            manipulator.TareForceTorqueSensor()
+            manipulator.hand.TareForceTorqueSensor()
             manipulator.parent.ExecuteTrajectory(traj, execute=True, retime=False, blend=False)
             return False
         # Trajectory is aborted by OWD because we felt a force.
