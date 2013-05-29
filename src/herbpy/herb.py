@@ -391,10 +391,8 @@ class Herb(openravepy.Robot):
         with util.Timer("Drive segway"):
             if not robot.segway_sim:
                 robot.segway_controller.SendCommand("Drive " + str(meters))
-                if timeout == None:
-                    robot.WaitForController(0)
-                elif timeout > 0:
-                    robot.WaitForController(timeout)
+                running_controllers = [ robot.segway_controller ]
+                is_done = util.WaitForControllers(running_controllers, timeout=timeout)
             # Create and execute base trajectory in simulation.
             else:
                 with robot.GetEnv():
@@ -421,11 +419,8 @@ class Herb(openravepy.Robot):
                     robot.SetTransform(desired_pose_in_world)
             else:
                 robot.segway_controller.SendCommand("Rotate " + str(angle_rad))
-                if timeout == None:
-                    robot.WaitForController(0)
-                elif timeout > 0:
-                    robot.WaitForController(timeout)
-
+                running_controllers = [ robot.segway_controller ]
+                is_done = util.WaitForControllers(running_controllers, timeout=timeout)
     def StopSegway(robot):
         if not robot.segway_sim:
             robot.segway_controller.SendCommand("Stop")
