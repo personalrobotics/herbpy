@@ -15,7 +15,7 @@ class Herb(openravepy.Robot):
         if not robot.talker_simulated:
             # XXX: HerbPy should not make direct service calls.
             logger.info('Saying "%s".', message)
-            rospy.wait_for_service('/talkerapplet')
+            #rospy.wait_for_service('/talkerapplet')
             talk = rospy.ServiceProxy('/talkerapplet', AppletCommand)    
             try:
                 talk('say', message, 0, 0)
