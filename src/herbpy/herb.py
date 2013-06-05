@@ -346,7 +346,7 @@ class Herb(openravepy.Robot):
             # Soft-tare the force/torque sensors. Tare is too slow.
             initial_force = dict()
             for manipulator in manipulators:
-                force, torque = manipulator.GetForceTorque()
+                force, torque = manipulator.hand.GetForceTorque()
                 initial_force[manipulator] = force
             
             try:
@@ -356,7 +356,7 @@ class Herb(openravepy.Robot):
                 while True:
                     # Check if we felt a force on any of the force/torque sensors.
                     for manipulator in manipulators:
-                        force, torque = manipulator.GetForceTorque()
+                        force, torque = manipulator.hand.GetForceTorque()
                         if numpy.linalg.norm(initial_force[manipulator] - force) > force_threshold:
                             return True
 
