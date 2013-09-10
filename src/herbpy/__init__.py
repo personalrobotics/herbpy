@@ -374,7 +374,7 @@ def initialize_herb(robot, left_arm_sim=True, right_arm_sim=True,
     # Bind extra methods to the manipulators.
     initialize_manipulator(robot, robot.left_arm, openravepy.IkParameterization.Type.Transform6D)
     initialize_manipulator(robot, robot.right_arm, openravepy.IkParameterization.Type.Transform6D)
-    initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
+    #initialize_manipulator(robot, robot.head, openravepy.IkParameterizationType.Lookat3D)
 
     # Specify offset for rendering trajectories.
     robot.left_arm.render_offset  = numpy.array([ 0, 0, 0.15, 1 ])
