@@ -12,7 +12,7 @@ PACKAGE_PATH = ros_pack.get_path(PACKAGE)
 class HERBRobot(prpy.base.WAMRobot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
-                       head_sim, moped_sim):
+                       head_sim, moped_sim, talker_sim):
         prpy.base.WAMRobot.__init__(self)
 
         # Convenience attributes for accessing self components.
@@ -59,6 +59,10 @@ class HERBRobot(prpy.base.WAMRobot):
         self.cbirrt_planner = CBiRRTPlanner()
         self.chomp_planner = CHOMPPlanner()
         self.planner = Ranked(self.chomp_planner, self.cbirrt_planner)
+
+        # Setting necessary sim flags
+        self.talker_simulated = talker_sim
+
 
     def CloneBindings(self, parent):
         from prpy import Cloned
