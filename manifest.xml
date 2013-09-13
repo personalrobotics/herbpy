@@ -7,12 +7,12 @@
     <author>Michael Koval, Pras Velagapudi</author>
     <license>BSD</license>
     <depend package="rospy"/>
-    <depend package="rosunit"/>
-    <depend package="prrave"/>
+    <depend package="prpy"/>
     <depend package="openrave"/>
+    <depend package="openrave_exports"/>
     <depend package="manipulation2"/>
     <depend package="or_multi_controller"/>
-    <!-- TODO: make these optional -->
+    <!-- TODO: Make these completely optional. -->
     <depend package="cbirrt2"/>
     <depend package="orcdchomp"/>
     <export>
