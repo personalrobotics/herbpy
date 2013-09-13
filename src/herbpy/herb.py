@@ -18,7 +18,7 @@ def initialize(robot_xml='robots/herb2_padded_nosensors.robot.xml',
     # Default arguments.
     keys = [ 'left_arm_sim', 'left_hand_sim', 'left_ft_sim',
              'right_arm_sim', 'right_hand_sim', 'right_ft_sim',
-             'head_sim', 'moped_sim', 'talker_sim' ]
+             'head_sim', 'moped_sim', 'talker_sim', 'segway_sim' ]
     for key in keys:
         if key not in kw_args:
             kw_args[key] = sim

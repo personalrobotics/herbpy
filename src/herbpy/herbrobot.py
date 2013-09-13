@@ -12,7 +12,7 @@ PACKAGE_PATH = ros_pack.get_path(PACKAGE)
 class HERBRobot(prpy.base.WAMRobot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
-                       head_sim, moped_sim, talker_sim):
+                       head_sim, moped_sim, talker_sim, segway_sim):
         prpy.base.WAMRobot.__init__(self)
 
         # Convenience attributes for accessing self components.
@@ -36,6 +36,14 @@ class HERBRobot(prpy.base.WAMRobot):
         prpy.bind_subclass(self.right_arm.hand, BarrettHand, sim=right_hand_sim, manipulator=self.right_arm,
                            owd_namespace='/right/owd', bhd_namespace='/right/bhd', ft_sim=right_ft_sim)
 
+        # Setup the segway controller
+        self.segway_controller = self.AttachController(name=self.GetName(),
+                                                       args='SegwayController {0:s}'.format('herbpy'),
+                                                       dof_indices=[],
+                                                       affine_dofs=openravepy.DOFAffine.Transform,
+                                                       simulated=segway_sim)
+
+        
         # Bind the multicontroller to the self. All delegate controllers must be
         # registered before the multicontroller is bound.
         self.multicontroller.finalize()
@@ -62,6 +70,7 @@ class HERBRobot(prpy.base.WAMRobot):
 
         # Setting necessary sim flags
         self.talker_simulated = talker_sim
+        self.segway_sim = segway_sim
 
 
     def CloneBindings(self, parent):
@@ -147,7 +156,7 @@ class HERBRobot(prpy.base.WAMRobot):
         if (robot.left_ft_sim and left_arm) or (robot.right_ft_sim and right_arm):
             raise Exception('DriveStraightUntilForce does not work with simulated force/torque sensors.')
 
-        with util.Timer("Drive segway until force"):
+        with prpy.util.Timer("Drive segway until force"):
             env = robot.GetEnv()
             direction = numpy.array(direction, dtype='float')
             direction /= numpy.linalg.norm(direction) 
@@ -213,11 +222,11 @@ class HERBRobot(prpy.base.WAMRobot):
         robot.DriveSegway(distance)
 
     def DriveSegway(robot, meters, timeout=None):
-        with util.Timer("Drive segway"):
+        with prpy.util.Timer("Drive segway"):
             if not robot.segway_sim:
                 robot.segway_controller.SendCommand("Drive " + str(meters))
                 running_controllers = [ robot.segway_controller ]
-                is_done = util.WaitForControllers(running_controllers, timeout=timeout)
+                is_done = prpy.util.WaitForControllers(running_controllers, timeout=timeout)
             # Create and execute base trajectory in simulation.
             else:
                 with robot.GetEnv():
@@ -232,7 +241,7 @@ class HERBRobot(prpy.base.WAMRobot):
             robot.segway_controller.SendCommand("Goto " + named_position)
 
     def RotateSegway(robot, angle_rad, timeout=None):
-        with util.Timer("Rotate segway"):
+        with prpy.util.Timer("Rotate segway"):
             if robot.segway_sim:
                 with robot.GetEnv():
                     current_pose_in_world = robot.GetTransform().copy()
@@ -245,7 +254,7 @@ class HERBRobot(prpy.base.WAMRobot):
             else:
                 robot.segway_controller.SendCommand("Rotate " + str(angle_rad))
                 running_controllers = [ robot.segway_controller ]
-                is_done = util.WaitForControllers(running_controllers, timeout=timeout)
+                is_done = prpy.util.WaitForControllers(running_controllers, timeout=timeout)
 
     def StopSegway(robot):
         if not robot.segway_sim:
