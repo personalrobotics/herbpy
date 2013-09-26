@@ -1,6 +1,5 @@
 import logging, math, numpy, openravepy, threading, time
 import exceptions, util
-from planner import PlanningError 
 from util import Deprecated
 
 logger = logging.getLogger('herbpy')

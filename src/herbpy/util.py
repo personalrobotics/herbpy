@@ -1,5 +1,5 @@
 import collections, functools, inspect, numpy, openravepy, types, time, logging, termcolor
-import herbpy, prrave.rave
+import herbpy
 
 class ColoredFormatter(logging.Formatter):
     def __init__(self, default):
