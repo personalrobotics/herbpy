@@ -70,16 +70,16 @@ class WAM(openravepy.Robot.Manipulator):
             return False
 
         # Update the OpenRAVE limits.
-        with manipulator.parent.GetEnv():
+        with manipulator.GetRobot().GetEnv():
             active_indices = manipulator.GetArmIndices()
 
-            or_velocity_limits = manipulator.parent.GetDOFVelocityLimits()
+            or_velocity_limits = manipulator.GetRobot().GetDOFVelocityLimits()
             or_velocity_limits[active_indices] = velocity_limits
-            manipulator.parent.SetDOFVelocityLimits(or_velocity_limits)
+            manipulator.GetRobot().SetDOFVelocityLimits(or_velocity_limits)
 
-            or_accel_limits = manipulator.parent.GetDOFAccelerationLimits()
+            or_accel_limits = manipulator.GetRobot().GetDOFAccelerationLimits()
             or_accel_limits[active_indices] = velocity_limits / min_accel_time
-            manipulator.parent.SetDOFAccelerationLimits(or_accel_limits)
+            manipulator.GetRobot().SetDOFAccelerationLimits(or_accel_limits)
 
         # Update the OWD limits.
         if not manipulator.simulated:
@@ -114,15 +114,15 @@ class WAM(openravepy.Robot.Manipulator):
         '''
         Sets this as the active manipulator and updates the active DOF indices.
         '''
-        manipulator.parent.SetActiveManipulator(manipulator)
-        manipulator.parent.SetActiveDOFs(manipulator.GetArmIndices())
+        manipulator.GetRobot().SetActiveManipulator(manipulator)
+        manipulator.GetRobot().SetActiveDOFs(manipulator.GetArmIndices())
 
     def GetDOFValues(manipulator):
-        return manipulator.parent.GetDOFValues(manipulator.GetArmIndices())
+        return manipulator.GetRobot().GetDOFValues(manipulator.GetArmIndices())
 
     def SetDOFValues(manipulator, dof_values,
                      limits_action=openravepy.KinBody.CheckLimitsAction.CheckLimits):
-        manipulator.parent.SetDOFValues(dof_values, manipulator.GetArmIndices(), limits_action)
+        manipulator.GetRobot().SetDOFValues(dof_values, manipulator.GetArmIndices(), limits_action)
 
     def MoveUntilTouch(manipulator, direction, distance, max_force=5, **kw_args):
         """
@@ -135,32 +135,32 @@ class WAM(openravepy.Robot.Manipulator):
         @param **kw_args planner parameters
         @return felt_force flag indicating whether we felt a force.
         """
-        with manipulator.parent.GetEnv():
-            manipulator.parent.GetController().SimulationStep(0)
+        with manipulator.GetRobot().GetEnv():
+            manipulator.GetRobot().GetController().SimulationStep(0)
 
             # Compute the expected force direction in the hand frame.
             direction = numpy.array(direction)
             hand_pose = manipulator.GetEndEffectorTransform()
             force_direction = numpy.dot(hand_pose[0:3, 0:3].T, -direction)
 
-            with manipulator.parent:
+            with manipulator.GetRobot():
                 traj = manipulator.PlanToEndEffectorOffset(direction, distance, execute=False, **kw_args)
-                traj = manipulator.parent.BlendTrajectory(traj)
-                traj = manipulator.parent.RetimeTrajectory(traj, stop_on_ft=True, force_direction=force_direction,
+                traj = manipulator.GetRobot().BlendTrajectory(traj)
+                traj = manipulator.GetRobot().RetimeTrajectory(traj, stop_on_ft=True, force_direction=force_direction,
                                                            force_magnitude=max_force, torque=[100,100,100])
 
         # TODO: Use a simulated force/torque sensor in simulation.
         try:
             manipulator.hand.TareForceTorqueSensor()
-            manipulator.parent.ExecuteTrajectory(traj, execute=True, retime=False, blend=False)
+            manipulator.GetRobot().ExecuteTrajectory(traj, execute=True, retime=False, blend=False)
             return False
         # Trajectory is aborted by OWD because we felt a force.
         except exceptions.TrajectoryAborted:
             return True
 
     def PlanToNamedConfiguration(manipulator, name, **kw_args):
-        config_inds = numpy.array(manipulator.parent.configs[name]['dofs'])
-        config_vals = numpy.array(manipulator.parent.configs[name]['vals'])
+        config_inds = numpy.array(manipulator.GetRobot().configs[name]['dofs'])
+        config_vals = numpy.array(manipulator.GetRobot().configs[name]['vals'])
 
         if len(config_inds) == 0:
             raise Exception('Failed to find named config: %s'%name)
@@ -183,7 +183,7 @@ class WAM(openravepy.Robot.Manipulator):
 
         traj = None
         if len(arm_inds) > 0:
-            manipulator.parent.SetActiveDOFs(arm_inds)
+            manipulator.GetRobot().SetActiveDOFs(arm_inds)
             traj = manipulator.PlanToConfiguration(arm_vals, **kw_args)
        
         return traj
