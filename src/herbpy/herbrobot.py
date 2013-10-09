@@ -16,9 +16,9 @@ class HERBRobot(prpy.base.WAMRobot):
         prpy.base.WAMRobot.__init__(self)
 
         # Convenience attributes for accessing self components.
-        self.left_arm = self.GetManipulator('left_wam')
-        self.right_arm = self.GetManipulator('right_wam')
-        self.head = self.GetManipulator('head_wam')
+        self.left_arm = self.GetManipulator('left')
+        self.right_arm = self.GetManipulator('right')
+        self.head = self.GetManipulator('head')
         self.left_arm.hand = self.left_arm.GetEndEffector()
         self.right_arm.hand = self.right_arm.GetEndEffector()
         self.left_hand = self.left_arm.hand

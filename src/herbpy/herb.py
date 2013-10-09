@@ -7,14 +7,18 @@ import prpy, openravepy
 import prpy.dependency_manager
 prpy.dependency_manager.export(PACKAGE)
 
-def initialize(robot_xml='robots/herb2_padded_nosensors.robot.xml',
-               env_path = None,
-               attach_viewer=False, sim=True, **kw_args):
+def initialize(robot_xml=None, env_path=None, attach_viewer=False, sim=True, **kw_args):
     # Create the environment.
     env = openravepy.Environment()
     if env_path is not None:
         if not env.Load(env_path):
             raise Exception('Unable to load environment frompath %s' % env_path)
+
+    if robot_xml is None:
+        import os, rospkg
+        rospack = rospkg.RosPack()
+        base_path = rospack.get_path('herb_description')
+        robot_xml = os.path.join(base_path, 'ordata', 'robots', 'herb.robot.xml')
 
     robot = env.ReadRobotXMLFile(robot_xml)
     env.Add(robot)
