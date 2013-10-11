@@ -12,6 +12,7 @@
     <depend package="openrave_exports"/>
     <depend package="manipulation2"/>
     <depend package="or_multi_controller"/>
+    <depend package="herb_description"/>
     <!-- TODO: Make these completely optional. -->
     <depend package="cbirrt2"/>
     <depend package="orcdchomp"/>
