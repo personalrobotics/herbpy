@@ -44,10 +44,6 @@ class HERBRobot(prpy.base.WAMRobot):
                                                        simulated=segway_sim)
 
         
-        # Bind the multicontroller to the self. All delegate controllers must be
-        # registered before the multicontroller is bound.
-        self.multicontroller.finalize()
-
         # Support for named configurations.
         import os.path
         self.configurations.add_group('left_arm', self.left_arm.GetArmIndices())

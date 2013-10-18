@@ -6,6 +6,7 @@ class HERBPantilt(prpy.base.WAM):
         # FIXME: We don't build the IK database because ikfast fails with a
         # compilation error on the pantilt. This should actually be LookAt3D.
         prpy.base.WAM.__init__(self, sim, owd_namespace, None)
+        #prpy.base.WAM.__init__(self, sim, owd_namespace, openravepy.IkParameterization.Type.Lookat3D)
 
     def CloneBindings(self, parent):
         prpy.base.WAM.CloneBindings(self, parent)
