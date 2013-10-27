@@ -83,6 +83,7 @@ def ExtractWorkspaceWaypoints(robot, traj):
             # Compute the hand pose at each waypoint using forward kinematics.
             waypoints = list()
             for t in xrange(traj.GetNumWaypoints()):
+                print(__file__ + ":" + __line__ + " PANTILT WAYPOINT")
                 waypoint = traj.GetWaypoint(t)
                 q = config_spec.ExtractJointValues(waypoint, robot, dof_indices)
                 robot.SetActiveDOFValues(q)

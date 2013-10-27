@@ -17,8 +17,10 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False, sim=True, **k
     if robot_xml is None:
         import os, rospkg
         rospack = rospkg.RosPack()
-        base_path = rospack.get_path('herb_description')
-        robot_xml = os.path.join(base_path, 'ordata', 'robots', 'herb.robot.xml')
+        #base_path = rospack.get_path('herb_description')
+        #robot_xml = os.path.join(base_path, 'ordata', 'robots', 'herb.robot.xml')
+        base_path = rospack.get_path('pr_ordata')
+        robot_xml = os.path.join(base_path, 'ordata', 'robots', 'herb2_padded.robot.xml')
 
     robot = env.ReadRobotXMLFile(robot_xml)
     env.Add(robot)
