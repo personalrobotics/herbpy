@@ -16,9 +16,9 @@ class HERBRobot(prpy.base.WAMRobot):
         prpy.base.WAMRobot.__init__(self)
 
         # Convenience attributes for accessing self components.
-        self.left_arm = self.GetManipulator('left_wam')
-        self.right_arm = self.GetManipulator('right_wam')
-        self.head = self.GetManipulator('head_wam')
+        self.left_arm = self.GetManipulator('left')
+        self.right_arm = self.GetManipulator('right')
+        self.head = self.GetManipulator('head')
         self.left_arm.hand = self.left_arm.GetEndEffector()
         self.right_arm.hand = self.right_arm.GetEndEffector()
         self.left_hand = self.left_arm.hand
@@ -64,10 +64,9 @@ class HERBRobot(prpy.base.WAMRobot):
         self.chomp_planner = CHOMPPlanner()
         self.mk_planner = MKPlanner()
         self.snap_planner = SnapPlanner()
-#        self.planner = Sequence(#self.snap_planner, 
-#                                Ranked(self.chomp_planner, Sequence(self.mk_planner, self.cbirrt_planner)))
-#
-        self.planner = Sequence(self.chomp_planner)
+        self.planner = Sequence(self.snap_planner, 
+                                Ranked(self.chomp_planner, Sequence(self.mk_planner, self.cbirrt_planner)))
+
         # Setting necessary sim flags
         self.talker_simulated = talker_sim
         self.segway_sim = segway_sim

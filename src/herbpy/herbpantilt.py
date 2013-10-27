@@ -28,7 +28,6 @@ class HERBPantilt(prpy.base.WAM):
         with robot.GetEnv():
             with robot:
                 for i in xrange(1, traj.GetNumWaypoints()):
-                    print(__file__ + ":" + __line__ + " PANTILT WAYPOINT")
                     traj_waypoint = traj.GetWaypoint(i)
                     arm_dof_values = traj_config_spec.ExtractJointValues(traj_waypoint, robot, arm_indices)
                     # Compute the position of the right arm through the FK.
@@ -59,7 +58,6 @@ class HERBPantilt(prpy.base.WAM):
         openravepy.planningutils.ConvertTrajectorySpecification(traj, merged_config_spec)
 
         for i in xrange(0, traj.GetNumWaypoints()):
-            print(__file__ + ":" + __line__ + " PANTILT WAYPOINT")
             waypoint = traj.GetWaypoint(i)
             merged_config_spec.InsertJointValues(waypoint, head_path[i], robot, head_indices, 0)
             traj.Insert(i, waypoint, True)
