@@ -70,7 +70,12 @@ class HERBRobot(prpy.base.WAMRobot):
         # Setting necessary sim flags
         self.talker_simulated = talker_sim
         self.segway_sim = segway_sim
-
+        self.moped_sim = moped_sim
+        if not self.moped_sim:
+          args = 'MOPEDSensorSystem herbpy /moped/ map'
+          self.moped_sensorsystem = openravepy.RaveCreateSensorSystem(self.GetEnv(), args)
+          if self.moped_sensorsystem is None:
+            raise Exception("creating the MOPED sensorsystem failed")
 
     def CloneBindings(self, parent):
         from prpy import Cloned
