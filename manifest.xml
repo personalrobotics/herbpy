@@ -10,7 +10,6 @@
     <depend package="rospy"/>
     <depend package="prpy"/>
     <depend package="openrave"/>
-    <depend package="openrave_exports"/>
     <depend package="manipulation2"/>
     <depend package="herb_description"/>
     <!-- TODO: Make these completely optional. -->
