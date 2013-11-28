@@ -6,6 +6,7 @@
     </description>
     <author>Michael Koval, Pras Velagapudi</author>
     <license>BSD</license>
+    <review status="released" notes="approved on 3/13"/>
     <depend package="rospy"/>
     <depend package="prpy"/>
     <depend package="openrave"/>
