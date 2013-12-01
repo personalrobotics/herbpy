@@ -1,6 +1,5 @@
 PACKAGE = 'herbpy'
 import roslib; roslib.load_manifest(PACKAGE)
-import openrave_exports; openrave_exports.export(PACKAGE)
 import prpy, openravepy
 
 # Add dependencies to our OpenRAVE plugin and data search paths.
