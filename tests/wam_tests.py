@@ -59,7 +59,7 @@ class WamTest(unittest.TestCase):
         self.assertRaises(Exception, self._wam.SetVelocityLimits, (velocity_limits,))
 
     def test_SetActive_SetsActiveManipulator(self):
-        self._robot.SetActiveManipulator('head_wam')
+        self._robot.SetActiveManipulator('head')
         self._wam.SetActive()
         self.assertEquals(self._robot.GetActiveManipulator(), self._wam)
 
