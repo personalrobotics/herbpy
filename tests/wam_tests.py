@@ -48,31 +48,14 @@ class WamTest(unittest.TestCase):
         self._wam.SetVelocityLimits(velocity_limits, 0.3)
         numpy.testing.assert_array_almost_equal(self._robot.GetDOFVelocityLimits(self._indices), velocity_limits)
 
-    def test_SetVelocityLimits_IncorrectSizeThrows(self):
-        velocity_limits_small = 0.1 * numpy.ones(self._num_dofs - 1)
-        velocity_limits_large = 0.1 * numpy.ones(self._num_dofs + 1)
-        self.assertRaises(Exception, self._wam.SetVelocityLimits, (velocity_limits_small,))
-        self.assertRaises(Exception, self._wam.SetVelocityLimits, (velocity_limits_large,))
+    def test_MoveUntilTouch_ZeroDirectionThrows(self):
+        self.assertRaises(Exception, self._wam.MoveUntilTouch, (numpy.zeros(3), 0.1))
 
-    def test_SetVelocityLimits_NegativeLimitThrows(self):
-        velocity_limits = -numpy.ones(self._num_dofs)
-        self.assertRaises(Exception, self._wam.SetVelocityLimits, (velocity_limits,))
+    def test_MoveUntilTouch_ZeroDistanceThrows(self):
+        self.assertRaises(Exception, self._wam.MoveUntilTouch, (numpy.array([ 1., 0., 0. ]), 0.0))
 
-    def test_SetActive_SetsActiveManipulator(self):
-        self._robot.SetActiveManipulator('head')
-        self._wam.SetActive()
-        self.assertEquals(self._robot.GetActiveManipulator(), self._wam)
-
-    def test_SetActive_SetsActiveDOFs(self):
-        self._robot.SetActiveDOFs([ 0 ])
-        self._wam.SetActive()
-        numpy.testing.assert_array_almost_equal(self._robot.GetActiveDOFIndices(), self._indices)
-
-    def test_SetDOFValues_SetsValues(self):
-        robot.SetDOFValues(numpy.zeros(self._num_dofs), self._indices)
-        dof_values = 0.6 * numpy.ones(self._num_dofs)
-        self._wam.SetDOFValues(dof_values)
-        numpy.testing.assert_array_almost_equal(self._robot.GetDOFValues(self._indices), dof_values)
+    def test_MoveUntilTouch_NonPositiveForceThrows(self):
+        self.assertRaises(Exception, self._wam.MoveUntilTouch, (numpy.array([ 1., 0., 0. ]), 0.1, 0.))
 
 if __name__ == '__main__':
     import rosunit
