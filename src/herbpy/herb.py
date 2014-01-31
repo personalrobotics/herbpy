@@ -1,6 +1,8 @@
 PACKAGE = 'herbpy'
 import roslib; roslib.load_manifest(PACKAGE)
-import prpy, openravepy
+import logging, prpy, openravepy
+
+logger = logging.getLogger('herbpy')
 
 # Add dependencies to our OpenRAVE plugin and data search paths.
 import prpy.dependency_manager
@@ -34,7 +36,13 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False, sim=True, **k
     from herbrobot import HERBRobot
     prpy.bind_subclass(robot, HERBRobot, **kw_args)
 
+    if attach_viewer == True:
+        attach_viewer = 'qtcoin'
+        logger.warning('Type of viewer is not specified; defaulting to "qtcoin".')
+
     if attach_viewer:
-        env.SetViewer('qtcoin')
+        env.SetViewer(attach_viewer)
+        if env.GetViewer() is None:
+            raise Exception('Failed creating viewer of type "{0:s}".'.format(attach_viewer))
 
     return env, robot

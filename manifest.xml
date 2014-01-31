@@ -19,6 +19,8 @@
         <!-- planners -->
         <openrave optional="cbirrt2"/>
         <openrave optional="orcdchomp"/>
+        <!-- viewers -->
+        <openrave optional="or_rviz"/>
         <!-- controllers -->
         <openrave optional="or_owd_controller"/>
         <openrave optional="or_segway_controller"/>
@@ -28,8 +30,9 @@
         <openrave optional="or_handstate_sensor"/>
         <openrave optional="or_barrett_ft_sensor"/>
         <!-- utilities -->
-        <openrave optional="pr_ordata"/>
         <openrave optional="or_talker_module"/>
         <openrave optional="or_mac_trajectory"/>
+        <!-- standard kinbodies -->
+        <openrave optional="pr_ordata"/>
     </export>
 </package>
