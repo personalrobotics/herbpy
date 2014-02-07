@@ -45,7 +45,7 @@ class HerbBase(MobileBase):
     def CloneBindings(self, parent):
         MobileBase.CloneBindings(self, parent)
 
-    def Forward(self, meters, execute=True, **kw_args):
+    def Forward(self, meters, **kw_args):
         """
         Drives the robot forward the desired distance
         Note: Only implemented in simulation. Derived robots should implement this method.
@@ -53,29 +53,8 @@ class HerbBase(MobileBase):
         @param timout duration to wait for execution
         """
         if self.simulated:
-            with self.robot.GetEnv():
-                start_pose = self.robot.GetTransform()
-
-            offset_pose = numpy.eye(4)
-            offset_pose[0, 3] = meters
-            goal_pose = numpy.dot(start_pose, offset_pose)
-
-            doft = openravepy.DOFAffine.Transform
-            cspec = openravepy.RaveGetAffineConfigurationSpecification(doft, self.robot)
-            traj = openravepy.RaveCreateTrajectory(self.robot.GetEnv(), 'GenericTrajectory')
-            traj.Init(cspec)
-            waypoint1 = openravepy.RaveGetAffineDOFValuesFromTransform(start_pose, doft)
-            waypoint2 = openravepy.RaveGetAffineDOFValuesFromTransform(goal_pose, doft)
-            traj.Insert(0, waypoint1)
-            traj.Insert(1, waypoint2)
-
-            if execute:
-                return self.robot.ExecuteTrajectory(traj, **kw_args)
-            else:
-                return traj
+            return MobileBase.Forward(self, meters, **kw_args)
         else:
-            MobileBase.Forward(self, meters, timeout=timeout)
-
             with prpy.util.Timer("Drive segway"):
                 self.controller.SendCommand("Drive " + str(meters))
                 is_done = prpy.util.WaitForControllers([ self.controller ], timeout=timeout)
