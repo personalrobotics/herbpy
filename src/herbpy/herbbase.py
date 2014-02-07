@@ -30,19 +30,22 @@
 
 from prpy.base import MobileBase
 import prpy
-import numpy
-import logging
+import numpy, logging, openravepy
 logger = logging.getLogger('herbpy')
 
 class HerbBase(MobileBase):
-
-    def __init___(self, sim, robot):
+    def __init__(self, sim, robot):
         MobileBase.__init__(self, sim=sim, robot=robot)
+        self.controller = robot.AttachController(name=robot.GetName(),
+                                                 args='SegwayController {0:s}'.format('herbpy'),
+                                                 dof_indices=[],
+                                                 affine_dofs=openravepy.DOFAffine.Transform,
+                                                 simulated=sim)
 
     def CloneBindings(self, parent):
         MobileBase.CloneBindings(self, parent)
 
-    def Forward(self, meters, timeout=None):
+    def Forward(self, meters, execute=True, **kw_args):
         """
         Drives the robot forward the desired distance
         Note: Only implemented in simulation. Derived robots should implement this method.
@@ -50,12 +53,32 @@ class HerbBase(MobileBase):
         @param timout duration to wait for execution
         """
         if self.simulated:
-            MobileBase.Forward(self, meters, timeout=timeout)
+            with self.robot.GetEnv():
+                start_pose = self.robot.GetTransform()
+
+            offset_pose = numpy.eye(4)
+            offset_pose[0, 3] = meters
+            goal_pose = numpy.dot(start_pose, offset_pose)
+
+            doft = openravepy.DOFAffine.Transform
+            cspec = openravepy.RaveGetAffineConfigurationSpecification(doft, self.robot)
+            traj = openravepy.RaveCreateTrajectory(self.robot.GetEnv(), 'GenericTrajectory')
+            traj.Init(cspec)
+            waypoint1 = openravepy.RaveGetAffineDOFValuesFromTransform(start_pose, doft)
+            waypoint2 = openravepy.RaveGetAffineDOFValuesFromTransform(goal_pose, doft)
+            traj.Insert(0, waypoint1)
+            traj.Insert(1, waypoint2)
+
+            if execute:
+                return self.robot.ExecuteTrajectory(traj, **kw_args)
+            else:
+                return traj
         else:
+            MobileBase.Forward(self, meters, timeout=timeout)
+
             with prpy.util.Timer("Drive segway"):
-                self.robot.segway_controller.SendCommand("Drive " + str(meters))
-                running_controllers = [ self.robot.segway_controller ]
-                is_done = prpy.util.WaitForControllers(running_controllers, timeout=timeout)
+                self.controller.SendCommand("Drive " + str(meters))
+                is_done = prpy.util.WaitForControllers([ self.controller ], timeout=timeout)
 
     def Rotate(self, angle_rad, timeout=None):
         """
@@ -67,8 +90,8 @@ class HerbBase(MobileBase):
             MobileBase.Rotate(self, angle_rad, timeout=timeout)
         else:
             with prpy.util.Timer("Rotate segway"):
-                self.robot.segway_controller.SendCommand("Rotate " + str(angle_rad))
-                running_controllers = [ self.robot.segway_controller ]
+                self.controller.SendCommand("Rotate " + str(angle_rad))
+                running_controllers = [ self.controller ]
                 is_done = prpy.util.WaitForControllers(running_controllers, timeout=timeout)
 
     def DriveStraightUntilForce(self, direction, velocity=0.1, force_threshold=3.0,
@@ -145,7 +168,7 @@ class HerbBase(MobileBase):
                             return False
 
                         # Continuously stream forward velocities.
-                        self.robot.segway_controller.SendCommand('DriveInstantaneous {0:f} 0 0'.format(velocity))
+                        self.controller.SendCommand('DriveInstantaneous {0:f} 0 0'.format(velocity))
                 finally:
                     # Stop the Segway before returning.
-                    self.robot.segway_controller.SendCommand('DriveInstantaneous 0 0 0')
+                    self.controller.SendCommand('DriveInstantaneous 0 0 0')

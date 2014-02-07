@@ -27,7 +27,6 @@ class HERBRobot(prpy.base.WAMRobot):
 
         # Dynamically switch to self-specific subclasses.
         from herbbase import HerbBase
-        self.base = HerbBase(sim=segway_sim, robot=self)
         from prpy.base import BarrettHand, WAM
         from herbpantilt import HERBPantilt
         prpy.bind_subclass(self.left_arm, WAM, sim=left_arm_sim, owd_namespace='/left/owd')
@@ -38,13 +37,8 @@ class HERBRobot(prpy.base.WAMRobot):
         prpy.bind_subclass(self.right_arm.hand, BarrettHand, sim=right_hand_sim, manipulator=self.right_arm,
                            owd_namespace='/right/owd', bhd_namespace='/right/bhd', ft_sim=right_ft_sim)
 
-        # Setup the segway controller
-        self.segway_controller = self.AttachController(name=self.GetName(),
-                                                       args='SegwayController {0:s}'.format('herbpy'),
-                                                       dof_indices=[],
-                                                       affine_dofs=openravepy.DOFAffine.Transform,
-                                                       simulated=segway_sim)
-
+        self.base = HerbBase(sim=segway_sim, robot=self)
+        prpy.bind.InstanceDeduplicator.add_canonical(self.base)
         
         # Support for named configurations.
         import os.path
@@ -168,11 +162,11 @@ class HERBRobot(prpy.base.WAMRobot):
         if robot.segway_sim:
             raise Exception('Driving to named positions is not supported in simulation.')
         else:
-            robot.segway_controller.SendCommand("Goto " + named_position)
+            robot.base.controller.SendCommand("Goto " + named_position)
 
     def RotateSegway(robot, angle_rad, timeout=None):
       robot.base.Rotate(angle_rad, timeout)
 
     def StopSegway(robot):
         if not robot.segway_sim:
-            robot.segway_controller.SendCommand("Stop")
+            robot.base.controller.SendCommand("Stop")
