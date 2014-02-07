@@ -48,7 +48,7 @@ class HerbBase(MobileBase):
         if self.simulated:
             MobileBase.Forward(self, meters, timeout=timeout)
         else:
-            robot.DriveSegway(self.robot, meters, timeout=timeout)
+            self.robot.DriveSegway(self.robot, meters, timeout=timeout)
 
     def Rotate(self, angle_rad, timeout=None):
         """
@@ -59,4 +59,4 @@ class HerbBase(MobileBase):
         if self.simulated:
             MobileBase.Rotate(self, angle_rad, timeout=timeout)
         else:
-            robot.RotateSegway(self.robot, angle_rad, timeout=timeout)
+            self.robot.RotateSegway(self.robot, angle_rad, timeout=timeout)
