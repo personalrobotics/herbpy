@@ -61,9 +61,10 @@ class HERBRobot(prpy.base.WAMRobot):
 
         # Initialize a default planning pipeline.
         from prpy.planning import Planner, Sequence, Ranked, Fastest
-        from prpy.planning import CBiRRTPlanner, CHOMPPlanner, IKPlanner, MKPlanner, NamedPlanner, SnapPlanner
+        from prpy.planning import CBiRRTPlanner, CHOMPPlanner, IKPlanner, MKPlanner, NamedPlanner, SnapPlanner, SBPLPlanner
         self.cbirrt_planner = CBiRRTPlanner()
         self.chomp_planner = CHOMPPlanner()
+        self.sbpl_planner = SBPLPlanner()
         self.mk_planner = MKPlanner()
         self.snap_planner = SnapPlanner()
         self.named_planner = NamedPlanner()
@@ -72,8 +73,10 @@ class HERBRobot(prpy.base.WAMRobot):
                                 self.named_planner,
                                 self.snap_planner, 
                                 Ranked(self.chomp_planner,
-                                       Sequence(self.mk_planner,
-                                                self.cbirrt_planner)))
+                                       Sequence(
+                                            Ranked(Sequence(self.mk_planner,
+                                                            self.cbirrt_planner),
+                                                    self.sbpl_planner))))
 
         # Setting necessary sim flags
         self.talker_simulated = talker_sim
