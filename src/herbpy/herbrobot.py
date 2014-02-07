@@ -26,6 +26,8 @@ class HERBRobot(prpy.base.WAMRobot):
         self.manipulators = [ self.left_arm, self.right_arm, self.head ]
 
         # Dynamically switch to self-specific subclasses.
+        from herbbase import HerbBase
+        self.base = HerbBase(sim=segway_sim, robot=self)
         from prpy.base import BarrettHand, WAM
         from herbpantilt import HERBPantilt
         prpy.bind_subclass(self.left_arm, WAM, sim=left_arm_sim, owd_namespace='/left/owd')

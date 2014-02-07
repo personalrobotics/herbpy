@@ -1,6 +1,7 @@
 PACKAGE = 'herbpy'
 import roslib; roslib.load_manifest(PACKAGE)
 import logging, prpy, openravepy
+from herbbase import HerbBase
 
 logger = logging.getLogger('herbpy')
 
