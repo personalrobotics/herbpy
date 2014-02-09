@@ -38,8 +38,7 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False, sim=True, **k
     prpy.bind_subclass(robot, HERBRobot, **kw_args)
 
     if attach_viewer == True:
-        attach_viewer = 'qtcoin'
-        logger.warning('Type of viewer is not specified; defaulting to "qtcoin".')
+        attach_viewer = 'or_rviz'
 
     if attach_viewer:
         env.SetViewer(attach_viewer)

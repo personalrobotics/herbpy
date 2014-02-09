@@ -9,9 +9,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='utility script for loading HerbPy')
     parser.add_argument('-s', '--sim', action='store_true',
                         help='simulation mode')
-    parser.add_argument('-v', '--viewer', nargs='?', const='qtcoin',
-                        help='attach a viewer of the specified type; defaults to '\
-                             '"qtcoin" if type is omitted')
+    parser.add_argument('-v', '--viewer', nargs='?', const=True,
+                        help='attach a viewer of the specified type')
     parser.add_argument('--robot-xml', type=str,
                         help='robot XML file; defaults to herb_description')
     parser.add_argument('--env-xml', type=str,
