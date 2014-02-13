@@ -155,8 +155,8 @@ class HERBRobot(prpy.base.WAMRobot):
         robot.RotateSegway(des_angle-cur_angle)
         robot.DriveSegway(distance)
 
-    def DriveSegway(robot, meters, timeout=None):
-      robot.base.Forward(meters, timeout)
+    def DriveSegway(robot, meters, **kw_args):
+      robot.base.Forward(meters, **kw_args)
 
     def DriveSegwayToNamedPosition(robot, named_position):
         if robot.segway_sim:
