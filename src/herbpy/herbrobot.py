@@ -164,8 +164,8 @@ class HERBRobot(prpy.base.WAMRobot):
         else:
             robot.base.controller.SendCommand("Goto " + named_position)
 
-    def RotateSegway(robot, angle_rad, timeout=None):
-      robot.base.Rotate(angle_rad, timeout)
+    def RotateSegway(robot, angle_rad, **kw_args):
+      robot.base.Rotate(angle_rad, **kw_args)
 
     def StopSegway(robot):
         if not robot.segway_sim:

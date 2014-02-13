@@ -59,14 +59,14 @@ class HerbBase(MobileBase):
                 self.controller.SendCommand("Drive " + str(meters))
                 is_done = prpy.util.WaitForControllers([ self.controller ], timeout=timeout)
 
-    def Rotate(self, angle_rad, timeout=None):
+    def Rotate(self, angle_rad, **kw_args):
         """
         Rotates the robot the desired distance
         @param angle_rad the number of radians to rotate
         @param timeout duration to wait for execution
         """
         if self.simulated:
-            MobileBase.Rotate(self, angle_rad, timeout=timeout)
+            MobileBase.Rotate(self, angle_rad, **kw_args)
         else:
             with prpy.util.Timer("Rotate segway"):
                 self.controller.SendCommand("Rotate " + str(angle_rad))
