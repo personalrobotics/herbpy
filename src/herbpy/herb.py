@@ -37,10 +37,17 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False, sim=True, **k
     from herbrobot import HERBRobot
     prpy.bind_subclass(robot, HERBRobot, **kw_args)
 
+    # Start by attempting to load or_rviz.
     if attach_viewer == True:
         attach_viewer = 'or_rviz'
+        env.SetViewer(attach_viewer)
 
-    if attach_viewer:
+        # Fall back on qtcoin if loading or_rviz failed
+        if env.GetViewer() is None:
+            logger.warning('Loading or_rviz failed. Falling back on qt_coin.')
+            attach_viewer = 'qtcoin'
+
+    if attach_viewer and env.GetViewer() is None:
         env.SetViewer(attach_viewer)
         if env.GetViewer() is None:
             raise Exception('Failed creating viewer of type "{0:s}".'.format(attach_viewer))
