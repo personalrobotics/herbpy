@@ -13,11 +13,9 @@
     <depend package="openrave"/>
     <depend package="manipulation2"/>
     <depend package="herb_description"/>
-    <depend package="or_rviz"/>
-    <!-- TODO: Make these completely optional. -->
-    <depend package="cbirrt2"/>
-    <depend package="orcdchomp"/>
     <export>
+        <!-- viewers -->
+        <openrave optional="or_rviz"/>
         <!-- planners -->
         <openrave optional="cbirrt2"/>
         <openrave optional="orcdchomp"/>
