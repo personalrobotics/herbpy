@@ -63,13 +63,13 @@ class HERBPantilt(prpy.base.WAM):
             traj.Insert(i, waypoint, True)
 
     def LookAt(self, target, **kw_args):
-        """
-        Look at a point in the world frame. This creates and, optionally executes,
-        a two-waypoint trajectory that starts at the current configuration and
-        moves to a goal configuration found through the neck's inverse kinematics.
-        @param target point in the world frame.
-        @param execute immediately execute the trajectory
-        @return trajectory head trajectory
+        """Look at a point in the world frame.
+        Create and, optionally, execute a two waypoint trajectory that starts
+        at the current configuration and moves to an IK solution that is
+        looking at \a target.
+        \param target point in the world frame.
+        \param **kw_args keyword arguments passed to \ref MoveTo
+        \return pantilt trajectory
         """
         dof_values = self.FindIK(target)
         if dof_values is not None:
@@ -78,6 +78,14 @@ class HERBPantilt(prpy.base.WAM):
             raise openravepy.openrave_exception('There is no IK solution available.')
 
     def MoveTo(self, target_dof_values, execute=True, **kw_args):
+        """Move to a target configuration.
+        Create and, optionally, execute a two waypoint trajectory that starts
+        in the current configuration and moves to \a target_dof_values.
+        \param target_dof_values desired configuration
+        \param execute optionally execute the trajectory
+        \param **kw_args keyword arguments passed to \p robot.ExecuteTrajectory
+        \return pantilt trajectory
+        """
         # Update the controllers to get new joint values.
         robot = self.GetRobot()
         with robot.GetEnv():
@@ -97,6 +105,10 @@ class HERBPantilt(prpy.base.WAM):
             return traj
 
     def FindIK(self, target):
+        """Find an IK solution that is looking at a desired position.
+        \param target target position
+        \return IK solution
+        """
         ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
         return self.ikmodel.manip.FindIKSolution(ik_params, 0)
 

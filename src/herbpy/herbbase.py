@@ -45,25 +45,24 @@ class HerbBase(MobileBase):
     def CloneBindings(self, parent):
         MobileBase.CloneBindings(self, parent)
 
-    def Forward(self, meters, **kw_args):
-        """
-        Drives the robot forward the desired distance
-        Note: Only implemented in simulation. Derived robots should implement this method.
-        @param meters the distance to drive the robot
-        @param timout duration to wait for execution
+    def Forward(self, meters, timeout=None):
+        """Drive forward for the desired distance.
+        \param distance distance to drive, in meters
+        \param timeout time in seconds; pass \p None to block until complete 
+        \return base trajectory
         """
         if self.simulated:
-            return MobileBase.Forward(self, meters, **kw_args)
+            return MobileBase.Forward(self, meters)
         else:
             with prpy.util.Timer("Drive segway"):
                 self.controller.SendCommand("Drive " + str(meters))
                 is_done = prpy.util.WaitForControllers([ self.controller ], timeout=timeout)
 
     def Rotate(self, angle_rad, **kw_args):
-        """
-        Rotates the robot the desired distance
-        @param angle_rad the number of radians to rotate
-        @param timeout duration to wait for execution
+        """Rotate in place by a desired angle
+        \param angle angle to turn, in radians
+        \param timeout time in seconds; pass \p None to block until complete 
+        \return base trajectory
         """
         if self.simulated:
             MobileBase.Rotate(self, angle_rad, **kw_args)
@@ -88,7 +87,7 @@ class HerbBase(MobileBase):
         @param timeout maximum duration in seconds
         @param left_arm flag to use the left force/torque sensor
         @param right_arm flag to use the right force/torque sensor
-        @return felt_force flag indicating whether the action felt a force
+        @return flag indicating whether the action felt a force
         """
         if self.simulated:
             raise NotImplementedError('DriveStraightUntilForce does not work in simulation')
