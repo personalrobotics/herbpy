@@ -2,13 +2,56 @@
 \mainpage
 \htmlinclude manifest.html
 
-\b foo 
+HerbPy is a Python library for interacting with HERB through OpenRAVE. HERB is
+a bimanual mobile manipulator designed and built by the <a
+href="https://personalrobotics.ri.cmu.edu">Personal Robotics Lab</a> at <a
+href="http://www.cmu.edu">Carnegie Mellon University</a>. HerbPy expands the
+robot-agnostic helper library PrPy by wrapping HERB-specific functionality.
 
-<!-- 
-Provide an overview of your package.
--->
+<h1>Running HerbPy</h1>
 
--->
+You use HerbPy in your script by simply calling the <code>initialize</code>
+function:
 
+\code
+env, robot = herbpy.initialize()
+\endcode
+
+By default, this function loads the OpenRAVE plugins necessary to communicate
+with HERB's hardware drivers. You can run HerbPy in simulation mode by passing
+the option \p sim=True. In both cases, you can optionally attach a
+viewer to the OpenRAVE environment by passing \p attach_viewer=True.
+
+See \ref herbpy.herb.initialize for the full list of initialization options.
+
+<h1>HerbPy Console</h1>
+HerbPy includes \ref console.py, a helper script for launching an interactive
+Python environment. Several common \ref herbpy.herb.initialize options are
+exposed as command-line arguments:
+
+\code
+rosrun herbpy console.py
+rosrun herbpy console.py --sim     # equivalent to sim=True
+rosrun herbpy console.py --viewer  # equivalent to attach_viewer=True
+\endcode
+
+
+<h1>Using HERBRobot</h1>
+The robot returned by \ref herbpy.herb.initialize is an OpenRAVE robot of type
+\ref herbpy.herbrobot.HERBRobot. This object provides access to all of HERB's
+hardware-specific functionality:
+
+<ul>
+<li>\p left_arm, \p right_arm : \ref prpy.base.wam.WAM - Barrett WAM arms</li>
+<li>\p left_hand, \p right_hand : \ref prpy.base.barretthand.BarrettHand - BarrettHand end-effectors</li>
+<li>\p head : \ref herbpy.herbpantilt.HERBPantilt - custom pan-tilt head</li>
+<li>\p base : \ref herbpy.herbbase.HerbBase - Segway RMP mobile base</li>
+</ul>
+
+You can browse the API documentation for each of these classes for more
+detailed information.
+
+<h1>Examples</h1>
+\todo Copy the <a href="https://wiki.personalrobotics.ri.cmu.edu/lib/exe/fetch.php?media=tutorials:herbpy_tutorial.pdf">HerbPy tutorial</a> into this Doxygen page.
 
 */
