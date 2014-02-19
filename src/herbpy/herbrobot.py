@@ -58,7 +58,6 @@ class HERBRobot(prpy.base.WAMRobot):
         from prpy.planning import CBiRRTPlanner, CHOMPPlanner, IKPlanner, MKPlanner, NamedPlanner, SnapPlanner, SBPLPlanner
         self.cbirrt_planner = CBiRRTPlanner()
         self.chomp_planner = CHOMPPlanner()
-        self.sbpl_planner = SBPLPlanner()
         self.mk_planner = MKPlanner()
         self.snap_planner = SnapPlanner()
         self.named_planner = NamedPlanner()
@@ -69,8 +68,10 @@ class HERBRobot(prpy.base.WAMRobot):
                                 Ranked(self.chomp_planner,
                                        Sequence(
                                             Ranked(Sequence(self.mk_planner,
-                                                            self.cbirrt_planner),
-                                                    self.sbpl_planner))))
+                                                            self.cbirrt_planner)))))
+
+        self.sbpl_planner = SBPLPlanner()
+        self.base_planner = self.sbpl_planner
 
         # Setting necessary sim flags
         self.talker_simulated = talker_sim
@@ -94,6 +95,7 @@ class HERBRobot(prpy.base.WAMRobot):
         self.right_hand = self.right_arm.hand
         self.manipulators = [ self.left_arm, self.right_arm, self.head ]
         self.planner = parent.planner
+        self.base_planner = parent.base_planner
 
     def Say(robot, message):
         """
