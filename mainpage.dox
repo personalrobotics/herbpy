@@ -9,11 +9,10 @@ href="http://www.cmu.edu">Carnegie Mellon University</a>. HerbPy expands the
 robot-agnostic helper library PrPy by wrapping HERB-specific functionality.
 
 <h1>Running HerbPy</h1>
-
 You use HerbPy in your script by simply calling the <code>initialize</code>
 function:
 
-\code
+\code{.py}
 env, robot = herbpy.initialize()
 \endcode
 
@@ -29,7 +28,7 @@ HerbPy includes \ref console.py, a helper script for launching an interactive
 Python environment. Several common \ref herbpy.herb.initialize options are
 exposed as command-line arguments:
 
-\code
+\code{.sh}
 rosrun herbpy console.py
 rosrun herbpy console.py --sim     # equivalent to sim=True
 rosrun herbpy console.py --viewer  # equivalent to attach_viewer=True
