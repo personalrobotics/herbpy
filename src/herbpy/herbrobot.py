@@ -114,6 +114,16 @@ class HERBRobot(prpy.base.WAMRobot):
             except rospy.ServiceException, e:
                 logger.error('Error talking.')
 
+    def SetStiffness(self, stiffness):
+        """
+        Set the stiffness of HERB's arms and head. Stifness values between zero
+        and one are experimental.
+        @param stiffness value between zero and one
+        """
+        self.head.SetStiffness(stiffness)
+        self.left_arm.SetStiffness(stiffness)
+        self.right_arm.SetStiffness(stiffness)
+
     def WaitForObject(robot, obj_name, timeout=None, update_period=0.1):
         start = time.time()
         found_body = None
