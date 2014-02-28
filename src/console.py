@@ -15,6 +15,8 @@ if __name__ == "__main__":
                         help='robot XML file; defaults to herb_description')
     parser.add_argument('--env-xml', type=str,
                         help='environment XML file; defaults to an empty environment')
+    parser.add_argument('-b', '--segway-sim', action='store_true',
+                        help='simulate base')
     parser.add_argument('--debug', action='store_true',
                         help='enable debug logging')
     args = parser.parse_args()
@@ -25,8 +27,15 @@ if __name__ == "__main__":
     if args.debug:
         openravepy.RaveSetDebugLevel(openravepy.DebugLevel.Debug)
 
-    env, robot = herbpy.initialize(sim=args.sim, attach_viewer=args.viewer,
-                                   robot_xml=args.robot_xml, env_path=args.env_xml)
+    herbpy_args = {'sim':args.sim,
+                   'attach_viewer':args.viewer,
+                   'robot_xml':args.robot_xml,
+                   'env_path':args.env_xml,
+                   'segway_sim':args.segway_sim}
+    if args.sim and not args.segway_sim:
+        herbpy_args['segway_sim'] = args.sim
+    
+    env, robot = herbpy.initialize(**herbpy_args)
 
     import IPython
     IPython.embed()
