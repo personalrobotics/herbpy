@@ -70,7 +70,16 @@ class HERBRobot(prpy.base.WAMRobot):
                                             Ranked(Sequence(self.mk_planner,
                                                             self.cbirrt_planner)))))
 
+        # Base planning
         self.sbpl_planner = SBPLPlanner()
+        try:
+            planner_parameters_path = os.path.join(PACKAGE_PATH, 'config/base_planner_parameters.yaml')
+            with open(planner_parameters_path, 'rb') as config_file:
+                import yaml
+                params_yaml = yaml.load(config_file)
+            self.sbpl_planner.SetPlannerParameters(params_yaml)
+        except IOError as e:
+            logger.warning('Failed loading base planner parameters from %s.', planner_parameters_path)
         self.base_planner = self.sbpl_planner
 
         # Setting necessary sim flags
