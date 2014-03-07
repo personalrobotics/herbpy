@@ -45,7 +45,7 @@ class HerbBase(MobileBase):
     def CloneBindings(self, parent):
         MobileBase.CloneBindings(self, parent)
 
-    def Forward(self, meters, timeout=None):
+    def Forward(self, meters, **kwargs):
         """Drive forward for the desired distance.
         \param distance distance to drive, in meters
         \param timeout time in seconds; pass \p None to block until complete 
@@ -56,21 +56,21 @@ class HerbBase(MobileBase):
         else:
             with prpy.util.Timer("Drive segway"):
                 self.controller.SendCommand("Drive " + str(meters))
-                is_done = prpy.util.WaitForControllers([ self.controller ], timeout=timeout)
+                is_done = prpy.util.WaitForControllers([ self.controller ], **kwargs)
 
-    def Rotate(self, angle_rad, **kw_args):
+    def Rotate(self, angle_rad, **kwargs):
         """Rotate in place by a desired angle
         \param angle angle to turn, in radians
         \param timeout time in seconds; pass \p None to block until complete 
         \return base trajectory
         """
         if self.simulated:
-            MobileBase.Rotate(self, angle_rad, **kw_args)
+            MobileBase.Rotate(self, angle_rad, **kwargs)
         else:
             with prpy.util.Timer("Rotate segway"):
                 self.controller.SendCommand("Rotate " + str(angle_rad))
                 running_controllers = [ self.controller ]
-                is_done = prpy.util.WaitForControllers(running_controllers, timeout=timeout)
+                is_done = prpy.util.WaitForControllers(running_controllers, **kwargs)
 
     def DriveStraightUntilForce(self, direction, velocity=0.1, force_threshold=3.0,
                                 max_distance=None, timeout=None, left_arm=True, right_arm=True):
