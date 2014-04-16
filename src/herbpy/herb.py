@@ -52,4 +52,7 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False, sim=True, **k
         if env.GetViewer() is None:
             raise Exception('Failed creating viewer of type "{0:s}".'.format(attach_viewer))
 
+    # Remove the ROS logging handler again. It might have been added when we loaded or_rviz.
+    prpy.logger.remove_ros_logger()
+
     return env, robot
