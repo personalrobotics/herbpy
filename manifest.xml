@@ -14,6 +14,7 @@
     <depend package="manipulation2"/>
     <depend package="herb_description"/>
     <export>
+        <openrave optional="herb_databases"/>
         <!-- viewers -->
         <openrave optional="or_rviz"/>
         <!-- planners -->
