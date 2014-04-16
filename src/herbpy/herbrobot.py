@@ -65,10 +65,9 @@ class HERBRobot(prpy.base.WAMRobot):
         self.planner = Sequence(self.ik_planner,
                                 self.named_planner,
                                 self.snap_planner, 
+                                self.mk_planner,
                                 Ranked(self.chomp_planner,
-                                       Sequence(
-                                            Ranked(Sequence(self.mk_planner,
-                                                            self.cbirrt_planner)))))
+                                       self.cbirrt_planner))
 
         # Base planning
         self.sbpl_planner = SBPLPlanner()
@@ -164,6 +163,7 @@ class HERBRobot(prpy.base.WAMRobot):
 
     def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
                                 max_distance=None, timeout=None, left_arm=True, right_arm=True):
+        logger.warning('DriveStraightUntilForce is deprecated. Use base.DriveStraightUntilForce instead.')
         robot.base.DriveStraightUntilForce(direction, velocity, force_threshold,
                                 max_distance, timeout, left_arm, right_arm)
 
@@ -177,7 +177,8 @@ class HERBRobot(prpy.base.WAMRobot):
         robot.DriveSegway(distance)
 
     def DriveSegway(robot, meters, **kw_args):
-      robot.base.Forward(meters, **kw_args)
+        logger.warning('DriveSegway is deprecated. Use base.Drive instead.')
+        robot.base.Forward(meters, **kw_args)
 
     def DriveSegwayToNamedPosition(robot, named_position):
         if robot.segway_sim:
@@ -186,7 +187,8 @@ class HERBRobot(prpy.base.WAMRobot):
             robot.base.controller.SendCommand("Goto " + named_position)
 
     def RotateSegway(robot, angle_rad, **kw_args):
-      robot.base.Rotate(angle_rad, **kw_args)
+        logger.warning('RotateSegway is deprecated. Use base.Rotate instead.')
+        robot.base.Rotate(angle_rad, **kw_args)
 
     def StopSegway(robot):
         if not robot.segway_sim:
