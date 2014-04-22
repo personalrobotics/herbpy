@@ -54,7 +54,7 @@ class HERBRobot(prpy.base.WAMRobot):
             logger.warning('Failed loading named configurations from %s.', configurations_path)
 
         # Initialize a default planning pipeline.
-        from prpy.planning import Planner, Sequence, Ranked, Fastest
+        from prpy.planning import Planner, Sequence, Ranked
         from prpy.planning import CBiRRTPlanner, CHOMPPlanner, IKPlanner, MKPlanner, NamedPlanner, SnapPlanner, SBPLPlanner
         self.cbirrt_planner = CBiRRTPlanner()
         self.chomp_planner = CHOMPPlanner()
