@@ -15,7 +15,7 @@ def generate_primitives_list():
     # Generate primitives for moving forward and backward
     primitives[0].append((1, 0, 0, 1.)) 
     primitives[0].append((8, 0, 0, 1.))
-    primitives[0].append((-1, 0, 0, 2.))
+    primitives[0].append((-1, 0, 0, 100.))
 
     # 1/16 theta change
     primitives[0].append((8, 1, 1, 1.))
@@ -33,7 +33,7 @@ def generate_primitives_list():
     # Forward and reverse
     primitives[45].append((1, 1, 0, 1.))
     primitives[45].append((6, 6, 0, 1.))
-    primitives[45].append((-1, -1, 0, 2.))
+    primitives[45].append((-1, -1, 0, 100.))
 
     # 1/16 theta change
     primitives[45].append((5,7,1, 1.))
@@ -51,7 +51,7 @@ def generate_primitives_list():
     # Straight
     primitives[22.5].append((2,1,0,1.))
     primitives[22.5].append((6,3,0,1.))
-    primitives[22.5].append((-2,-1,0,2.))
+    primitives[22.5].append((-2,-1,0,100.))
 
     # 1/16 theta change
     primitives[22.5].append((5,4,1,1.))
@@ -69,7 +69,7 @@ def generate_primitives_list():
     # Straight
     primitives[67.5].append((1,2,0,1.))
     primitives[67.5].append((3,6,0,1.))
-    primitives[67.5].append((-1,-2,0,2.))
+    primitives[67.5].append((-1,-2,0,100.))
 
     # 1/16 theta change
     primitives[67.5].append((4,5,-1,1.))
@@ -89,7 +89,7 @@ if __name__ == '__main__':
                         help="The resolution in xy")
     parser.add_argument('--angles', type=int, default=16,
                         help="The number of angles for the planner to consider")
-    parser.add_argument('--outfile', type=str, default='primitives.yaml',
+    parser.add_argument('--outfile', type=str, default='base_planner_parameters.yaml',
                         help="The name of the yaml file to generate")
     parser.add_argument('--actions', type=int, default=7,
                         help="The number of actions to select")
@@ -97,6 +97,10 @@ if __name__ == '__main__':
                         help='The weight to apply to the linear translation during cost computation')
     parser.add_argument('--tweight', type=float, default=10.0,
                         help='The weight to apply to the orientation change during cost computation')
+    parser.add_argument('--linear_collision_resolution', type=float, default=0.05,
+                        help='The linear resolution for collision checking (meters)')
+    parser.add_argument('--angular_collision_resolution', type=float, default=0.1,
+                        help='The angular resolution for collision checking')
     parser.add_argument('--debug', action='store_true',
                         help='Print debug info')
     args = parser.parse_args()
@@ -116,7 +120,6 @@ if __name__ == '__main__':
     num_angles = args.angles
     angular_resolution = 2.*numpy.pi/num_angles
     resolution = args.resolution
-    num_samples = 20
     for angleind in range(num_angles):
 
         # First pull the appropriate list of primitives for this particular angle
@@ -167,11 +170,18 @@ if __name__ == '__main__':
             intermediates = []
             
             if (final_x == 0. and final_y == 0.) or prim[2] == 0. : 
+                # Figure out how many samples based on the collision resolution 
+                #  and the type of action
+                if(final_x == 0. and final_y == 0.): # Turn in place
+                    num_samples = int(numpy.ceil(abs(prim[2]*angular_resolution/args.angular_collision_resolution)) + 0.5)
+                else:
+                    num_samples = int(numpy.ceil(numpy.linalg.norm(endpt[:2])/args.linear_collision_resolution) + 0.5)
+        
                 # Turn in place or move forward or backward
-                for sampleidx in range(num_samples):
+                for sampleidx in range(num_samples+1):
 
                     # Perform linear interpolation
-                    t = sampleidx/(num_samples - 1.)
+                    t = sampleidx/float(num_samples)
                     pt = startpt + (endpt - startpt)*t
                     r = prim[2] * angular_resolution
                     pt[2] = (startpt[2] + r*t) % (2. * numpy.pi)
@@ -191,8 +201,13 @@ if __name__ == '__main__':
                     print 'Warning: l = %d < 0 -> bad action start/end points' % S[0]
 #                    IPython.embed()
 
-                for sampleidx in range(num_samples):
-                    dt = sampleidx / (num_samples-1.)
+                # Figure out how many samples based on the collision resolution 
+                #  and the type of action
+                num_samples = max(int(0.5 + numpy.ceil(abs(prim[2]*angular_resolution/args.angular_collision_resolution))),
+                                  int(0.5 + numpy.ceil(numpy.linalg.norm(endpt[:2])/args.linear_collision_resolution)))
+                
+                for sampleidx in range(num_samples+1):
+                    dt = sampleidx / float(num_samples)
                     
                     if dt*tv < S[0]:
                         pt = numpy.array([startpt[0] + dt*tv*numpy.cos(startpt[2]),
@@ -209,7 +224,7 @@ if __name__ == '__main__':
                 error = endpt[:2] - intermediates[-1][:2]
                 if numpy.linalg.norm(error) > 0.0001:
                     for idx in range(len(intermediates)):
-                        intermediates[idx][:2] += error*idx*(1./(num_samples-1.))
+                        intermediates[idx][:2] += error*idx*(1./num_samples)
             
             pose_list = []
             for intermediate in intermediates:
