@@ -12,7 +12,7 @@ PACKAGE_PATH = ros_pack.get_path(PACKAGE)
 class HERBRobot(prpy.base.WAMRobot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
-                       head_sim, moped_sim, talker_sim, segway_sim):
+                       head_sim, vision_sim, talker_sim, segway_sim):
         prpy.base.WAMRobot.__init__(self)
 
         # Convenience attributes for accessing self components.
@@ -84,12 +84,12 @@ class HERBRobot(prpy.base.WAMRobot):
         # Setting necessary sim flags
         self.talker_simulated = talker_sim
         self.segway_sim = segway_sim
-        self.moped_sim = moped_sim
-        if not self.moped_sim:
-          args = 'MOPEDSensorSystem herbpy /moped/ map'
-          self.moped_sensorsystem = openravepy.RaveCreateSensorSystem(self.GetEnv(), args)
-          if self.moped_sensorsystem is None:
-            raise Exception("creating the MOPED sensorsystem failed")
+        self.vision_sim = vision_sim
+        if not self.vision_sim:
+          args = 'MarkerSensorSystem {0:s} {1:s} {2:s} {3:s} {4:s}'.format('herbpy', '/herbpy', '/head/wam2', 'herb', '/head/wam2')
+          self.vision_sensorsystem = openravepy.RaveCreateSensorSystem(self.GetEnv(), args)
+          if self.vision_sensorsystem is None:
+            raise Exception("creating the marker vision sensorsystem failed")
 
     def CloneBindings(self, parent):
         from prpy import Cloned
@@ -136,8 +136,8 @@ class HERBRobot(prpy.base.WAMRobot):
         start = time.time()
         found_body = None
 
-        if not robot.moped_sim:
-            robot.moped_sensorsystem.SendCommand('Enable')
+        if not robot.vision_sim:
+            robot.vision_sensorsystem.SendCommand('enable')
         else:
             # Timeout immediately in simulation.
             timeout = 0
@@ -148,7 +148,7 @@ class HERBRobot(prpy.base.WAMRobot):
                 # Check for an object with the appropriate name in the environment.
                 bodies = robot.GetEnv().GetBodies()
                 for body in bodies:
-                    if body.GetName().startswith('moped_' + obj_name):
+                    if body.GetName().startswith('vision_' + obj_name):
                         return body
 
                 # Check for a timeout.
@@ -158,8 +158,8 @@ class HERBRobot(prpy.base.WAMRobot):
 
                 time.sleep(update_period)
         finally:
-            if not robot.moped_sim:
-                robot.moped_sensorsystem.SendCommand('Disable')
+            if not robot.vision_sim:
+                robot.vision_sensorsystem.SendCommand('Disable')
 
     def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
                                 max_distance=None, timeout=None, left_arm=True, right_arm=True):

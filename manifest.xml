@@ -25,7 +25,7 @@
         <openrave optional="or_segway_controller"/>
         <!-- sensors -->
         <openrave optional="or_handstate_sensor"/>
-        <openrave optional="or_moped_sensorsystem"/>
+        <openrave optional="or_marker_sensorsystem"/>
         <openrave optional="or_handstate_sensor"/>
         <openrave optional="or_barrett_ft_sensor"/>
         <!-- utilities -->
