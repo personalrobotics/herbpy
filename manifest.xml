@@ -23,6 +23,7 @@
         <!-- controllers -->
         <openrave optional="or_owd_controller"/>
         <openrave optional="or_segway_controller"/>
+        <openrave optional="or_navigation_controller"/>
         <!-- sensors -->
         <openrave optional="or_handstate_sensor"/>
         <openrave optional="or_marker_sensorsystem"/>
