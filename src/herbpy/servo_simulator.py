@@ -4,6 +4,19 @@ logger = logging.getLogger('herbpy')
 
 class ServoSimulator:
     def __init__(self, manip, rate, watchdog_timeout):
+        """Creates a simulator to simulate real-time velocity control.
+        The manipulator will move with the velocity given by SetVelocity until
+        either: (1) another velocity is specified with SetVelocity or (2) the
+        watchdog timer expires. The simulator will reqlinquish control o the
+        arm if it SetVelocity is called with zero velocity or the watchdog
+        timer expires. This API was designed to mimic OWD's WAMServo interface
+        and is generally used as part of a control loop that outputs joint
+        velocities (e.g. visual servoing).
+        @param manip manipulator being velocity controlledo
+        @param rate frequency of position updates, in Hz
+        @param watchdog_timeout duration of the watchdog timer, in seconds
+        """
+
         self.manip = manip
         self.indices = self.manip.GetArmIndices()
         self.num_dofs = len(self.indices)
@@ -16,11 +29,17 @@ class ServoSimulator:
         self.period = 1.0 / rate
         self.timer = None
         self.mutex = threading.Lock()
-        self.thread = threading.Thread(target=self.Step)
+        self.thread = threading.Thread(target=self._Step)
         self.thread.daemon = True
         self.thread.start()
 
     def SetVelocity(self, q_dot):
+        """Sets the desired velocity of the manipulator.
+        The specified velocity will immediately overwrite any previous
+        SetVelocity commands. Sending a zero veocity disables the
+        ServoSimulator. This function is thread-safe.
+        @param q_dot manipulator joint velocities
+        """
         q_dot_limits = self.manip.parent.GetDOFVelocityLimits(self.indices)
 
         if not (numpy.abs(q_dot) <= q_dot_limits).all():
@@ -36,7 +55,7 @@ class ServoSimulator:
                 self.running = False
         logger.debug('DD Releasing')
 
-    def Step(self):
+    def _Step(self):
         while True:
             logger.debug('CC Acquiring')
             with self.mutex:

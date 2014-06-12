@@ -48,9 +48,9 @@ class HerbBase(MobileBase):
 
     def Forward(self, meters, execute=True, timeout=None, **kwargs):
         """Drive forward for the desired distance.
-        \param distance distance to drive, in meters
-        \param timeout time in seconds; pass \p None to block until complete 
-        \return base trajectory
+        @param distance distance to drive, in meters
+        @param timeout time in seconds; pass \p None to block until complete 
+        @return base trajectory
         """
         if self.simulated or not execute:
             return MobileBase.Forward(self, meters, execute=execute, timeout=timeout,  **kwargs)
@@ -61,9 +61,9 @@ class HerbBase(MobileBase):
 
     def Rotate(self, angle_rad, execute=True, timeout=None, **kwargs):
         """Rotate in place by a desired angle
-        \param angle angle to turn, in radians
-        \param timeout time in seconds; pass \p None to block until complete 
-        \return base trajectory
+        @param angle angle to turn, in radians
+        @param timeout time in seconds; pass \p None to block until complete 
+        @return base trajectory
         """
         if self.simulated or not execute:
             MobileBase.Rotate(self, angle_rad, execute=execute, timeout=timeout, **kwargs)
@@ -91,7 +91,7 @@ class HerbBase(MobileBase):
         @return flag indicating whether the action felt a force
         """
         if self.simulated:
-            raise NotImplementedError('DriveStraightUntilForce does not work in simulation')
+            raise NotImplementedError('DriveStraightUntilForce does not work in simulation.')
         else:
             if (self.robot.left_ft_sim and left_arm) or (self.robot.right_ft_sim and right_arm):
                 raise Exception('DriveStraightUntilForce does not work with simulated force/torque sensors.')

@@ -1,19 +1,18 @@
 PACKAGE = 'herbpy'
-import logging, numpy, openravepy, rospy, time
-import prpy
+import logging, prpy
 
 logger = logging.getLogger('herbpy')
-
-# Absolute path to this package.
-from rospkg import RosPack
-ros_pack = RosPack()
-PACKAGE_PATH = ros_pack.get_path(PACKAGE)
 
 class HERBRobot(prpy.base.WAMRobot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
                        head_sim, vision_sim, talker_sim, segway_sim):
         prpy.base.WAMRobot.__init__(self)
+
+        # Absolute path to this package.
+        from rospkg import RosPack
+        ros_pack = RosPack()
+        package_path = ros_pack.get_path(PACKAGE)
 
         # Convenience attributes for accessing self components.
         self.left_arm = self.GetManipulator('left')
@@ -48,7 +47,8 @@ class HERBRobot(prpy.base.WAMRobot):
         self.configurations.add_group('left_hand', self.left_hand.GetIndices())
         self.configurations.add_group('right_hand', self.right_hand.GetIndices())
         try:
-            configurations_path = os.path.join(PACKAGE_PATH, 'config/configurations.yaml')
+            configurations_path = os.path.join(package_path
+                    , 'config/configurations.yaml')
             self.configurations.load_yaml(configurations_path)
         except IOError as e:
             logger.warning('Failed loading named configurations from %s.', configurations_path)
@@ -72,7 +72,7 @@ class HERBRobot(prpy.base.WAMRobot):
         # Base planning
         self.sbpl_planner = SBPLPlanner()
         try:
-            planner_parameters_path = os.path.join(PACKAGE_PATH, 'config/base_planner_parameters.yaml')
+            planner_parameters_path = os.path.join(package_path, 'config/base_planner_parameters.yaml')
             with open(planner_parameters_path, 'rb') as config_file:
                 import yaml
                 params_yaml = yaml.load(config_file)
@@ -85,6 +85,7 @@ class HERBRobot(prpy.base.WAMRobot):
         self.talker_simulated = talker_sim
         self.segway_sim = segway_sim
         self.vision_sim = vision_sim
+
         if not self.vision_sim:
           args = 'MarkerSensorSystem {0:s} {1:s} {2:s} {3:s} {4:s}'.format('herbpy', '/herbpy', '/head/wam2', 'herb', '/head/wam2')
           self.vision_sensorsystem = openravepy.RaveCreateSensorSystem(self.GetEnv(), args)
@@ -106,11 +107,11 @@ class HERBRobot(prpy.base.WAMRobot):
         self.base_planner = parent.base_planner
 
     def Say(robot, message):
-        """
-        Say a message using HERB's text-to-speech engine.
+        """Say a message using HERB's text-to-speech engine.
         @param message
         """
         from pr_msgs.srv import AppletCommand
+        import rospy
 
         if not robot.talker_simulated:
             # XXX: HerbPy should not make direct service calls.
@@ -123,9 +124,9 @@ class HERBRobot(prpy.base.WAMRobot):
                 logger.error('Error talking.')
 
     def SetStiffness(self, stiffness):
-        """
-        Set the stiffness of HERB's arms and head. Stifness values between zero
-        and one are experimental.
+        """Set the stiffness of HERB's arms and head.
+        Zero is gravity compensation, one is position control. Stifness values
+        between zero and one are experimental.
         @param stiffness value between zero and one
         """
         self.head.SetStiffness(stiffness)
@@ -133,6 +134,19 @@ class HERBRobot(prpy.base.WAMRobot):
         self.right_arm.SetStiffness(stiffness)
 
     def WaitForObject(robot, obj_name, timeout=None, update_period=0.1):
+        """Wait for the perception system to detect an object.
+        This function will block until either: (1) an object of the appropriate
+        type has been detected by the perception system or (2) a timeout
+        occurs. The name of an object is generally equal to its filename
+        without the ".kinbody.xml" extension; e.g. the name of
+        fuze_bottle.kinbody.xml is fuze_bottle.
+        @param obj_name type of object to wait for
+        @param timeout maximum time to wait in seconds or None to wait forever
+        @param update_period period at which to poll the sensor
+        @return perceived KinBody or None if a timeout occured
+        """
+        import time
+
         start = time.time()
         found_body = None
 
@@ -163,11 +177,15 @@ class HERBRobot(prpy.base.WAMRobot):
 
     def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
                                 max_distance=None, timeout=None, left_arm=True, right_arm=True):
+        """Deprecated. Use base.DriveStraightUntilForce instead.
+        """
         logger.warning('DriveStraightUntilForce is deprecated. Use base.DriveStraightUntilForce instead.')
         robot.base.DriveStraightUntilForce(direction, velocity, force_threshold,
                                 max_distance, timeout, left_arm, right_arm)
 
     def DriveAlongVector(robot, direction, goal_pos):
+        import numpy
+        # TODO: Do we still need this? If so, we should move it into HERBBase.
         direction = direction[:2]/numpy.linalg.norm(direction[:2])
         herb_pose = robot.GetTransform()
         distance = numpy.dot(goal_pos[:2]-herb_pose[:2,3], direction)
@@ -177,19 +195,26 @@ class HERBRobot(prpy.base.WAMRobot):
         robot.DriveSegway(distance)
 
     def DriveSegway(robot, meters, **kw_args):
-        logger.warning('DriveSegway is deprecated. Use base.Drive instead.')
+        """Deprecated. Use base.Forward instead.
+        """
+        logger.warning('DriveSegway is deprecated. Use base.Forward instead.')
         robot.base.Forward(meters, **kw_args)
 
     def DriveSegwayToNamedPosition(robot, named_position):
+        """Deprecated. Use base.PlanToBasePose instead.
+        """
         if robot.segway_sim:
             raise Exception('Driving to named positions is not supported in simulation.')
         else:
             robot.base.controller.SendCommand("Goto " + named_position)
 
     def RotateSegway(robot, angle_rad, **kw_args):
+        """Deprecated. Use base.Rotate instead.
+        """
         logger.warning('RotateSegway is deprecated. Use base.Rotate instead.')
         robot.base.Rotate(angle_rad, **kw_args)
 
     def StopSegway(robot):
+        # TODO: This should be moved into HERBBase.
         if not robot.segway_sim:
             robot.base.controller.SendCommand("Stop")

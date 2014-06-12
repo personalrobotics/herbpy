@@ -12,6 +12,15 @@ class HERBPantilt(prpy.base.WAM):
         prpy.base.WAM.CloneBindings(self, parent)
 
     def FollowHand(self, traj, manipulator):
+        """Modify a trajectory to make the head follow an end-effector.
+        The input trajectory must not include any of the head's DOFs and will
+        be modified to include the head. This is implemented by appending the
+        appropriate head joint angles to the existing waypoints in the
+        trajectory. This means that the head is only guaranteed to perfectly
+        track the end-effector at the input waypoints.
+        @param traj input trajectory that does not include the head DOFs
+        @param manipulator end-effector to track
+        """
         robot = self.GetRobot()
         traj_config_spec = traj.GetConfigurationSpecification()
         head_config_spec = self.GetArmConfigurationSpecification()
@@ -67,9 +76,9 @@ class HERBPantilt(prpy.base.WAM):
         Create and, optionally, execute a two waypoint trajectory that starts
         at the current configuration and moves to an IK solution that is
         looking at \a target.
-        \param target point in the world frame.
-        \param **kw_args keyword arguments passed to \ref MoveTo
-        \return pantilt trajectory
+        @param target point in the world frame.
+        @param **kw_args keyword arguments passed to \ref MoveTo
+        @return pantilt trajectory
         """
         dof_values = self.FindIK(target)
         if dof_values is not None:
@@ -81,10 +90,10 @@ class HERBPantilt(prpy.base.WAM):
         """Move to a target configuration.
         Create and, optionally, execute a two waypoint trajectory that starts
         in the current configuration and moves to \a target_dof_values.
-        \param target_dof_values desired configuration
-        \param execute optionally execute the trajectory
-        \param **kw_args keyword arguments passed to \p robot.ExecuteTrajectory
-        \return pantilt trajectory
+        @param target_dof_values desired configuration
+        @param execute optionally execute the trajectory
+        @param **kw_args keyword arguments passed to \p robot.ExecuteTrajectory
+        @return pantilt trajectory
         """
         # Update the controllers to get new joint values.
         robot = self.GetRobot()
@@ -106,8 +115,8 @@ class HERBPantilt(prpy.base.WAM):
 
     def FindIK(self, target):
         """Find an IK solution that is looking at a desired position.
-        \param target target position
-        \return IK solution
+        @param target target position
+        @return IK solution
         """
         ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
         return self.ikmodel.manip.FindIKSolution(ik_params, 0)
