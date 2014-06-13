@@ -1,5 +1,6 @@
 PACKAGE = 'herbpy'
 import logging, prpy
+import openravepy
 
 logger = logging.getLogger('herbpy')
 
