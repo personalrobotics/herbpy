@@ -1,30 +1,63 @@
 PACKAGE = 'herbpy'
-import roslib; roslib.load_manifest(PACKAGE)
 import logging, prpy, openravepy
 from herbbase import HerbBase
 
 logger = logging.getLogger('herbpy')
 
-# Add dependencies to our OpenRAVE plugin and data search paths.
-import prpy.dependency_manager
-prpy.dependency_manager.export(PACKAGE)
+def initialize(robot_xml=None, env_path=None, attach_viewer=False,
+               sim=True, **kw_args):
+    import prpy
+    prpy.logger.initialize_logging()
 
-def initialize(robot_xml=None, env_path=None, attach_viewer=False, sim=True, **kw_args):
+    # Load plugins.
+    prpy.dependency_manager.export()
+    openravepy.RaveInitialize(True)
+
     # Create the environment.
     env = openravepy.Environment()
     if env_path is not None:
         if not env.Load(env_path):
             raise Exception('Unable to load environment frompath %s' % env_path)
 
-    if robot_xml is None:
-        import os, rospkg
-        rospack = rospkg.RosPack()
-        base_path = rospack.get_path('herb_description')
-        robot_xml = os.path.join(base_path, 'ordata', 'robots', 'herb.robot.xml')
+    # Find the HERB URDF and SRDF files.
+    from catkin.find_in_workspaces import find_in_workspaces
+    share_directories = find_in_workspaces(search_dirs=['share'],
+                                           project='herb_description')
+    if not share_directories:
+        logger.error('Unable to find the HERB model. Do you have the'
+                     ' package herb_description installed?')
+        raise ValueError('Unable to find HERB model.')
 
-    robot = env.ReadRobotXMLFile(robot_xml)
-    env.Add(robot)
-    prpy.logger.initialize_logging()
+    import os.path
+    found_models = False
+    for share_directory in share_directories:
+        urdf_path = os.path.join(share_directories[0], 'robots', 'herb.urdf')
+        srdf_path = os.path.join(share_directories[0], 'robots', 'herb.srdf')
+        if os.path.exists(urdf_path) and os.path.exists(srdf_path):
+            found_models = True
+            break
+
+    if not found_models:
+        logger.error('Missing URDF file and/or SRDF file for HERB.'
+                     ' Is the herb_description package properly installed?')
+        raise ValueError('Unable to find HERB URDF and SRDF files.')
+
+    # Load the URDF file into OpenRAVE.
+    urdf_module = openravepy.RaveCreateModule(env, 'urdf')
+    if urdf_module is None:
+        logger.error('Unable to load or_urdf module. Do you have or_urdf'
+                     ' built and installed in one of your Catkin workspaces?')
+        raise ValueError('Unable to load or_urdf plugin.')
+
+    args = 'Load {:s} {:s}'.format(urdf_path, srdf_path)
+    herb_name = urdf_module.SendCommand(args)
+    if herb_name is None:
+        raise ValueError('Failed loading HERB model using or_urdf.')
+
+    robot = env.GetRobot(herb_name)
+    if robot is None:
+        raise ValueError('Unable to find robot with name "{:s}".'.format(
+                         herb_name))
 
     # Default arguments.
     keys = [ 'left_arm_sim', 'left_hand_sim', 'left_ft_sim',
@@ -50,9 +83,11 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False, sim=True, **k
     if attach_viewer and env.GetViewer() is None:
         env.SetViewer(attach_viewer)
         if env.GetViewer() is None:
-            raise Exception('Failed creating viewer of type "{0:s}".'.format(attach_viewer))
+            raise Exception('Failed creating viewer of type "{0:s}".'.format(
+                            attach_viewer))
 
-    # Remove the ROS logging handler again. It might have been added when we loaded or_rviz.
+    # Remove the ROS logging handler again. It might have been added when we
+    # loaded or_rviz.
     prpy.logger.remove_ros_logger()
 
     return env, robot
