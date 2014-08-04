@@ -38,7 +38,7 @@ class HERBRobot(prpy.base.WAMRobot):
                            owd_namespace='/right/owd', bhd_namespace='/right/bhd', ft_sim=right_ft_sim)
 
         self.base = HerbBase(sim=segway_sim, robot=self)
-        prpy.bind.InstanceDeduplicator.add_canonical(self.base)
+        #prpy.bind.InstanceDeduplicator.add_canonical(self.base)
         
         # Support for named configurations.
         import os.path
