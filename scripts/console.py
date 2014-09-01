@@ -3,6 +3,12 @@
 Provides a simple console that sets up basic functionality for 
 using herbpy and openravepy.
 """
+
+import os
+if os.environ.get('ROS_DISTRO', 'hydro')[0] in 'abcdef':
+    import roslib
+    roslib.load_manifest('herbpy')
+
 import argparse, herbpy, logging, numpy, openravepy, sys
 
 if __name__ == "__main__":
