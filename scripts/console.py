@@ -5,7 +5,7 @@ using herbpy and openravepy.
 """
 
 import os
-if os.environ.get('ROS_DISTRO', 'hydro')[0] in 'abcdef':
+if os.environ.get('ROS_DISTRO', 'hydro')[0] <= 'f':
     import roslib
     roslib.load_manifest('herbpy')
 
