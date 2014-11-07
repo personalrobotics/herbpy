@@ -36,9 +36,7 @@ class HERBRobot(prpy.base.WAMRobot):
                            owd_namespace='/left/owd', bhd_namespace='/left/bhd', ft_sim=right_ft_sim)
         prpy.bind_subclass(self.right_arm.hand, BarrettHand, sim=right_hand_sim, manipulator=self.right_arm,
                            owd_namespace='/right/owd', bhd_namespace='/right/bhd', ft_sim=right_ft_sim)
-
         self.base = HerbBase(sim=segway_sim, robot=self)
-        #prpy.bind.InstanceDeduplicator.add_canonical(self.base)
         
         # Support for named configurations.
         import os.path
@@ -47,12 +45,24 @@ class HERBRobot(prpy.base.WAMRobot):
         self.configurations.add_group('head', self.head.GetArmIndices())
         self.configurations.add_group('left_hand', self.left_hand.GetIndices())
         self.configurations.add_group('right_hand', self.right_hand.GetIndices())
+
+        if prpy.dependency_manager.is_catkin():
+            from catkin.find_in_workspaces import find_in_workspaces
+            configurations_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
+                    path='config/configurations.yaml', first_match_only=True)
+            if not configurations_paths:
+                raise ValueError(
+                    'Unable to load named configurations from "config/configurations.yaml".')
+
+            configurations_path = configurations_paths[0]
+        else:
+            configurations_path = os.path.join(package_path, 'config/configurations.yaml')
+
         try:
-            configurations_path = os.path.join(package_path
-                    , 'config/configurations.yaml')
             self.configurations.load_yaml(configurations_path)
         except IOError as e:
-            logger.warning('Failed loading named configurations from %s.', configurations_path)
+            raise ValueError('Failed laoding named configurations from "{:s}".'.format(
+                configurations_path))
 
         # Initialize a default planning pipeline.
         from prpy.planning import Planner, Sequence, Ranked
@@ -70,15 +80,28 @@ class HERBRobot(prpy.base.WAMRobot):
                                 self.cbirrt_planner)
 
         # Base planning
+        if prpy.dependency_manager.is_catkin():
+            from catkin.find_in_workspaces import find_in_workspaces
+            planner_parameters_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
+                    path='config/base_planner_parameters.yaml', first_match_only=True)
+            if not planner_parameters_paths:
+                raise ValueError(
+                    'Unable to load base planner parameters from "config/base_planner_parameters.yaml".')
+
+            planner_parameters_path = planner_parameters_paths[0]
+        else:
+            planner_parameters_path = os.path.join(package_path, 'config/base_planner_parameters.yaml')
+
         self.sbpl_planner = SBPLPlanner()
         try:
-            planner_parameters_path = os.path.join(package_path, 'config/base_planner_parameters.yaml')
             with open(planner_parameters_path, 'rb') as config_file:
                 import yaml
                 params_yaml = yaml.load(config_file)
             self.sbpl_planner.SetPlannerParameters(params_yaml)
         except IOError as e:
-            logger.warning('Failed loading base planner parameters from %s.', planner_parameters_path)
+            raise ValueError('Failed loading base planner parameters from "{:s}".'.format(
+                planner_parameters_path))
+
         self.base_planner = self.sbpl_planner
 
         # Setting necessary sim flags
