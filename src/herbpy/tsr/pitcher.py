@@ -30,7 +30,8 @@ def pitcher_grasp(robot, pitcher, manip=None):
     return [grasp_chain]
         
 @TSRFactory('herb', 'rubbermaid_ice_guard_pitcher_blue', 'pour')
-def pitcher_pour(robot, pitcher, min_tilt, max_tilt, manip=None, grasp_transform = None):
+def pitcher_pour(robot, pitcher, min_tilt = 1.4, max_tilt = 1.57, manip=None, grasp_transform = None, 
+                 pitcher_pose = None):
     '''
     @param robot The robot whose active manipulator should be used to pour
     @param pitcher The pitcher to pour
@@ -49,8 +50,10 @@ def pitcher_pour(robot, pitcher, min_tilt, max_tilt, manip=None, grasp_transform
             manip.SetActive()
             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
+    if pitcher_pose is None:
+        pitcher_pose = pitcher.GetTransform()
     pitcher_in_world = pitcher.GetTransform()
-    
+
     # spout in pitcher
     spout_in_pitcher = numpy.array([[-0.7956, 0.6057, 0., -0.0662],
                                     [-0.6057, -0.7956, 0., -0.0504],
@@ -64,7 +67,7 @@ def pitcher_pour(robot, pitcher, min_tilt, max_tilt, manip=None, grasp_transform
     Bw_pour = numpy.zeros((6,2))
     Bw_pour[4,:] = [ -0.2, 1.57 ]
         
-    tsr_0 = TSR(T0_w = pitcher_in_world,
+    tsr_0 = TSR(T0_w = pitcher_pose,
                 Tw_e = spout_in_pitcher,
                 Bw = numpy.zeros((6,2)),
                 manip = manip_idx)
