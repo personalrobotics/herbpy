@@ -5,8 +5,10 @@ from prpy.tsr.tsr import *
 @TSRFactory('herb', 'rubbermaid_ice_guard_pitcher_blue', 'grasp')
 def pitcher_grasp(robot, pitcher, manip=None):
     '''
-    @param robot The robot whose active manipulator should be used for the grasp
-    @param pitcher The pitcher to pour
+    @param robot The robot performing the grasp
+    @param pitcher The pitcher to grasp
+    @param manip The manipulator to perform the grasp, if None
+       the active manipulator on the robot is used
     '''
     
     if manip is None:
