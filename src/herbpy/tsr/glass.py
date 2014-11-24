@@ -104,3 +104,42 @@ def glass_on_table(robot, glass, pose_tsr_chain, manip=None):
 
     return  [ place_chain ]
     
+@TSRFactory('herb', 'glass', 'transport')
+def glass_transport(robot, glass, manip=None, roll_epsilon=0.2, pitch_epsilon=0.2, yaw_epsilon=0.2):
+    '''
+    Generates a trajectory-wide constraint for transporting the object with little roll, pitch or yaw
+    Assumes the object has already been grasped and is in the proper
+    configuration for transport.
+
+    @param robot The robot grasping the glass
+    @param glass The grasped object
+    @param manip the manipulator grasping the object, if None the active manipulator 
+       of the robot is used
+    @param roll_epsilon The amount to let the object roll during transport (object frame)
+    @param pitch_epsilon The amount to let the object pitch during transport (object frame)
+    @param yaw_epsilon The amount to let the object yaw during transport (object frame)
+    '''
+   
+    if manip is None:
+        manip_idx = robot.GetActiveManipulatorIndex()
+        manip = robot.GetActiveManipulator()
+    else:
+        with manip.GetRobot():
+            manip.SetActive()
+            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+
+    ee_in_glass = numpy.dot(numpy.linalg.inv(glass.GetTransform()), manip.GetEndEffectorTransform())
+    Bw = numpy.array([[-100., 100.], # bounds that cover full reachability of manip
+                      [-100., 100.],
+                      [-100., 100.],
+                      [-roll_epsilon, roll_epsilon],
+                      [-pitch_epsilon, pitch_epsilon],
+                      [-yaw_epsilon, yaw_epsilon]])
+    transport_tsr = TSR(T0_w = glass.GetTransform(),
+                        Tw_e = ee_in_glass,
+                        Bw = Bw,
+                        manip = manip_idx)
+    transport_chain = TSRChain(sample_start = False, sample_goal=False, constrain=True,
+                               TSR = transport_tsr)
+    
+    return [ transport_chain ]
