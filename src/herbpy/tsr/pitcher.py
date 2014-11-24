@@ -2,7 +2,7 @@ import numpy
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import *
 
-@TSRFactory('herb', 'rubbermaid_ice_guard_pitcher_blue', 'grasp')
+@TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'grasp')
 def pitcher_grasp(robot, pitcher, manip=None):
     '''
     @param robot The robot performing the grasp
@@ -31,7 +31,7 @@ def pitcher_grasp(robot, pitcher, manip=None):
 
     return [grasp_chain]
         
-@TSRFactory('herb', 'rubbermaid_ice_guard_pitcher_blue', 'pour')
+@TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'pour')
 def pitcher_pour(robot, pitcher, min_tilt = 1.4, max_tilt = 1.57, manip=None, grasp_transform = None, 
                  pitcher_pose = None):
     '''
