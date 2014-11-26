@@ -8,7 +8,7 @@ class HERBRobot(prpy.base.WAMRobot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
                        head_sim, vision_sim, talker_sim, segway_sim):
-        prpy.base.WAMRobot.__init__(self)
+        prpy.base.WAMRobot.__init__(self, robot_name='herb')
 
         # Absolute path to this package.
         from rospkg import RosPack
@@ -51,8 +51,7 @@ class HERBRobot(prpy.base.WAMRobot):
             configurations_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
                     path='config/configurations.yaml', first_match_only=True)
             if not configurations_paths:
-                raise ValueError(
-                    'Unable to load named configurations from "config/configurations.yaml".')
+                raise ValueError('Unable to load named configurations from "config/configurations.yaml".')
 
             configurations_path = configurations_paths[0]
         else:
@@ -67,11 +66,10 @@ class HERBRobot(prpy.base.WAMRobot):
         # Support for loading tsrs from yaml
         if prpy.dependency_manager.is_catkin():
             from catkin.find_in_workspaces import find_in_workspaces
-            tsr_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
-                    path='config/tsrs.yaml', first_match_only=True)
+            tsrs_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
+                             path='config/tsrs.yaml', first_match_only=True)
             if not tsrs_paths:
-                raise ValueError(
-                    'Unable to load named tsrs from "config/tsrs.yaml".')
+                raise ValueError('Unable to load named tsrs from "config/tsrs.yaml".')
 
             tsrs_path = tsrs_paths[0]
         else:
