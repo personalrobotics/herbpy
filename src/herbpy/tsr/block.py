@@ -3,13 +3,13 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import *
 
 @TSRFactory('herb', 'block', 'place')
-def block_on_object(robot, block, obj, manip=None):
+def block_at_pose(robot, block, position, manip=None):
     '''
     Generates end-effector poses for placing the block on another object
     
     @param robot The robot grasping the block
     @param block The block being grasped
-    @param obj The object to place the block on
+    @param position The position to place the block [x,y,z]
     @param manip The manipulator grasping the object, if None the 
        active manipulator of the robot is used
     '''
@@ -22,17 +22,15 @@ def block_on_object(robot, block, obj, manip=None):
             manip.SetActive()
             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
-    obj_aabb = obj.ComputeAABB()
-    
     # Block on the object
-    Tw_e = numpy.eye(4)
-    Tw_e[:3,:3] = block.GetTransform()[:3,:3]
-    Tw_e[2,3] = obj_aabb.extents()[2] + 0.02
+    T0_w = numpy.eye(4)
+    T0_w[:3,3] = position
+
     Bw = numpy.zeros((6,2))
     Bw[5,:] = [-numpy.pi, numpy.pi]
 
-    place_tsr = TSR(T0_w = obj.GetTransform(),
-                    Tw_e = Tw_e, 
+    place_tsr = TSR(T0_w = T0_w,
+                    Tw_e = numpy.eye(4),
                     Bw = Bw,
                     manip = manip_idx)
 
