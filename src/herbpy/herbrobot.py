@@ -8,7 +8,7 @@ class HERBRobot(prpy.base.WAMRobot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
                        head_sim, vision_sim, talker_sim, segway_sim):
-        prpy.base.WAMRobot.__init__(self)
+        prpy.base.WAMRobot.__init__(self, robot_name='herb')
 
         # Absolute path to this package.
         from rospkg import RosPack
@@ -51,8 +51,7 @@ class HERBRobot(prpy.base.WAMRobot):
             configurations_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
                     path='config/configurations.yaml', first_match_only=True)
             if not configurations_paths:
-                raise ValueError(
-                    'Unable to load named configurations from "config/configurations.yaml".')
+                raise ValueError('Unable to load named configurations from "config/configurations.yaml".')
 
             configurations_path = configurations_paths[0]
         else:
@@ -64,6 +63,24 @@ class HERBRobot(prpy.base.WAMRobot):
             raise ValueError('Failed laoding named configurations from "{:s}".'.format(
                 configurations_path))
 
+        # Support for loading tsrs from yaml
+        if prpy.dependency_manager.is_catkin():
+            from catkin.find_in_workspaces import find_in_workspaces
+            tsrs_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
+                             path='config/tsrs.yaml', first_match_only=True)
+            if not tsrs_paths:
+                raise ValueError('Unable to load named tsrs from "config/tsrs.yaml".')
+
+            tsrs_path = tsrs_paths[0]
+        else:
+            tsrs_path = os.path.join(package_path, 'config/tsrs.yaml')
+
+        try:
+            self.tsrlibrary.load_yaml(tsrs_path)
+        except IOError as e:
+            raise ValueError('Failed loading named tsrs from "{:s}".'.format(
+                tsrs_path))
+
         # Initialize a default planning pipeline.
         from prpy.planning import Planner, Sequence, Ranked
         from prpy.planning import CBiRRTPlanner, CHOMPPlanner, IKPlanner, MKPlanner, NamedPlanner, SnapPlanner, SBPLPlanner, OMPLPlanner
@@ -72,11 +89,14 @@ class HERBRobot(prpy.base.WAMRobot):
         self.snap_planner = SnapPlanner()
         self.named_planner = NamedPlanner()
         self.ik_planner = IKPlanner()
-        self.ompl_planner = OMPLPlanner(algorithm='OMPLPlanner')
+        self.chomp_planner = CHOMPPlanner()
+        self.ompl_planner = OMPLPlanner(algorithm='RRTConnect')
         self.planner = Sequence(self.ik_planner,
                                 self.named_planner,
                                 self.snap_planner, 
                                 self.mk_planner,
+                                self.chomp_planner,
+                                self.ompl_planner,
                                 self.cbirrt_planner)
 
         # Base planning
