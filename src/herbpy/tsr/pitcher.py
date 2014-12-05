@@ -57,10 +57,12 @@ def pitcher_pour(robot, pitcher, min_tilt = 1.4, max_tilt = 1.57, manip=None, gr
     pitcher_in_world = pitcher.GetTransform()
 
     # spout in pitcher
-    spout_in_pitcher = numpy.array([[-0.7956, 0.6057, 0., -0.0662],
-                                    [-0.6057, -0.7956, 0., -0.0504],
-                                    [0., 0., 1., 0.2376], 
+    spout_in_pitcher = numpy.array([[-0.7956, 0.6057, 0., 0.],
+                                    [-0.6057, -0.7956, 0., 0.],
+                                    [0., 0., 1., 0.0599], 
                                     [0., 0., 0., 1.]])
+    spout_offset = 0.113
+    spout_in_pitcher[:2,3] = spout_offset*spout_in_pitcher[:2,0]
     
     # end-effector relative to spout
     ee_in_world = manip.GetEndEffectorTransform()
