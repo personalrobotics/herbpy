@@ -2,8 +2,8 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.2.0 (2014-12-12)
+------------------
 * Deleting transient save file.
 * Contributors: Pras Velagapudi
 
