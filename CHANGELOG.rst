@@ -2,6 +2,11 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Deleting transient save file.
+* Contributors: Pras Velagapudi
+
 1.1.0 (2014-12-11)
 ------------------
 * Added TSRLibrary to HERB.
