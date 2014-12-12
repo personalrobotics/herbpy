@@ -2,8 +2,8 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2014-12-11)
+------------------
 * Added TSRLibrary to HERB.
 * Adding TSRs for the pitcker, the block, and an "upright" constraint.
 * Enabled CHOMP and OMPL.
