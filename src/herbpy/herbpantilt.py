@@ -1,15 +1,15 @@
 import logging, numpy, openravepy, rospy
 import prpy
+from prpy.base.wam import WAM
 
-class HERBPantilt(prpy.base.WAM):
+class HERBPantilt(WAM):
     def __init__(self, sim, owd_namespace):
         # FIXME: We don't build the IK database because ikfast fails with a
         # compilation error on the pantilt. This should actually be LookAt3D.
-        prpy.base.WAM.__init__(self, sim, owd_namespace, None)
-        #prpy.base.WAM.__init__(self, sim, owd_namespace, openravepy.IkParameterization.Type.Lookat3D)
+        WAM.__init__(self, sim, owd_namespace, None)
 
     def CloneBindings(self, parent):
-        prpy.base.WAM.CloneBindings(self, parent)
+        WAM.CloneBindings(self, parent)
 
     def FollowHand(self, traj, manipulator):
         """Modify a trajectory to make the head follow an end-effector.

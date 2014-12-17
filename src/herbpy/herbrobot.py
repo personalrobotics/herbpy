@@ -1,14 +1,20 @@
 PACKAGE = 'herbpy'
-import logging, prpy
+import logging
 import openravepy
+import prpy
+from prpy.base.barretthand import BarrettHand
+from prpy.base.wam import WAM
+from prpy.base.wamrobot import WAMRobot
+from herbbase import HerbBase
+from herbpantilt import HERBPantilt
 
 logger = logging.getLogger('herbpy')
 
-class HERBRobot(prpy.base.WAMRobot):
+class HERBRobot(WAMRobot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
                        head_sim, vision_sim, talker_sim, segway_sim):
-        prpy.base.WAMRobot.__init__(self, robot_name='herb')
+        WAMRobot.__init__(self, robot_name='herb')
 
         # Absolute path to this package.
         from rospkg import RosPack
@@ -26,9 +32,6 @@ class HERBRobot(prpy.base.WAMRobot):
         self.manipulators = [ self.left_arm, self.right_arm, self.head ]
 
         # Dynamically switch to self-specific subclasses.
-        from herbbase import HerbBase
-        from prpy.base import BarrettHand, WAM
-        from herbpantilt import HERBPantilt
         prpy.bind_subclass(self.left_arm, WAM, sim=left_arm_sim, owd_namespace='/left/owd')
         prpy.bind_subclass(self.right_arm, WAM, sim=right_arm_sim, owd_namespace='/right/owd')
         prpy.bind_subclass(self.head, HERBPantilt, sim=head_sim, owd_namespace='/head/owd')
@@ -138,7 +141,7 @@ class HERBRobot(prpy.base.WAMRobot):
 
     def CloneBindings(self, parent):
         from prpy import Cloned
-        prpy.base.WAMRobot.CloneBindings(self, parent)
+        WAMRobot.CloneBindings(self, parent)
         self.left_arm = Cloned(parent.left_arm)
         self.right_arm = Cloned(parent.right_arm)
         self.head = Cloned(parent.head)
