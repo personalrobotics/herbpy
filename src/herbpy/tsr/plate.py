@@ -62,7 +62,7 @@ def plate_on_table(robot, plate, pose_tsr_chain, manip=None):
     # we want the plate at 45 degrees and above the pose on the table
     palm_direction = manip.GetEndEffectorTransform()[:,2]  # palm points in the direction of the z-axis
     tilt_axis = [-palm_direction[1], palm_direction[0], 0] # orthogonal to palm direction
-    tilt_amount = 45. * numpy.pi/180.
+    tilt_amount = 30. * numpy.pi/180.
 
     # rotate to align the tilt axis with the x-axis
     axis_direction = numpy.arctan2(tilt_axis[1], tilt_axis[0])
