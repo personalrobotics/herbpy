@@ -27,6 +27,7 @@ if __name__ == "__main__":
                         help='enable debug logging')
     args = parser.parse_args()
 
+    openravepy.RaveInitialize(True)
     openravepy.misc.InitOpenRAVELogging()
 
     if args.debug:
