@@ -23,7 +23,7 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
             raise Exception('Unable to load environment frompath %s' % env_path)
 
     if prpy.dependency_manager.is_catkin():
-        #Find the HERB URDF and SRDF files.
+        # Find the HERB URDF and SRDF files.
         from catkin.find_in_workspaces import find_in_workspaces
         share_directories = find_in_workspaces(search_dirs=['share'],
                                                project='herb_description')
@@ -85,12 +85,14 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
 
     # Start by attempting to load or_rviz.
     if attach_viewer == True:
-        attach_viewer = 'or_rviz'
+        attach_viewer = 'rviz'
         env.SetViewer(attach_viewer)
 
         # Fall back on qtcoin if loading or_rviz failed
         if env.GetViewer() is None:
-            logger.warning('Loading or_rviz failed. Falling back on qt_coin.')
+            logger.warning(
+                'Loading the RViz viewer failed. Do you have or_interactive'
+                ' marker installed? Falling back on qtcoin.')
             attach_viewer = 'qtcoin'
 
     if attach_viewer and env.GetViewer() is None:
