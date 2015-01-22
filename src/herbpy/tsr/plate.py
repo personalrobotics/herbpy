@@ -20,7 +20,7 @@ def plate_grasp(robot, plate, manip=None):
     plate_radius = plate.ComputeAABB().extents()[0]
     T0_w = plate.GetTransform()
     Tw_e = numpy.array([[0., -1.,  0., 0.],
-                        [0.,  0., -1., plate_radius + 0.2], #radius plus end-effector offset
+                        [0.,  0., -1., plate_radius + 0.18], #radius plus end-effector offset
                         [1.,  0.,  0., 0.],
                         [0.,  0.,  0., 1.]])
     Bw = numpy.zeros((6,2))
