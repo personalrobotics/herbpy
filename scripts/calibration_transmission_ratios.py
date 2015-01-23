@@ -8,6 +8,8 @@ import math
 import numpy
 import serial
 import struct
+import yaml
+import rospy
 from enum import IntEnum
 
 ActiveDOF = openravepy.Robot.SaveParameters.ActiveDOF 
@@ -161,16 +163,15 @@ def calibrate(sensor, manipulator, nominal_config, ijoint, padding=0.05, wait=1.
     angle_actual = max_actual - min_actual
     angle_measurement = math.acos(numpy.dot(min_gravity, max_gravity))
 
-    # TODO: Is this flipped?
-    # TODO: How do we deal with the differentials?
-    correction = angle_measurement / angle_actual
-    print('J{:d}: Predicted:  {: 1.7f} radians'.format(ijoint + 1, angle_actual))
-    print('J{:d}: Measured:   {: 1.7f} radians'.format(ijoint + 1, angle_measurement))
-    print('J{:d}: Correction: {: 1.7f}'.format(ijoint + 1, correction))
-
+    return angle_actual, angle_measurement
 
 if __name__ == '__main__':
-    env, robot = herbpy.initialize(sim=True, attach_viewer='interactivemarker')
+
+    sim = True
+    namespace = '/right/owd/'
+    output_path = 'transmission_ratios.yaml'
+
+    env, robot = herbpy.initialize(sim=sim, attach_viewer='interactivemarker')
     robot.planner = prpy.planning.SnapPlanner()
 
     # TODO: Hack to work around a race condition in or_interactivemarker.
@@ -202,6 +203,11 @@ if __name__ == '__main__':
             link.Enable(False)
             link.SetVisible(False)
 
+    output_data = {}
+
+    if not sim:
+        rospy.init_node('transmission_ratio_calibrator', anonymous=True)
+
     with X3Inclinometer(port='/dev/ttyUSB0') as sensor:
         # Reset the inclinometer by setting all offsets to zero and reverting
         # to the default sign on all axes.
@@ -216,7 +222,37 @@ if __name__ == '__main__':
         # Sequentially calibrate each joint.
         for ijoint in xrange(manipulator.GetArmDOF()):
             print()
-            calibrate(sensor, robot.right_arm, nominal_config, ijoint)
+            print()
+
+            # Compute the error in the current transmission ratio.
+            angle_encoders, angle_sensor = calibrate(
+                sensor, robot.right_arm, nominal_config, ijoint)
+
+            # TODO: Is this flipped?
+            correction = angle_sensor / angle_encoders
+
+            print()
+            print('J{:d}: Predicted:  {: 1.7f} radians'.format(ijoint + 1, angle_encoders))
+            print('J{:d}: Measured:   {: 1.7f} radians'.format(ijoint + 1, angle_sensor))
+            print('J{:d}: Correction: {: 1.7f}'.format(ijoint + 1, correction))
+
+            # Compute the new transmission ratio.
+            if not sim or True:
+                param_name = 'motor{:d}_transmission_ratio'.format(ijoint + 1)
+                old_transmission_ratio = rospy.get_param(namespace + param_name)
+                new_transmission_ratio = old_transmission_ratio * correction
+                output_data[param_name] = new_transmission_ratio
+
+                print('J{:d}: Transmission Ratio: {: 1.7f} -> {: 1.7f}'.format(
+                    ijoint + 1, old_transmission_ratio, new_transmission_ratio))
+
+        # TODO: What about the differentials? These correspond to parameters: 
+        #   - /right/owd/differential3_ratio
+        #   - /right/owd/differential6_ratio
+
+        with open(output_path, 'w') as output_file:
+            yaml.dump(output_data, output_file)
+            print('Wrote output to: {:s}'.format(output_path))
 
         """
         while True:
