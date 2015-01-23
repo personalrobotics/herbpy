@@ -178,7 +178,7 @@ joint_inclinometer_axes = [
 ]
 
 def calibrate(sensor, manipulator, nominal_config, ijoint, iaxis=None,
-              padding=0.05, wait=1., smooth=True):
+              padding=0.05, wait=5., smooth=True):
     min_limit, max_limit = robot.GetActiveDOFLimits()
 
     """
@@ -189,7 +189,7 @@ def calibrate(sensor, manipulator, nominal_config, ijoint, iaxis=None,
     print('J{:d}: Moving to nominal configuration'.format(ijoint + 1))
     robot.PlanToConfiguration(nominal_config, smooth=smooth)
 
-    print('J{:d}: Moving to negative joint limit'.format(ijoint + 1))
+    print('J{:d}: Moving to negative joint limit: {:f}'.format(ijoint + 1, min_limit[ijoint] + padding))
     min_config = numpy.array(nominal_config)
     min_config[ijoint] = min_limit[ijoint] + padding
     robot.PlanToConfiguration(min_config, smooth=smooth)
@@ -199,7 +199,7 @@ def calibrate(sensor, manipulator, nominal_config, ijoint, iaxis=None,
     min_actual = robot.GetActiveDOFValues()[ijoint]
     min_measurement, _ = sensor.get_all_angles()
 
-    print('J{:d}: Moving to positive joint limit'.format(ijoint + 1))
+    print('J{:d}: Moving to positive joint limit: {:f}'.format(ijoint + 1, max_limit[ijoint] - padding))
     max_config = numpy.array(nominal_config)
     max_config[ijoint] = max_limit[ijoint] - padding
     robot.PlanToConfiguration(max_config, smooth=smooth)
@@ -208,6 +208,8 @@ def calibrate(sensor, manipulator, nominal_config, ijoint, iaxis=None,
     time.sleep(wait)
     max_actual = robot.GetActiveDOFValues()[ijoint]
     max_measurement, _ = sensor.get_all_angles()
+
+    angle_actual = max_actual - min_actual
 
     # Compute the angle between the two gravity vectors.
     if iaxis is None:
@@ -220,7 +222,11 @@ def calibrate(sensor, manipulator, nominal_config, ijoint, iaxis=None,
     else:
         angle_measurement = abs(max_measurement[iaxis] - min_measurement[iaxis])
 
-    angle_actual = max_actual - min_actual
+        if angle_measurement - angle_actual > math.pi:
+            angle_measurement = angle_measurement - 2 * math.pi
+        elif angle_measurement - angle_actual < -math.pi:
+            angle_measurement = angle_measurement + 2 * math.pi
+
     return angle_actual, angle_measurement
 
 if __name__ == '__main__':
@@ -298,6 +304,8 @@ if __name__ == '__main__':
 
         # Sequentially calibrate each joint.
         for ijoint in xrange(manipulator.GetArmDOF()):
+            ijoint = 4
+
             print()
             print()
 
@@ -320,7 +328,7 @@ if __name__ == '__main__':
                 param_name = 'motor{:d}_transmission_ratio'.format(ijoint + 1)
                 old_transmission_ratio = rospy.get_param(namespace + param_name)
                 new_transmission_ratio = old_transmission_ratio * correction
-                output_data[param_name] = new_transmission_ratio
+                output_data[param_name] = new_transmission_ratio.tolist()
 
                 print('J{:d}: Transmission Ratio: {: 1.7f} -> {: 1.7f}'.format(
                     ijoint + 1, old_transmission_ratio, new_transmission_ratio))
