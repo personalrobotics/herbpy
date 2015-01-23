@@ -2,7 +2,7 @@ import numpy
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import *
 
-@TSRFactory('herb', 'bowl', 'grasp')
+@TSRFactory('herb', 'plastic_bowl', 'grasp')
 def bowl_grasp(robot, bowl, manip=None):
     '''
     @param robot The robot performing the grasp
@@ -31,7 +31,7 @@ def bowl_grasp(robot, bowl, manip=None):
 
     return [grasp_chain]
     
-@TSRFactory('herb', 'bowl', 'place')
+@TSRFactory('herb', 'plastic_bowl', 'place')
 def bowl_on_table(robot, bowl, pose_tsr_chain, manip=None):
     '''
     Generates end-effector poses for placing the bowl on the table.

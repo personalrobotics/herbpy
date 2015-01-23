@@ -2,7 +2,7 @@ import numpy
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import *
 
-@TSRFactory('herb', 'plate', 'grasp')
+@TSRFactory('herb', 'plastic_plate', 'grasp')
 def plate_grasp(robot, plate, manip=None):
     '''
     @param robot The robot performing the grasp
@@ -32,7 +32,7 @@ def plate_grasp(robot, plate, manip=None):
 
     return [grasp_chain]
     
-@TSRFactory('herb', 'plate', 'place')
+@TSRFactory('herb', 'plastic_plate', 'place')
 def plate_on_table(robot, plate, pose_tsr_chain, manip=None):
     '''
     Generates end-effector poses for placing the plate on the table.

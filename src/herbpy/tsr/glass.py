@@ -2,7 +2,7 @@ import numpy
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import *
 
-@TSRFactory('herb', 'glass', 'grasp')
+@TSRFactory('herb', 'plastic_glass', 'grasp')
 def glass_grasp(robot, glass, manip=None):
     '''
     @param robot The robot performing the grasp
@@ -32,7 +32,7 @@ def glass_grasp(robot, glass, manip=None):
 
     return [grasp_chain]
 
-@TSRFactory('herb', 'glass', 'push_grasp')
+@TSRFactory('herb', 'plastic_glass', 'push_grasp')
 def glass_push_grasp(robot, glass, manip=None):
     '''
     This factory differes from glass_grasp in that it places the manipulator 
