@@ -128,6 +128,7 @@ def get_gravity_vector(angles):
     return angles / numpy.linalg.norm(angles)
 
 def calibrate(sensor, manipulator, nominal_config, padding=0.05, wait=1.):
+    robot = manipulator.GetRobot()
     ActiveDOF = openravepy.Robot.SaveParameters.ActiveDOF
 
     with robot.CreateRobotStateSaver(ActiveDOF):
@@ -146,14 +147,19 @@ def calibrate(sensor, manipulator, nominal_config, padding=0.05, wait=1.):
 
         # We should read joint values from waminternals, not wamstate.
 
-        for ijoint in xrange(manipulator.GetArmDOF()):
+        for ijoint, dof_index in enumerate(manipulator.GetArmIndices()):
+            joint = robot.GetJointFromDOFIndex(dof_index)
+
+            print()
+            print('J{:d}: {:s}'.format(ijoint + 1, joint.GetName()))
+
             print('J{:d}: Moving to nominal configuration'.format(ijoint + 1))
-            robot.PlanToConfiguration(nominal_config)
+            robot.PlanToConfiguration(nominal_config, smooth=False)
 
             print('J{:d}: Moving to negative joint limit'.format(ijoint + 1))
             min_config = numpy.array(nominal_config)
             min_config[ijoint] = min_limit[ijoint] + padding
-            robot.PlanToConfiguration(min_config)
+            robot.PlanToConfiguration(min_config, smooth=False)
 
             print('J{:d}: Collecting sample at negative joint limit'.format(ijoint + 1))
             time.sleep(wait)
@@ -164,7 +170,7 @@ def calibrate(sensor, manipulator, nominal_config, padding=0.05, wait=1.):
             print('J{:d}: Moving to positive joint limit'.format(ijoint + 1))
             max_config = numpy.array(nominal_config)
             max_config[ijoint] = max_limit[ijoint] - padding
-            robot.PlanToConfiguration(max_config)
+            robot.PlanToConfiguration(max_config, smooth=False)
 
             print('J{:d}: Collecting sample at positive joint limit'.format(ijoint + 1))
             time.sleep(wait)
@@ -174,8 +180,13 @@ def calibrate(sensor, manipulator, nominal_config, padding=0.05, wait=1.):
 
             angle_actual = max_actual - min_actual
             angle_measurement = math.acos(numpy.dot(min_gravity, max_gravity))
-            print('J{:d}: Predicted: {: 1.10f} radians'.format(ijoint + 1, angle_actual))
-            print('J{:d}: Measured:  {: 1.10f} radians'.format(ijoint + 1, angle_measurement))
+
+            # TODO: Is this flipped?
+            # TODO: How do we deal with the differentials?
+            correction = angle_measurement / angle_actual
+            print('J{:d}: Predicted:  {: 1.7f} radians'.format(ijoint + 1, angle_actual))
+            print('J{:d}: Measured:   {: 1.7f} radians'.format(ijoint + 1, angle_measurement))
+            print('J{:d}: Correction: {: 1.7f}'.format(ijoint + 1, correction))
 
 
 if __name__ == '__main__':
@@ -197,14 +208,18 @@ if __name__ == '__main__':
     with X3Inclinometer(port='/dev/ttyUSB0') as sensor:
         # Reset the inclinometer by setting all offsets to zero and reverting
         # to the default sign on all axes.
+        print('X3: Clearing read/write buffers')
         sensor.reset()
 
+        print('X3: Configuring sensor')
         for iaxis in range(3):
             sensor.set_one_angle_offset(iaxis, 0.)
             sensor.set_one_direction(iaxis, Direction.NORMAL)
 
-        #calibrate(sensor, robot.right_arm, nominal_config)
+        calibrate(sensor, robot.right_arm, nominal_config)
 
+        """
         while True:
             angles, _ = sensor.get_all_angles()
             print('angles =', angles)
+        """
