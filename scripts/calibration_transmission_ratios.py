@@ -10,6 +10,9 @@ import serial
 import struct
 from enum import IntEnum
 
+ActiveDOF = openravepy.Robot.SaveParameters.ActiveDOF 
+
+
 class Status(IntEnum):
     Success = 0x00
     InvalidCommand = 0x01
@@ -127,83 +130,77 @@ def get_gravity_vector(angles):
     # FIXME: This is NOT the correct way to compute the gravity vector.
     return angles / numpy.linalg.norm(angles)
 
-def calibrate(sensor, manipulator, nominal_config, padding=0.05, wait=1.):
-    robot = manipulator.GetRobot()
-    ActiveDOF = openravepy.Robot.SaveParameters.ActiveDOF
+def calibrate(sensor, manipulator, nominal_config, ijoint, padding=0.05, wait=1.):
+    min_limit, max_limit = robot.GetActiveDOFLimits()
 
-    with robot.CreateRobotStateSaver(ActiveDOF):
-        robot.SetActiveDOFs(manipulator.GetArmIndices())
-        min_limit, max_limit = robot.GetActiveDOFLimits()
+    print('J{:d}: Moving to nominal configuration'.format(ijoint + 1))
+    robot.PlanToConfiguration(nominal_config, smooth=False)
 
-        # TODO: This is a hack to avoid hitting the floor/head. We should
-        # change the DOF limits outside this function.
-        min_limit[1] = -0.5
-        max_limit[1] =  0.5
-        max_limit[3] =  2.7
-        min_limit[5] = -1.4
-        max_limit[5] =  1.4
+    print('J{:d}: Moving to negative joint limit'.format(ijoint + 1))
+    min_config = numpy.array(nominal_config)
+    min_config[ijoint] = min_limit[ijoint] + padding
+    robot.PlanToConfiguration(min_config, smooth=False)
 
-        assert (max_limit - min_limit > padding).all()
+    print('J{:d}: Collecting sample at negative joint limit'.format(ijoint + 1))
+    time.sleep(wait)
+    min_actual = robot.GetActiveDOFValues()[ijoint]
+    min_measurement, _ = sensor.get_all_angles()
+    min_gravity = get_gravity_vector(min_measurement)
 
-        # We should read joint values from waminternals, not wamstate.
+    print('J{:d}: Moving to positive joint limit'.format(ijoint + 1))
+    max_config = numpy.array(nominal_config)
+    max_config[ijoint] = max_limit[ijoint] - padding
+    robot.PlanToConfiguration(max_config, smooth=False)
 
-        for ijoint, dof_index in enumerate(manipulator.GetArmIndices()):
-            joint = robot.GetJointFromDOFIndex(dof_index)
+    print('J{:d}: Collecting sample at positive joint limit'.format(ijoint + 1))
+    time.sleep(wait)
+    max_actual = robot.GetActiveDOFValues()[ijoint]
+    max_measurement, _ = sensor.get_all_angles()
+    max_gravity = get_gravity_vector(max_measurement)
 
-            print()
-            print('J{:d}: {:s}'.format(ijoint + 1, joint.GetName()))
+    angle_actual = max_actual - min_actual
+    angle_measurement = math.acos(numpy.dot(min_gravity, max_gravity))
 
-            print('J{:d}: Moving to nominal configuration'.format(ijoint + 1))
-            robot.PlanToConfiguration(nominal_config, smooth=False)
-
-            print('J{:d}: Moving to negative joint limit'.format(ijoint + 1))
-            min_config = numpy.array(nominal_config)
-            min_config[ijoint] = min_limit[ijoint] + padding
-            robot.PlanToConfiguration(min_config, smooth=False)
-
-            print('J{:d}: Collecting sample at negative joint limit'.format(ijoint + 1))
-            time.sleep(wait)
-            min_actual = robot.GetActiveDOFValues()[ijoint]
-            min_measurement, _ = sensor.get_all_angles()
-            min_gravity = get_gravity_vector(min_measurement)
-
-            print('J{:d}: Moving to positive joint limit'.format(ijoint + 1))
-            max_config = numpy.array(nominal_config)
-            max_config[ijoint] = max_limit[ijoint] - padding
-            robot.PlanToConfiguration(max_config, smooth=False)
-
-            print('J{:d}: Collecting sample at positive joint limit'.format(ijoint + 1))
-            time.sleep(wait)
-            max_actual = robot.GetActiveDOFValues()[ijoint]
-            max_measurement, _ = sensor.get_all_angles()
-            max_gravity = get_gravity_vector(max_measurement)
-
-            angle_actual = max_actual - min_actual
-            angle_measurement = math.acos(numpy.dot(min_gravity, max_gravity))
-
-            # TODO: Is this flipped?
-            # TODO: How do we deal with the differentials?
-            correction = angle_measurement / angle_actual
-            print('J{:d}: Predicted:  {: 1.7f} radians'.format(ijoint + 1, angle_actual))
-            print('J{:d}: Measured:   {: 1.7f} radians'.format(ijoint + 1, angle_measurement))
-            print('J{:d}: Correction: {: 1.7f}'.format(ijoint + 1, correction))
+    # TODO: Is this flipped?
+    # TODO: How do we deal with the differentials?
+    correction = angle_measurement / angle_actual
+    print('J{:d}: Predicted:  {: 1.7f} radians'.format(ijoint + 1, angle_actual))
+    print('J{:d}: Measured:   {: 1.7f} radians'.format(ijoint + 1, angle_measurement))
+    print('J{:d}: Correction: {: 1.7f}'.format(ijoint + 1, correction))
 
 
 if __name__ == '__main__':
     env, robot = herbpy.initialize(sim=True, attach_viewer='interactivemarker')
     robot.planner = prpy.planning.SnapPlanner()
 
-    nominal_config = [ math.pi, 0., 0., 0., 0., 0., 0. ]
-
+    # TODO: Hack to work around a race condition in or_interactivemarker.
     import time
     time.sleep(0.1)
 
+    manipulator = robot.right_arm
+    robot.SetActiveDOFs(manipulator.GetArmIndices())
+
+    # Pad the joint limits to avoid hitting the floor and head.
+    min_limit, max_limit = robot.GetDOFLimits()
+    arm_indices = manipulator.GetArmIndices()
+    min_limit[arm_indices[1]] = -0.5
+    max_limit[arm_indices[1]] =  0.5
+    max_limit[arm_indices[3]] =  2.7
+    min_limit[arm_indices[5]] = -1.4
+    max_limit[arm_indices[5]] =  1.4
+    robot.SetDOFLimits(min_limit, max_limit)
+
+    nominal_config = [ math.pi, 0., 0., 0., 0., 0., 0. ]
+
+    # Close the hand for safety.
+    manipulator.hand.CloseHand()
+
+    # TODO: Temporarily disable the left arm, since it isn't present on the
+    # real robot. We'll need to disable this when we get the other arm back.
     for link in robot.GetLinks():
         if link.GetName().startswith('/left'):
             link.Enable(False)
             link.SetVisible(False)
-
-    robot.right_arm.hand.CloseHand()
 
     with X3Inclinometer(port='/dev/ttyUSB0') as sensor:
         # Reset the inclinometer by setting all offsets to zero and reverting
@@ -216,10 +213,14 @@ if __name__ == '__main__':
             sensor.set_one_angle_offset(iaxis, 0.)
             sensor.set_one_direction(iaxis, Direction.NORMAL)
 
-        calibrate(sensor, robot.right_arm, nominal_config)
+        # Sequentially calibrate each joint.
+        for ijoint in xrange(manipulator.GetArmDOF()):
+            print()
+            calibrate(sensor, robot.right_arm, nominal_config, ijoint)
 
         """
         while True:
+            raw_input('Press <ENTER> to print a value.')
             angles, _ = sensor.get_all_angles()
-            print('angles =', angles)
+            print(angles)
         """
