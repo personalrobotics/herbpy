@@ -304,8 +304,6 @@ if __name__ == '__main__':
 
         # Sequentially calibrate each joint.
         for ijoint in xrange(manipulator.GetArmDOF()):
-            ijoint = 4
-
             print()
             print()
 
