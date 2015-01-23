@@ -9,6 +9,7 @@ import numpy
 import serial
 import struct
 import yaml
+import tf.transformations
 import rospy
 from enum import IntEnum
 
@@ -128,50 +129,106 @@ class X3Inclinometer(object):
             raise ValueError('Checksum failed.')
 
 
-def get_gravity_vector(angles):
-    # FIXME: This is NOT the correct way to compute the gravity vector.
-    return angles / numpy.linalg.norm(angles)
+def get_gravity_vector(vals):
+   # compose a 3x3 matrix
+   A = numpy.zeros((3,3))
+   
+   for i,val in enumerate(vals):
+     
+      # expresses atan2 relationships
+      if i == 0:
+         arg1 = (-1., 1)
+         arg2 = ( 1., 2)
+      elif i == 1:
+         arg1 = (-1., 0)
+         arg2 = (-1., 2)
+      else: # i == 2
+         arg1 = (-1., 1)
+         arg2 = (-1., 0)
+     
+      # compute tangents
+      tval = math.tan(val)
+      cval = 1.0/math.tan(val) # better version?
+      if abs(tval) < abs(cval):
+         # use tangent
+         pass
+      else:
+         # use cotangent
+         tval = cval
+         arg1, arg2 = arg2, arg1
+     
+      # fill matrix
+      A[i,arg2[1]] = arg2[0] * tval
+      A[i,arg1[1]] = - arg1[0]
+   
+   U, S, VT = numpy.linalg.svd(A)
+   return tuple(VT[2,:])
 
-def calibrate(sensor, manipulator, nominal_config, ijoint, padding=0.05, wait=1.):
+
+# Axes:
+# 2 - out of the palm, z-axis
+joint_inclinometer_axes = [
+    2, # J1
+    1, # J2
+    2, # J3
+    1, # J4
+    2, # J5
+    1, # J6
+    2, # J7
+]
+
+def calibrate(sensor, manipulator, nominal_config, ijoint, iaxis=None,
+              padding=0.05, wait=1., smooth=True):
     min_limit, max_limit = robot.GetActiveDOFLimits()
 
+    """
+    if max_limit[ijoint] - min_limit[ijoint] > math.pi - padding:
+        raise ValueError('Limits of J{:d} are too far apart.'.format(ijoint))
+    """
+
     print('J{:d}: Moving to nominal configuration'.format(ijoint + 1))
-    robot.PlanToConfiguration(nominal_config, smooth=False)
+    robot.PlanToConfiguration(nominal_config, smooth=smooth)
 
     print('J{:d}: Moving to negative joint limit'.format(ijoint + 1))
     min_config = numpy.array(nominal_config)
     min_config[ijoint] = min_limit[ijoint] + padding
-    robot.PlanToConfiguration(min_config, smooth=False)
+    robot.PlanToConfiguration(min_config, smooth=smooth)
 
     print('J{:d}: Collecting sample at negative joint limit'.format(ijoint + 1))
     time.sleep(wait)
     min_actual = robot.GetActiveDOFValues()[ijoint]
     min_measurement, _ = sensor.get_all_angles()
-    min_gravity = get_gravity_vector(min_measurement)
 
     print('J{:d}: Moving to positive joint limit'.format(ijoint + 1))
     max_config = numpy.array(nominal_config)
     max_config[ijoint] = max_limit[ijoint] - padding
-    robot.PlanToConfiguration(max_config, smooth=False)
+    robot.PlanToConfiguration(max_config, smooth=smooth)
 
     print('J{:d}: Collecting sample at positive joint limit'.format(ijoint + 1))
     time.sleep(wait)
     max_actual = robot.GetActiveDOFValues()[ijoint]
     max_measurement, _ = sensor.get_all_angles()
-    max_gravity = get_gravity_vector(max_measurement)
+
+    # Compute the angle between the two gravity vectors.
+    if iaxis is None:
+        assert max_limit[ijoint] - min_limit[ijoint] < math.pi - padding
+
+        min_gravity = get_gravity_vector(min_measurement)
+        max_gravity = get_gravity_vector(max_measurement)
+        angle_measurement = math.acos(numpy.dot(min_gravity, max_gravity))
+    # Use the specified axis of the inclinometer.
+    else:
+        angle_measurement = abs(max_measurement[iaxis] - min_measurement[iaxis])
 
     angle_actual = max_actual - min_actual
-    angle_measurement = math.acos(numpy.dot(min_gravity, max_gravity))
-
     return angle_actual, angle_measurement
 
 if __name__ == '__main__':
-
-    sim = True
+    sim = False
     namespace = '/right/owd/'
     output_path = 'transmission_ratios.yaml'
 
-    env, robot = herbpy.initialize(sim=sim, attach_viewer='interactivemarker')
+    env, robot = herbpy.initialize(sim=sim, segway_sim=True, vision_sim=True, head_sim=True, left_arm_sim=True, left_hand_sim=True, attach_viewer='interactivemarker')
     robot.planner = prpy.planning.SnapPlanner()
 
     # TODO: Hack to work around a race condition in or_interactivemarker.
@@ -186,9 +243,19 @@ if __name__ == '__main__':
     arm_indices = manipulator.GetArmIndices()
     min_limit[arm_indices[1]] = -0.5
     max_limit[arm_indices[1]] =  0.5
-    max_limit[arm_indices[3]] =  2.7
+    max_limit[arm_indices[3]] =  1.5
     min_limit[arm_indices[5]] = -1.4
     max_limit[arm_indices[5]] =  1.4
+
+    """
+    for ijoint, dof_index in enumerate(arm_indices):
+        residual = max_limit[dof_index] - min_limit[dof_index] - math.pi - 0.3
+        if residual > 0:
+            min_limit[dof_index] += residual / 2
+            max_limit[dof_index] -= residual / 2
+            print('Reduced range of J{:d} by {:f}.'.format(ijoint, residual))
+    """
+
     robot.SetDOFLimits(min_limit, max_limit)
 
     nominal_config = [ math.pi, 0., 0., 0., 0., 0., 0. ]
@@ -219,6 +286,16 @@ if __name__ == '__main__':
             sensor.set_one_angle_offset(iaxis, 0.)
             sensor.set_one_direction(iaxis, Direction.NORMAL)
 
+        """
+        while True:
+            angles, _ = sensor.get_all_angles()
+            gravity = get_gravity_vector(angles)
+            print('{: 1.7f} {: 1.7f} {: 1.7f} -> {: 1.7f} {: 1.7f} {: 1.7f}'.format(
+                *numpy.concatenate((angles, gravity))))
+
+        raise Exception() 
+        """
+
         # Sequentially calibrate each joint.
         for ijoint in xrange(manipulator.GetArmDOF()):
             print()
@@ -226,10 +303,12 @@ if __name__ == '__main__':
 
             # Compute the error in the current transmission ratio.
             angle_encoders, angle_sensor = calibrate(
-                sensor, robot.right_arm, nominal_config, ijoint)
+                sensor, robot.right_arm, nominal_config,
+                ijoint=ijoint, iaxis=joint_inclinometer_axes[ijoint]
+            )
 
             # TODO: Is this flipped?
-            correction = angle_sensor / angle_encoders
+            correction = angle_encoders / angle_sensor
 
             print()
             print('J{:d}: Predicted:  {: 1.7f} radians'.format(ijoint + 1, angle_encoders))
@@ -246,17 +325,11 @@ if __name__ == '__main__':
                 print('J{:d}: Transmission Ratio: {: 1.7f} -> {: 1.7f}'.format(
                     ijoint + 1, old_transmission_ratio, new_transmission_ratio))
 
-        # TODO: What about the differentials? These correspond to parameters: 
-        #   - /right/owd/differential3_ratio
-        #   - /right/owd/differential6_ratio
+    # TODO: What about the differentials? These correspond to parameters: 
+    #   - /right/owd/differential3_ratio
+    #   - /right/owd/differential6_ratio
 
-        with open(output_path, 'w') as output_file:
-            yaml.dump(output_data, output_file)
-            print('Wrote output to: {:s}'.format(output_path))
+    with open(output_path, 'w') as output_file:
+        yaml.dump(output_data, output_file)
+        print('Wrote output to: {:s}'.format(output_path))
 
-        """
-        while True:
-            raw_input('Press <ENTER> to print a value.')
-            angles, _ = sensor.get_all_angles()
-            print(angles)
-        """
