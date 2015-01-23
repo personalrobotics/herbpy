@@ -8,9 +8,9 @@ import math
 import numpy
 import serial
 import struct
-from enum import Enum
+from enum import IntEnum
 
-class Status(Enum):
+class Status(IntEnum):
     Success = 0x00
     InvalidCommand = 0x01
     Reserved = 0x03
@@ -20,9 +20,15 @@ class Status(Enum):
     FlashProgramError = 0x08
 
 
-class Command(Enum):
+class Command(IntEnum):
     GetAllAngles = 0xE1
+    SetOneDirection = 0xC4
     SetOneAngleOffset = 0xCF
+
+
+class Direction(IntEnum):
+    NORMAL = 0x00
+    REVERSED = 0x01
 
 
 class X3Inclinometer(object):
@@ -61,6 +67,7 @@ class X3Inclinometer(object):
 
     def get_all_angles(self, address=0x00):
         assert self.connection
+
         request = struct.pack('BB', address, Command.GetAllAngles.value)
         self.connection.write(request)
 
@@ -73,10 +80,25 @@ class X3Inclinometer(object):
 
         return angles, temperature
 
+    def set_one_direction(self, axis, direction, address=0):
+        assert self.connection
+        assert axis in [ 0, 1, 2 ]
+
+        request = struct.pack('BBBB', address, Command.SetOneDirection.value, axis, direction.value)
+        checksum = 256 - (self._sum_bytes(request) % 256)
+        request += chr(checksum)
+
+        self._checksum(request)
+        self.connection.write(request)
+
+        response_binary = self.connection.read(2)
+        self._checksum(response_binary)
+
     def set_one_angle_offset(self, axis, offset, address=0):
         assert self.connection
 
         offset_raw = int(offset / 1000 + 0.5)
+        assert axis in [ 0, 1, 2 ]
         assert -360000 <= offset_raw <= 359999
 
         request = struct.pack('>BBBi', address, Command.SetOneAngleOffset.value, axis, offset_raw)
@@ -173,7 +195,14 @@ if __name__ == '__main__':
     robot.right_arm.hand.CloseHand()
 
     with X3Inclinometer(port='/dev/ttyUSB0') as sensor:
+        # Reset the inclinometer by setting all offsets to zero and reverting
+        # to the default sign on all axes.
         sensor.reset()
+
+        for iaxis in range(3):
+            sensor.set_one_angle_offset(iaxis, 0.)
+            sensor.set_one_direction(iaxis, Direction.NORMAL)
+
         #calibrate(sensor, robot.right_arm, nominal_config)
 
         while True:
