@@ -250,6 +250,8 @@ if __name__ == '__main__':
     min_limit[arm_indices[1]] = -0.5
     max_limit[arm_indices[1]] =  0.5
     max_limit[arm_indices[3]] =  1.5
+    min_limit[arm_indices[4]] = -1.4
+    max_limit[arm_indices[4]] =  1.4
     min_limit[arm_indices[5]] = -1.4
     max_limit[arm_indices[5]] =  1.4
 
@@ -292,12 +294,11 @@ if __name__ == '__main__':
             sensor.set_one_angle_offset(iaxis, 0.)
             sensor.set_one_direction(iaxis, Direction.NORMAL)
 
+
         """
         while True:
             angles, _ = sensor.get_all_angles()
-            gravity = get_gravity_vector(angles)
-            print('{: 1.7f} {: 1.7f} {: 1.7f} -> {: 1.7f} {: 1.7f} {: 1.7f}'.format(
-                *numpy.concatenate((angles, gravity))))
+            print('{: 1.7f} {: 1.7f} {: 1.7f}'.format(*angles))
 
         raise Exception() 
         """
