@@ -70,7 +70,7 @@ def glass_push_grasp(robot, glass, manip=None):
 
     return [grasp_chain]
                 
-@TSRFactory('herb', 'glass', 'place')
+@TSRFactory('herb', 'plastic_glass', 'place')
 def glass_on_table(robot, glass, pose_tsr_chain, manip=None):
     '''
     Generates end-effector poses for placing the glass on the table.
@@ -104,7 +104,7 @@ def glass_on_table(robot, glass, pose_tsr_chain, manip=None):
 
     return  [ place_chain ]
     
-@TSRFactory('herb', 'glass', 'transport')
+@TSRFactory('herb', 'plastic_glass', 'transport')
 def glass_transport(robot, glass, manip=None, roll_epsilon=0.2, pitch_epsilon=0.2, yaw_epsilon=0.2):
     '''
     Generates a trajectory-wide constraint for transporting the object with little roll, pitch or yaw
