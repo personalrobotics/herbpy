@@ -2,6 +2,7 @@ PACKAGE = 'herbpy'
 import logging
 import openravepy
 import prpy
+from prpy.planning.base import UnsupportedPlanningError
 from prpy.base.barretthand import BarrettHand
 from prpy.base.wam import WAM
 from prpy.base.wamrobot import WAMRobot
@@ -90,22 +91,26 @@ class HERBRobot(WAMRobot):
         # Initialize a default planning pipeline.
         from prpy.planning import Planner, Sequence, Ranked
         from prpy.planning import CBiRRTPlanner, CHOMPPlanner, IKPlanner, MKPlanner, NamedPlanner, SnapPlanner, SBPLPlanner, OMPLPlanner
-        self.cbirrt_planner = CBiRRTPlanner()
-        self.mk_planner = MKPlanner()
-        self.snap_planner = SnapPlanner()
-        self.named_planner = NamedPlanner()
-        self.ik_planner = IKPlanner()
-        self.chomp_planner = CHOMPPlanner()
-        self.ompl_planner = OMPLPlanner(algorithm='RRTConnect')
-        self.planner = Sequence(self.ik_planner,
-                                self.named_planner,
-                                self.snap_planner, 
-                                self.mk_planner,
-                                self.chomp_planner,
-                                self.ompl_planner,
-                                self.cbirrt_planner
-                                )
-
+        
+        potential_planners = [(CBiRRTPlanner, 'cbirrt_planner', {}),
+                              (MKPlanner, 'mk_planner', {}),
+                              (SnapPlanner, 'snap_planner', {}),
+                              (NamedPlanner, 'named_planner', {}),
+                              (IKPlanner, 'ik_planner', {}),
+                              (CHOMPPlanner, 'chomp_planner', {}),
+                              (OMPLPlanner, 'ompl_planner',
+                                            {'algorithm':'RRTConnect'})]
+        planners = []
+        for potential_planner, attr_name, planner_args in potential_planners:
+            try:
+                planner = potential_planner(**planner_args)
+                setattr(self, attr_name, planner)
+                planners.append(planner)
+            except UnsupportedPlanningError:
+                pass
+        
+        self.planner = Sequence(*planners)
+        
         # Base planning
         if prpy.dependency_manager.is_catkin():
             from catkin.find_in_workspaces import find_in_workspaces
