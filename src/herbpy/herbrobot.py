@@ -95,15 +95,16 @@ class HERBRobot(WAMRobot):
         self.snap_planner = SnapPlanner()
         self.named_planner = NamedPlanner()
         self.ik_planner = IKPlanner()
-        #self.chomp_planner = CHOMPPlanner()
+        self.chomp_planner = CHOMPPlanner()
         self.ompl_planner = OMPLPlanner(algorithm='RRTConnect')
         self.planner = Sequence(self.ik_planner,
                                 self.named_planner,
                                 self.snap_planner, 
                                 self.mk_planner,
-        #                        self.chomp_planner,
+                                self.chomp_planner,
                                 self.ompl_planner,
-                                self.cbirrt_planner)
+                                self.cbirrt_planner
+                                )
 
         # Base planning
         if prpy.dependency_manager.is_catkin():
