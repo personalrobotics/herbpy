@@ -84,7 +84,10 @@ def plate_on_table(robot, plate, pose_tsr_chain, manip=None):
     plate_radius = plate.ComputeAABB().extents()[0]
     tilted_plate_in_table[2,3] = plate_radius * numpy.cos(tilt_amount) + 0.02
                                  
-    plate_tsr = TSR(Tw_e = tilted_plate_in_table, Bw = numpy.zeros((6,2)), manip = manip_idx)
+    #plate_tsr = TSR(Tw_e = tilted_plate_in_table, Bw = numpy.zeros((6,2)), manip = manip_idx)
+    plate_in_table = numpy.eye(4)
+    plate_in_table[2,3] = 0.20
+    plate_tsr = TSR(Tw_e = plate_in_table, Bw = numpy.zeros((6,2)), manip = manip_idx)
     grasp_tsr = TSR(Tw_e = ee_in_plate, Bw = Bw, manip = manip_idx)
     all_tsrs = list(pose_tsr_chain.TSRs) + [plate_tsr, grasp_tsr]
     place_chain = TSRChain(sample_start = False, sample_goal = True, constrain = False,
