@@ -24,7 +24,7 @@ def glass_grasp(robot, glass, manip=None):
                         [0., 0., 0., 1.]])
 
     Bw = numpy.zeros((6,2))
-    Bw[2,:] = [-0.02, 0.02]  # Allow a little vertical movement
+    Bw[2,:] = [0.0, 0.02]  # Allow a little vertical movement
     Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
     
     grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)

@@ -24,7 +24,7 @@ def plate_grasp(robot, plate, manip=None):
                         [1.,  0.,  0., 0.],
                         [0.,  0.,  0., 1.]])
     Bw = numpy.zeros((6,2))
-    Bw[2,:] = [-0.02, 0.02] # Allow a little verticle movement
+    Bw[2,:] = [0.0, 0.01] # Allow a little verticle movement
     Bw[5,:] = [-numpy.pi, numpy.pi] # Allow any point around the edge of the plate
 
     grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)

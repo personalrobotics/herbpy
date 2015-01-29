@@ -20,7 +20,7 @@ def bowl_grasp(robot, bowl, manip=None):
     T0_w = bowl.GetTransform()
     Tw_e = numpy.array([[1.,  0.,  0., 0.08],
                         [0., -1.,  0., 0.],
-                        [0.,  0., -1., 0.27],
+                        [0.,  0., -1., 0.30],
                         [0.,  0.,  0., 1.]])
     Bw = numpy.zeros((6,2))
     Bw[2,:] = [-0.02, 0.02] # Allow a little verticle movement
