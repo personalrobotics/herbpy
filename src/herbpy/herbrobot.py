@@ -74,17 +74,19 @@ class HERBRobot(WAMRobot):
                 tsrs_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
                                  path='config/tsrs.yaml', first_match_only=True)
                 if not tsrs_paths:
-                    raise ValueError('Unable to load named tsrs from "config/tsrs.yaml".')
-
-                tsrs_path = tsrs_paths[0]
+                    logger.info('Unable to load named tsrs from "config/tsrs.yaml".')
+                    tsrs_path = None
+                else:
+                    tsrs_path = tsrs_paths[0]
             else:
                 tsrs_path = os.path.join(package_path, 'config/tsrs.yaml')
 
-            try:
-                self.tsrlibrary.load_yaml(tsrs_path)
-            except IOError as e:
-                raise ValueError('Failed loading named tsrs from "{:s}".'.format(
-                    tsrs_path))
+            if tsrs_path is not None:
+                try:
+                    self.tsrlibrary.load_yaml(tsrs_path)
+                except IOError as e:
+                    raise ValueError('Failed loading named tsrs from "{:s}".'.format(
+                            tsrs_path))
 
         # Initialize a default planning pipeline.
         from prpy.planning import Planner, Sequence, Ranked
