@@ -2,6 +2,18 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Updating plate, bowl and glass tsrs
+* Adding back in chomp planner
+* Adding head tf publisher
+* Added RaveInitialize to fix --debug flag.
+* Switched to "rviz" as the default viewer.
+* Adding protection against an empty or missing tsrs.yaml. This is not required.
+* Now selectively loads planners and does not fail when it can't find one.
+* Explicitly import sub-modules from prpy.base.
+* Contributors: Aaron Walsman, Jennifer King, Michael Koval, Pras Velagapudi
+
 1.2.0 (2014-12-12)
 ------------------
 * Deleting transient save file.
