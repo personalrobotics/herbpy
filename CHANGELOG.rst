@@ -2,8 +2,8 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.3.0 (2015-02-10)
+------------------
 * Updating plate, bowl and glass tsrs
 * Adding back in chomp planner
 * Adding head tf publisher
