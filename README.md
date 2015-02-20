@@ -48,18 +48,18 @@ We'll default to the right arm (``robot.left_arm``) in these examples, keep in m
 
 The arms can be in two modes, stiff and not stiff. When the arms are not stiff, they are in gravity compensation mode and can be moved around. When the arms are stiff, they cannot be moved, but now planning can be performed.
 
-To make the arms stiff,
+To make an arm stiff,
 ```
 robot.right_arm.SetStiffness(1)
 ```
 
-And to put them back into gravity compensation mode
+And to put it back into gravity compensation mode
 ```
 robot.right_arm.SetStiffness(0)
 ```
 Make sure the arms are stiff before you begin planning and executing trajectories!
 
-The state of the arms is given by their configuration, or DOFValues (degrees of freedom) values. You can get these by calling
+The state of an arm is given by its configuration, or DOFValues (degrees of freedom) values. You can get these by calling
 
 ```
 robot.right_arm.GetDOFValues()
@@ -77,6 +77,10 @@ There are also named configurations corresponding to common arm configurations. 
 
 ```
 robot.PlanToNamedConfiguration('relaxed_home')
+```
+or for a single arm
+```
+robot.right_arm.PlanToNamedConfiguration('relaxed_home')
 ```
 
 If you do not want to immediately execute a trajectory, you can instead do
@@ -107,9 +111,9 @@ except Exception as e:
 The most common thing you'll want to do with the arms is move them such that the hand, or end effector, is at a particular position and orientation (a pose) in the world. To plan to a pose, you must first generate a configuration that corresponds to that pose.
 
 ```
-pose_in_world = ... #must be a 4x4 homogeneous transformation matrix
+pose_in_world = ... # must be a 4x4 homogeneous transformation matrix
 filter_options = openravepy.IkFilterOptions.CheckEnvCollisions #or 0 for no collision checks
-config = robot.right_arm.FindIKSolution(pose_in_world, filter_options) #will return None if no config can be found
+config = robot.right_arm.FindIKSolution(pose_in_world, filter_options) # will return None if no config can be found
 robot.right_arm.PlanToConfiguration(config)
 ```
 
@@ -151,7 +155,7 @@ To open it,
 robot.right_arm.hand.OpenHand()
 ```
 
-You can grab an object to mark it as connected to the robot. It will be connected to whatever part of the robot was touching the object when the method is called.
+You can grab an object to mark it as connected to the robot. It will be connected to whatever link of the active part robot was touching the object when the method is called.
 ```
 robot.right_arm.SetActive()
 robot.Grab(obj)
@@ -162,7 +166,7 @@ And to release an object:
 robot.Release(obj)
 ```
 
-You can also perform more precise control of the fingers. When a finger is at its 0 position, it is fully opened. At pi, they are fully closed.
+You can also perform more precise control of the fingers. When a finger is at its 0 position, it is fully opened. At pi, it is fully closed.
 
 For example, to get the hand ready to grasp a cylinder, you could do
 ```
@@ -191,7 +195,7 @@ To get the position of herb, do
 robot_pose_in_world = robot.GetTransform()
 ```
 
-It can be useful to set HERBs position manually, especially in simulation:
+It can be useful to set HERB's position manually, especially in simulation:
 ```
 robot.SetTransform(desired_robot_pose_in_world)
 ```
@@ -215,4 +219,4 @@ robot.base.PlanToBasePose(robot_pose_in_world)
 
 ### Other Examples ###
 
-[Comprehensive Documented Example](graspGlass.py
+[Comprehensive Documented Example](graspGlass.py)
