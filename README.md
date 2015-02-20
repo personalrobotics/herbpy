@@ -219,4 +219,4 @@ robot.base.PlanToBasePose(robot_pose_in_world)
 
 ### Other Examples ###
 
-[Comprehensive Documented Example](graspGlass.py)
+[comprehensive documented example of picking up a fuze bottle](examples/graspFuzeBottle.py)
