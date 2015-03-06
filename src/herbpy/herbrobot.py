@@ -90,16 +90,17 @@ class HERBRobot(WAMRobot):
 
         # Initialize a default planning pipeline.
         from prpy.planning import Planner, Sequence, Ranked
-        from prpy.planning import CBiRRTPlanner, CHOMPPlanner, IKPlanner, MKPlanner, NamedPlanner, SnapPlanner, SBPLPlanner, OMPLPlanner
+        from prpy.planning import CBiRRTPlanner, CHOMPPlanner, IKPlanner, MKPlanner, NamedPlanner, SnapPlanner, SBPLPlanner, OMPLPlanner, GreedyIKPlanner
         
-        potential_planners = [(CBiRRTPlanner, 'cbirrt_planner', {}),
+        potential_planners = [(SnapPlanner, 'snap_planner', {}),
+                              (GreedyIKPlanner, 'greedy_ik_planner', {}),
                               (MKPlanner, 'mk_planner', {}),
-                              (SnapPlanner, 'snap_planner', {}),
                               (NamedPlanner, 'named_planner', {}),
                               (IKPlanner, 'ik_planner', {}),
-                              (CHOMPPlanner, 'chomp_planner', {}),
                               (OMPLPlanner, 'ompl_planner',
-                                            {'algorithm':'RRTConnect'})]
+                                            {'algorithm':'RRTConnect'}),
+                              (CBiRRTPlanner, 'cbirrt_planner', {}),
+                              (CHOMPPlanner, 'chomp_planner', {})]
         planners = []
         for potential_planner, attr_name, planner_args in potential_planners:
             try:
