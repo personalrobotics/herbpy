@@ -231,17 +231,17 @@ def calibrate(sensor, manipulator, nominal_config, ijoint, iaxis=None,
 
 if __name__ == '__main__':
     sim = False
-    namespace = '/right/owd/'
+    namespace = '/left/owd/'
     output_path = 'transmission_ratios.yaml'
 
-    env, robot = herbpy.initialize(sim=sim, segway_sim=True, vision_sim=True, head_sim=True, left_arm_sim=True, left_hand_sim=True, attach_viewer='interactivemarker')
+    env, robot = herbpy.initialize(sim=sim, segway_sim=True, vision_sim=True, head_sim=True, right_arm_sim=True, right_hand_sim=True, attach_viewer='interactivemarker')
     robot.planner = prpy.planning.SnapPlanner()
 
     # TODO: Hack to work around a race condition in or_interactivemarker.
     import time
     time.sleep(0.1)
 
-    manipulator = robot.right_arm
+    manipulator = robot.left_arm
     robot.SetActiveDOFs(manipulator.GetArmIndices())
 
     # Pad the joint limits to avoid hitting the floor and head.
@@ -310,7 +310,7 @@ if __name__ == '__main__':
 
             # Compute the error in the current transmission ratio.
             angle_encoders, angle_sensor = calibrate(
-                sensor, robot.right_arm, nominal_config,
+                sensor, manipulator, nominal_config,
                 ijoint=ijoint, iaxis=joint_inclinometer_axes[ijoint]
             )
 
@@ -333,8 +333,8 @@ if __name__ == '__main__':
                     ijoint + 1, old_transmission_ratio, new_transmission_ratio))
 
     # TODO: What about the differentials? These correspond to parameters: 
-    #   - /right/owd/differential3_ratio
-    #   - /right/owd/differential6_ratio
+    #   - <namespace>/owd/differential3_ratio
+    #   - <namespace>/owd/differential6_ratio
 
     with open(output_path, 'w') as output_file:
         yaml.dump(output_data, output_file)
