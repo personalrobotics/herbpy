@@ -41,6 +41,13 @@ class HERBRobot(WAMRobot):
         prpy.bind_subclass(self.right_arm.hand, BarrettHand, sim=right_hand_sim, manipulator=self.right_arm,
                            owd_namespace='/right/owd', bhd_namespace='/right/bhd', ft_sim=right_ft_sim)
         self.base = HerbBase(sim=segway_sim, robot=self)
+
+        # Set HERB's acceleration limits. These are not specified in URDF.
+        accel_limits = self.GetDOFAccelerationLimits()
+        accel_limits[self.head.GetArmIndices()] = [ 2. ] * self.head.GetArmDOF()
+        accel_limits[self.left_arm.GetArmIndices()] = [ 2. ] * self.left_arm.GetArmDOF()
+        accel_limits[self.right_arm.GetArmIndices()] = [ 2. ] * self.right_arm.GetArmDOF()
+        self.SetDOFAccelerationLimits(accel_limits)
         
         # Support for named configurations.
         import os.path
