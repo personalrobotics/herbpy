@@ -99,8 +99,8 @@ class HERBRobot(WAMRobot):
                               (IKPlanner, 'ik_planner', {}),
                               (OMPLPlanner, 'ompl_planner',
                                             {'algorithm':'RRTConnect'}),
-                              (CBiRRTPlanner, 'cbirrt_planner', {})]
-  #                            (CHOMPPlanner, 'chomp_planner', {})]
+                              (CBiRRTPlanner, 'cbirrt_planner', {}),
+                              (CHOMPPlanner, 'chomp_planner', {})]
         planners = []
         for potential_planner, attr_name, planner_args in potential_planners:
             try:

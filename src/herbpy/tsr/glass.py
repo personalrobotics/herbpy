@@ -92,6 +92,7 @@ def glass_on_table(robot, glass, pose_tsr_chain, manip=None):
 
     ee_in_glass = numpy.dot(numpy.linalg.inv(glass.GetTransform()), manip.GetEndEffectorTransform())
     Bw = numpy.zeros((6,2))
+    Bw[2,:] = [0., 0.04]  # Allow some lateral movement
     
     for tsr in pose_tsr_chain.TSRs:
         if tsr.manipindex != manip_idx:
