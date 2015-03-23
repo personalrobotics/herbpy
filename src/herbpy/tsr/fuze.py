@@ -41,7 +41,7 @@ def point_at_obj(robot, bottle, manip=None):
     Bw_0 = numpy.zeros((6, 2))
     Bw_0[3, :] = [-numpy.pi, numpy.pi]
     Bw_0[4, :] = [0, numpy.pi]
-    Bw_0[5, :] = [-numpy.pi, numpy.py]
+    Bw_0[5, :] = [-numpy.pi, numpy.pi]
 
     Bw_1 = numpy.zeros((6, 2))
     Bw_1[2, :] = [-0.75, 1.]
