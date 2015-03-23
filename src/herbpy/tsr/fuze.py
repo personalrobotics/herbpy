@@ -3,7 +3,7 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import *
 
 @TSRFactory('herb', 'fuze_bottle', 'point')
-def point_at_obj(robot, bottle, manip=none):
+def point_at_obj(robot, bottle, manip=None):
     '''
     @param robot The robot performing the point
     @param bottle The bottle to point
@@ -53,7 +53,3 @@ def point_at_obj(robot, bottle, manip=none):
                      sample_start=False, constrain=False)
 
     return [chain]
-	
-   
-
-
