@@ -25,9 +25,9 @@ def point_at_obj(robot, bottle, manip=None):
     # compute T_we. Tuned once and used forever onward 
     # Insures pointer points at object with right arm
     arm_start =  numpy.array([[ 0.07277, -0.71135,  0.69905,  0.58575],
-       			              [ 0.03360,  0.70226,  0.71111, -0.44275],
-    					      [-0.99678, -0.02825,  0.07501,  0.95686],
-   					          [ 0.     ,  0.     ,  0.     ,  1.     ]])
+       			      [ 0.03360,  0.70226,  0.71111, -0.44275],
+    		              [-0.99678, -0.02825,  0.07501,  0.95686],
+ 			      [ 0.     ,  0.     ,  0.     ,  1.     ]])
 		
     base_obj_trans = numpy.array([[1, 0, 0, 1.0],
                                   [0, 1, 0, 0.0],
