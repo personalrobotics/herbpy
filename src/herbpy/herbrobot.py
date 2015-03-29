@@ -144,11 +144,11 @@ class HERBRobot(WAMRobot):
 
         self.base_planner = self.sbpl_planner
 
-        # Actions
+        # Actions and TSRs
         from prpy.action import ActionLibrary
         self.actionlibrary = ActionLibrary()
-        from prpy.action import *
         from herbpy.action import *
+        from herbpy.tsr import *
 
         # Setting necessary sim flags
         self.talker_simulated = talker_sim

@@ -40,7 +40,7 @@ def HerbGrasp(robot, obj, distance=None, manip=None, preshape=[0., 0., 0., 0.], 
     manip.hand.MoveHand(f1 = preshape[0],
                         f2 = preshape[1],
                         f3 = preshape[2],
-                        f4 = preshape[3])
+                        spread = preshape[3])
 
     # Get the grasp tsr
     grasp_tsr_list = robot.tsrlibrary(obj, 'grasp') 
@@ -61,4 +61,9 @@ def HerbGrasp(robot, obj, distance=None, manip=None, preshape=[0., 0., 0., 0.], 
 
     # Now close the hand to grasp
     manip.hand.CloseHand()
+
+    # Manipulator must be active for grab to work properly
+    active_manip = robot.GetActiveManipulator()
+    robot.SetActiveManipulator(manip)
     robot.Grab(obj)
+    robot.SetActiveManipulator(active_manip)
