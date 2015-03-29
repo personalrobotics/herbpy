@@ -109,7 +109,7 @@ class HERBPantilt(WAM):
 
         # Optionally exeucute the trajectory.
         if execute:
-            return self.GetRobot().ExecuteTrajectory(traj, **kw_args)
+            return self.GetRobot().ExecutePath(traj, **kw_args)
         else:
             return traj
 
