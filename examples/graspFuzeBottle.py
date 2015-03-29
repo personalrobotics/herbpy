@@ -51,9 +51,9 @@ raw_input('press enter to begin planning')
 
 # move to a good start position
 robot.head.MoveTo([0, -math.pi/16]) # look down slightly
-#robot.PlanToNamedConfiguration('relaxed_home') # move the arms to the 'relaxed_home' position
-indices, values = robot.configurations.get_configuration('relaxed_home') # Faster for testing
-robot.SetDOFValues(values=values, dofindices=indices)
+robot.PlanToNamedConfiguration('relaxed_home') # move the arms to the 'relaxed_home' position
+#indices, values = robot.configurations.get_configuration('relaxed_home') # Faster for testing
+#robot.SetDOFValues(values=values, dofindices=indices)
 
 # drive to the table
 robot_in_table = numpy.array([[0., 1., 0.,  0.], 
@@ -62,11 +62,11 @@ robot_in_table = numpy.array([[0., 1., 0.,  0.],
                               [0., 0., 0.,  1.]])
 base_pose = numpy.dot(table.GetTransform(), robot_in_table)
 base_pose[2,3] = 0
-#robot.base.PlanToBasePose(base_pose)
-robot.SetTransform(base_pose) # way faster for testing
+robot.base.PlanToBasePose(base_pose)
+#robot.SetTransform(base_pose) # way faster for testing
 
 # Grasp the bottle
-robot.right_arm.Grasp(fuze)
+robot.right_arm.PushGrasp(fuze, push_required=False)
 robot.right_arm.PlanToNamedConfiguration('home')
 
 # we do this so the viewer doesn't close when the example is done
