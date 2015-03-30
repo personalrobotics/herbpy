@@ -2,6 +2,21 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Calling ExecutePath instead of ExecuteTrajectory in MoveTo
+* Transmission ratio calibration script
+* Adding CHOMP back to planner list to allow access to OptimizeTrajectory function. Slight modification to placement TSRs for bowl and glass - allows for stacking objects.
+* Set HERB's acceleration limits (not set by URDF).
+* Removed CHOMP as a default planner.
+* Updating ordering of planners. Adding workspace planner
+* added more documentation and an example
+* New transmission ratios.
+* Implemented set_one_direction.
+* Implemented set_one_angle_offset.
+* Added a skeleton script to calibrate transmission ratios.
+* Contributors: Evan, Evan Shapiro, Jennifer King, Michael Koval
+
 1.3.0 (2015-02-10)
 ------------------
 * Updating plate, bowl and glass tsrs
