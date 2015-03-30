@@ -2,8 +2,8 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.4.0 (2015-03-30)
+------------------
 * Calling ExecutePath instead of ExecuteTrajectory in MoveTo
 * Transmission ratio calibration script
 * Adding CHOMP back to planner list to allow access to OptimizeTrajectory function. Slight modification to placement TSRs for bowl and glass - allows for stacking objects.
