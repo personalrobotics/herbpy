@@ -146,7 +146,7 @@ class HERBRobot(WAMRobot):
 
         # Actions and TSRs
         from prpy.action import ActionLibrary
-        self.actionlibrary = ActionLibrary()
+        self.actions = ActionLibrary()
         from herbpy.action import *
         from herbpy.tsr import *
 
