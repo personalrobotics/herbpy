@@ -29,7 +29,9 @@ def PushGrasp(robot, obj, distance=0.1, manip=None, preshape=[0., 0., 0., 0.], p
     """
     HerbGrasp(robot, obj,  manip=manip, preshape=preshape, distance=distance)
 
-def HerbGrasp(robot, obj, distance=None, manip=None, preshape=[0., 0., 0., 0.], push_required=False,
+def HerbGrasp(robot, obj, distance=None, manip=None, 
+              preshape=[0., 0., 0., 0.], 
+              push_required=False, 
               **kw_args):
     """
     @param robot The robot performing the push grasp
@@ -37,19 +39,16 @@ def HerbGrasp(robot, obj, distance=None, manip=None, preshape=[0., 0., 0., 0.], 
     @param distance The distance to push before grasping (if None, no pushing)
     @param manip The manipulator to perform the grasp with 
        (if None active manipulator is used)
+    @param preshape The grasp preshape for the hand
     @param push_required If true, throw exception if a plan for the pushing 
        movement cannot be found. If false, continue with grasp even if push 
        cannot be executed. (only used if distance is not None)
-    @param preshape The grasp preshape for the hand
     """
     if manip is None:
         manip = robot.GetActiveManipulator()
 
     # Move the hand to the grasp preshape
-    manip.hand.MoveHand(f1 = preshape[0],
-                        f2 = preshape[1],
-                        f3 = preshape[2],
-                        spread = preshape[3])
+    manip.hand.MoveHand(*preshape)
 
     # Get the grasp tsr
     grasp_tsr_list = robot.tsrlibrary(obj, 'grasp') 
