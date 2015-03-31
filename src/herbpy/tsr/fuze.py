@@ -24,14 +24,14 @@ def point_at_obj(robot, bottle, manip='right'):
     # Ensures pointer points at object with right arm
     # TODO need to add increased documentation once resolved 
     arm_start =  numpy.array([[ 0.07277, -0.71135,  0.69905,  0.58575],
-             			      [ 0.03360,  0.70226,  0.71111, -0.44275],
-    		                  [-0.99678, -0.02825,  0.07501,  0.95686],
- 			                  [ 0.     ,  0.     ,  0.     ,  1.     ]])
+                              [ 0.03360,  0.70226,  0.71111, -0.44275],
+                              [-0.99678, -0.02825,  0.07501,  0.95686],
+                              [ 0.     ,  0.     ,  0.     ,  1.     ]])
 		
     T_base_obj = numpy.array([[1, 0, 0, 1.0],
-                                  [0, 1, 0, 0.0],
-                                  [0, 0, 1, 1.0],
-                                  [0, 0, 0, 1.0]])
+                              [0, 1, 0, 0.0],
+                              [0, 0, 1, 1.0],
+                              [0, 0, 0, 1.0]])
 
     TW_e_0 = numpy.dot(numpy.linalg.inv(T_base_obj), arm_start)
     TW_e_1 = numpy.identity(4)
