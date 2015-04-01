@@ -11,8 +11,9 @@ def point_at_obj(robot, bottle, manip=None):
     if manip is None:
         manip = robot.right_arm
 
-    manip.SetActive()
-    manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+    with manip.GetRobot():
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
     
     if manip.GetName() != 'right':
         raise prpy.exceptions.PrPyException('Pointing is only defined on the right arm.')
