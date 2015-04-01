@@ -1,39 +1,32 @@
-# TODO fix the imports
 import numpy
 import prpy.tsr 
 
 @prpy.tsr.tsrlibrary.TSRFactory('herb', 'fuze_bottle', 'point')
-def point_at_obj(robot, bottle, manip='right'):
+def point_at_obj(robot, bottle, manip=None):
     '''
     @param robot The robot performing the point
     @param bottle The bottle to point at
     @param manip The manipulator to point with. This must be the right arm 
     '''
-    if manip.GetName() == 'right':
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
-    else:
-        raise Exception("The pointing tsr is only defined for the right manipulator")
+    if manip is None:
+        manip = robot.right_arm
+
+    manip.SetActive()
+    manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+    
+    if manip.GetName() != 'right':
+        raise prpy.exceptions.PrPyException('Pointing is only defined on the right arm.')
 		
     # compute T_ow
     T0_w_0 = bottle.GetTransform()
     T0_w_1 = numpy.identity(4)
 
-    # compute T_we. Tuned once and used forever onward 
-    # Ensures pointer points at object with right arm
-    # TODO need to add increased documentation once resolved 
-    arm_start =  numpy.array([[ 0.07277, -0.71135,  0.69905,  0.58575],
-                              [ 0.03360,  0.70226,  0.71111, -0.44275],
-                              [-0.99678, -0.02825,  0.07501,  0.95686],
-                              [ 0.     ,  0.     ,  0.     ,  1.     ]])
-		
-    T_base_obj = numpy.array([[1, 0, 0, 1.0],
-                              [0, 1, 0, 0.0],
-                              [0, 0, 1, 1.0],
-                              [0, 0, 0, 1.0]])
-
-    TW_e_0 = numpy.dot(numpy.linalg.inv(T_base_obj), arm_start)
+    # compute T_we with respect to right arm.  
+    TW_e_0 = numpy.array([[ 0.07277, -0.71135,  0.69905, -0.41425],
+                          [ 0.0336 ,  0.70226,  0.71111, -0.44275],
+                          [-0.99678, -0.02825,  0.07501, -0.04314],
+                          [ 0.     ,  0.     ,  0.     ,  1.     ]])
+  
     TW_e_1 = numpy.identity(4)
 
     # compute B_w
@@ -50,5 +43,5 @@ def point_at_obj(robot, bottle, manip='right'):
 
     chain = prpy.tsr.TSRChain(TSRs=[T_0, T_1], sample_goal=True, 
                      sample_start=False, constrain=False)
-
+ 
     return [chain]
