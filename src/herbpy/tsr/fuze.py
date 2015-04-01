@@ -3,11 +3,11 @@ import prpy.tsr
 
 @prpy.tsr.tsrlibrary.TSRFactory('herb', 'fuze_bottle', 'point')
 def point_at_obj(robot, bottle, manip=None):
-    '''
+    """
     @param robot The robot performing the point
     @param bottle The bottle to point at
     @param manip The manipulator to point with. This must be the right arm 
-    '''
+    """
     if manip is None:
         manip = robot.right_arm
 
