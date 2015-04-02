@@ -38,6 +38,7 @@ def point_on(robot, tray, manip=None, padding=0.0):
     ydim = 0.33 - 2.*padding #tray_extents[1] - 2.*padding
     Bw[0,:] = [-xdim, xdim ] # move along x and z directios to get any point on tray
     Bw[1,:] = [-ydim, ydim]
+    Bw[2,:] = [-0.02, 0.04] # verticle movement
     Bw[5,:] = [-numpy.pi, numpy.pi] # allow any rotation around z - which is the axis normal to the tray top
 
     
