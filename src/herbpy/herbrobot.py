@@ -11,6 +11,15 @@ from herbpantilt import HERBPantilt
 
 logger = logging.getLogger('herbpy')
 
+
+def try_and_warn(fn, exception_type, message, default_value=None):
+    try:
+        return fn()
+    except exception_type:
+        logger.warning(message)
+        return None
+
+
 class HERBRobot(WAMRobot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
@@ -96,28 +105,72 @@ class HERBRobot(WAMRobot):
                             tsrs_path))
 
         # Initialize a default planning pipeline.
-        from prpy.planning import Planner, Sequence, Ranked
-        from prpy.planning import CBiRRTPlanner, CHOMPPlanner, IKPlanner, MKPlanner, NamedPlanner, SnapPlanner, SBPLPlanner, OMPLPlanner, GreedyIKPlanner
+        from prpy.planning import Fallback, Sequence, Ranked
+        from prpy.planning import (
+            BiRRTPlanner,
+            CBiRRTPlanner,
+            CHOMPPlanner,
+            GreedyIKPlanner,
+            IKPlanner,
+            NamedPlanner,
+            SBPLPlanner,
+            SnapPlanner,
+            TSRPlanner,
+            VectorFieldPlanner
+        )
+
+        # TODO: These should be meta-planners.
+        self.named_planner = NamedPlanner()
+        self.ik_planner = IKPlanner()
+
+        # Special-purpose planners.
+        self.snap_planner = SnapPlanner()
+        self.vectorfield_planner = VectorFieldPlanner()
+        self.greedyik_planner = GreedyIKPlanner()
+
+        # General-purpose planners.
+        self.birrt_planner = BiRRTPlanner()
+        self.cbirrt_planner = CBiRRTPlanner()
+
+        # Optional planners.
+        try:
+            from or_trajopt import TrajoptPlanner
+
+            self.trajopt_planner = TrajoptPlanner()
+        except ImportError:
+            self.trajopt_planner = None
+            logger.warning('Failed creating TrajoptPlanner. Is the or_trajopt'
+                           ' package in your workspace and built?')
+
+        try:
+            self.chomp_planner = CHOMPPlanner()
+        except UnsupportedPlanningError:
+            self.chomp_planner = None
+            logger.warning('Failed loading the CHOMP module. Is the or_cdchomp'
+                           ' package in your workspace and built?')
         
-        potential_planners = [(SnapPlanner, 'snap_planner', {}),
-                              (GreedyIKPlanner, 'greedy_ik_planner', {}),
-                              (MKPlanner, 'mk_planner', {}),
-                              (NamedPlanner, 'named_planner', {}),
-                              (IKPlanner, 'ik_planner', {}),
-                              (OMPLPlanner, 'ompl_planner',
-                                            {'algorithm':'RRTConnect'}),
-                              (CBiRRTPlanner, 'cbirrt_planner', {}),
-                              (CHOMPPlanner, 'chomp_planner', {})]
-        planners = []
-        for potential_planner, attr_name, planner_args in potential_planners:
-            try:
-                planner = potential_planner(**planner_args)
-                setattr(self, attr_name, planner)
-                planners.append(planner)
-            except UnsupportedPlanningError:
-                pass
-        
-        self.planner = Sequence(*planners)
+        self.planner = Fallback(
+            Sequence(
+                # First, try the straight-line trajectory.
+                self.snap_planner,
+                # If that fails, try a few simple (and fast!) heuristics.
+                self.vectorfield_planner,
+                self.greedyik_planner,
+                # Next, try a trajectory optimizer.
+                self.trajopt_planner or self.chomp_planner,
+                # If all else fails, call an RRT.
+                self.birrt_planner,
+                # TSRPlanner adds support for planning to TSRs to the default
+                # OpenRAVE BiRRT planner. Otherwise, only TrajOpt or CHOMP from
+                # this list would implement PlanToTSR.
+                TSRPlanner(delegate_planner=self.birrt_planner)
+            ),
+            # Fall back on CBiRRT for constrained planning.
+            self.cbirrt_planner,
+            # Provide helper functions
+            self.named_planner,
+            self.ik_planner,
+        )
         
         # Base planning
         if prpy.dependency_manager.is_catkin():
