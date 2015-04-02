@@ -1,5 +1,6 @@
-import logging, prpy
+import logging, openravepy, prpy
 from prpy.action import ActionMethod
+from prpy.planning.base import PlanningError
 from contextlib import contextmanager
 
 logger = logging.getLogger('herbpy')
@@ -74,17 +75,7 @@ def HerbGrasp(robot, obj, push_distance=None, manip=None,
         tsrlist = robot.tsrlibrary(obj, 'grasp')
     
     # Plan to the grasp
-    if not render:
-        class RenderNothing():
-            def __init__(self, *args, **kw_args):
-                pass
-            def __enter__(self):
-                pass
-            def __exit__(self, type, value, traceback):
-                pass
-
-    render_func = prpy.viz.RenderTSRList if render else RenderNothing
-    with render_func(tsrlist, robot.GetEnv()):
+    with prpy.viz.RenderTSRList(tsrlist, robot.GetEnv(), render=render):
         manip.PlanToTSR(tsrlist)
 
     if push_distance is not None:
@@ -96,32 +87,30 @@ def HerbGrasp(robot, obj, push_distance=None, manip=None,
         with env:
             obj_in_world = obj.GetTransform()
 
-        # First move back until collision
-        stepsize = 0.01
-        total_distance = 0.0
-        while not env.CheckCollision(robot, obj) and total_distance <= push_distance:
-            obj_in_world[:3,3] -= stepsize*push_direction
-            total_distance += stepsize
-            with env:
+            # First move back until collision
+            stepsize = 0.01
+            total_distance = 0.0
+            while not env.CheckCollision(robot, obj) and total_distance <= push_distance:
+                obj_in_world[:3,3] -= stepsize*push_direction
+                total_distance += stepsize
                 obj.SetTransform(obj_in_world)
             
-        # Then move forward until just out of collision
-        stepsize = 0.001
-        while env.CheckCollision(robot, obj):
-            obj_in_world[:3,3] += stepsize*push_direction
-            with env:
+            # Then move forward until just out of collision
+            stepsize = 0.001
+            while env.CheckCollision(robot, obj):
+                obj_in_world[:3,3] += stepsize*push_direction
                 obj.SetTransform(obj_in_world)
 
         # Manipulator must be active for grab to work properly
-        active_manip = robot.GetActiveManipulator()
-        robot.SetActiveManipulator(manip)
-        robot.Grab(obj)
-        robot.SetActiveManipulator(active_manip)
+        p = openravepy.KinBody.SaveParameters
+        with robot.CreateRobotStateSaver(p.ActiveManipulator):
+            robot.SetActiveManipulator(manip)
+            robot.Grab(obj)
+
                 
         # Now execute the straight line movement
-        render_func = prpy.viz.RenderVector if render else RenderNothing
-        with render_func(ee_in_world[:3,3], push_direction,
-                         push_distance, robot.GetEnv()):
+        with prpy.viz.RenderVector(ee_in_world[:3,3], push_direction,
+                                   push_distance, robot.GetEnv(), render=render):
             try:
                 manip.PlanToEndEffectorOffset(direction = push_direction,
                                               distance = push_distance,
@@ -138,8 +127,8 @@ def HerbGrasp(robot, obj, push_distance=None, manip=None,
     manip.hand.CloseHand()
 
     # Manipulator must be active for grab to work properly
-    active_manip = robot.GetActiveManipulator()
-    robot.SetActiveManipulator(manip)
-    robot.Grab(obj)
-    robot.SetActiveManipulator(active_manip)
+    p = openravepy.KinBody.SaveParameters
+    with robot.CreateRobotStateSaver(p.ActiveManipulator):
+        robot.SetActiveManipulator(manip)
+        robot.Grab(obj)
 
