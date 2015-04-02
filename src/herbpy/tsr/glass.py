@@ -3,40 +3,20 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import *
 
 @TSRFactory('herb', 'plastic_glass', 'grasp')
-def glass_grasp(robot, glass, manip=None):
+def glass_grasp(robot, glass, manip=None, **kw_args):
     '''
     @param robot The robot performing the grasp
     @param glass The glass to grasp
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
     '''
-    if manip is None:
-        manip_idx = robot.GetActiveManipulatorIndex()
-    else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
-
-    T0_w = glass.GetTransform()
-    Tw_e = numpy.array([[ 0., 0., 1., -0.225], 
-                        [1., 0., 0., 0.], 
-                        [0., 1., 0., 0.08], 
-                        [0., 0., 0., 1.]])
-
-    Bw = numpy.zeros((6,2))
-    Bw[2,:] = [0.0, 0.02]  # Allow a little vertical movement
-    Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
+    return _glass_grasp(robot, glass, manip=manip, **kw_args)
     
-    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = TSRChain(sample_start=False, sample_goal = True, constrain=False, TSR = grasp_tsr)
-
-    return [grasp_chain]
-
 @TSRFactory('herb', 'plastic_glass', 'push_grasp')
-def glass_push_grasp(robot, glass, manip=None):
+def glass_push_grasp(robot, glass, manip=None, push_distance=0.1, **kw_args):
     '''
     This factory differes from glass_grasp in that it places the manipulator 
-    10 cm further away and assumes the manip will perform a push after
+    further away and assumes the manip will perform a push after
     moving to this TSR.  This allows for dealing with uncertainty in pose estimation of the
     object. 
     After using this code to move the end-effector into place, the robot
@@ -47,7 +27,18 @@ def glass_push_grasp(robot, glass, manip=None):
     @param glass The glass to grasp
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
+    @param push_distance The offset distance for pushing
     '''
+    return _glass_grasp(robot, glass, manip=manip, push_distance=push_distance, **kw_args)
+
+def _glass_grasp(robot, glass, manip=None, push_distance=0.0, **kw_args):
+    """
+    @param robot The robot performing the grasp
+    @param glass The glass to grasp
+    @param manip The manipulator to perform the grasp, if None
+       the active manipulator on the robot is used
+    @param push_distance The offset distance for pushing
+    """
     if manip is None:
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
@@ -56,13 +47,17 @@ def glass_push_grasp(robot, glass, manip=None):
             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     T0_w = glass.GetTransform()
-    Tw_e = numpy.array([[ 0., 0., 1., -0.325], 
+    
+    ee_to_palm = 0.18
+    palm_to_glass_center = .045
+    total_offset = ee_to_palm + palm_to_glass_center + push_distance
+    Tw_e = numpy.array([[ 0., 0., 1., -total_offset], 
                         [1., 0., 0., 0.], 
-                        [0., 1., 0., 0.08], 
+                        [0., 1., 0., 0.08], # glass height
                         [0., 0., 0., 1.]])
 
     Bw = numpy.zeros((6,2))
-    Bw[2,:] = [-0.02, 0.02]  # Allow a little vertical movement
+    Bw[2,:] = [0.0, 0.02]  # Allow a little vertical movement
     Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
     
     grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
