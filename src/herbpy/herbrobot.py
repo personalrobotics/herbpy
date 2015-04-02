@@ -2,14 +2,24 @@ PACKAGE = 'herbpy'
 import logging
 import openravepy
 import prpy
-from prpy.planning.base import UnsupportedPlanningError
 from prpy.base.barretthand import BarrettHand
 from prpy.base.wam import WAM
 from prpy.base.wamrobot import WAMRobot
+from prpy.exceptions import PrPyException
+from prpy.planning.base import UnsupportedPlanningError
 from herbbase import HerbBase
 from herbpantilt import HERBPantilt
 
 logger = logging.getLogger('herbpy')
+
+
+def try_and_warn(fn, exception_type, message, default_value=None):
+    try:
+        return fn()
+    except exception_type:
+        logger.warning(message)
+        return None
+
 
 class HERBRobot(WAMRobot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
@@ -96,28 +106,86 @@ class HERBRobot(WAMRobot):
                             tsrs_path))
 
         # Initialize a default planning pipeline.
-        from prpy.planning import Planner, Sequence, Ranked
-        from prpy.planning import CBiRRTPlanner, CHOMPPlanner, IKPlanner, MKPlanner, NamedPlanner, SnapPlanner, SBPLPlanner, OMPLPlanner, GreedyIKPlanner
+        from prpy.planning import (
+            FirstSupported,
+            MethodMask,
+            Ranked,
+            Sequence,
+        )
+        from prpy.planning import (
+            BiRRTPlanner,
+            CBiRRTPlanner,
+            CHOMPPlanner,
+            GreedyIKPlanner,
+            IKPlanner,
+            NamedPlanner,
+            SBPLPlanner,
+            SnapPlanner,
+            TSRPlanner,
+            VectorFieldPlanner
+        )
+
+        # TODO: These should be meta-planners.
+        self.named_planner = NamedPlanner()
+        self.ik_planner = IKPlanner()
+
+        # Special-purpose planners.
+        self.snap_planner = SnapPlanner()
+        self.vectorfield_planner = VectorFieldPlanner()
+        self.greedyik_planner = GreedyIKPlanner()
+
+        # General-purpose planners.
+        self.birrt_planner = BiRRTPlanner()
+        self.cbirrt_planner = CBiRRTPlanner()
+
+        # Trajectory optimizer.
+        try:
+            from or_trajopt import TrajoptPlanner
+
+            self.trajopt_planner = TrajoptPlanner()
+        except ImportError:
+            self.trajopt_planner = None
+            logger.warning('Failed creating TrajoptPlanner. Is the or_trajopt'
+                           ' package in your workspace and built?')
+
+        try:
+            self.chomp_planner = CHOMPPlanner()
+        except UnsupportedPlanningError:
+            self.chomp_planner = None
+            logger.warning('Failed loading the CHOMP module. Is the or_cdchomp'
+                           ' package in your workspace and built?')
+
+        if not (self.trajopt_planner or self.chomp_planner):
+            raise PrPyException('Unable to load both CHOMP and TrajOpt. At'
+                                ' least one of these packages is required.')
         
-        potential_planners = [(SnapPlanner, 'snap_planner', {}),
-                              (GreedyIKPlanner, 'greedy_ik_planner', {}),
-                              (MKPlanner, 'mk_planner', {}),
-                              (NamedPlanner, 'named_planner', {}),
-                              (IKPlanner, 'ik_planner', {}),
-                              (OMPLPlanner, 'ompl_planner',
-                                            {'algorithm':'RRTConnect'}),
-                              (CBiRRTPlanner, 'cbirrt_planner', {}),
-                              (CHOMPPlanner, 'chomp_planner', {})]
-        planners = []
-        for potential_planner, attr_name, planner_args in potential_planners:
-            try:
-                planner = potential_planner(**planner_args)
-                setattr(self, attr_name, planner)
-                planners.append(planner)
-            except UnsupportedPlanningError:
-                pass
-        
-        self.planner = Sequence(*planners)
+        actual_planner = Sequence(
+            # First, try the straight-line trajectory.
+            self.snap_planner,
+            # Then, try a few simple (and fast!) heuristics.
+            self.vectorfield_planner,
+            self.greedyik_planner,
+            # Next, try a trajectory optimizer.
+            self.trajopt_planner or self.chomp_planner,
+            # If all else fails, call an RRT.
+            self.birrt_planner,
+            MethodMask(
+                FirstSupported(
+                    # Try sampling the TSR and planning with BiRRT. This only
+                    # works for PlanToIK and PlanToTSR with strictly goal TSRs.
+                    TSRPlanner(delegate_planner=self.birrt_planner),
+                    # Fall back on CBiRRT, which also handles start and
+                    # constraint TSRs.
+                    self.cbirrt_planner,
+                ),
+                methods=['PlanToIK', 'PlanToTSR']
+            )
+        )
+        self.planner = FirstSupported(
+            actual_planner,
+            # Special purpose meta-planner.
+            NamedPlanner(delegate_planner=actual_planner),
+        )
         
         # Base planning
         if prpy.dependency_manager.is_catkin():
