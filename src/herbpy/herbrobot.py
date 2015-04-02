@@ -2,10 +2,11 @@ PACKAGE = 'herbpy'
 import logging
 import openravepy
 import prpy
-from prpy.planning.base import UnsupportedPlanningError
 from prpy.base.barretthand import BarrettHand
 from prpy.base.wam import WAM
 from prpy.base.wamrobot import WAMRobot
+from prpy.exceptions import PrPyException
+from prpy.planning.base import UnsupportedPlanningError
 from herbbase import HerbBase
 from herbpantilt import HERBPantilt
 
@@ -105,7 +106,7 @@ class HERBRobot(WAMRobot):
                             tsrs_path))
 
         # Initialize a default planning pipeline.
-        from prpy.planning import Fallback, Sequence, Ranked
+        from prpy.planning import Fallback, Sequence, Ranked, Only
         from prpy.planning import (
             BiRRTPlanner,
             CBiRRTPlanner,
@@ -132,7 +133,7 @@ class HERBRobot(WAMRobot):
         self.birrt_planner = BiRRTPlanner()
         self.cbirrt_planner = CBiRRTPlanner()
 
-        # Optional planners.
+        # Trajectory optimizer.
         try:
             from or_trajopt import TrajoptPlanner
 
@@ -148,28 +149,38 @@ class HERBRobot(WAMRobot):
             self.chomp_planner = None
             logger.warning('Failed loading the CHOMP module. Is the or_cdchomp'
                            ' package in your workspace and built?')
+
+        if not (self.trajopt_planner or self.chomp_planner):
+            raise PrPyException('Unable to load both CHOMP and TrajOpt. At'
+                                ' least one of these packages is required.')
         
+        actual_planner = Sequence(
+            # First, try the straight-line trajectory.
+            self.snap_planner,
+            # Then, try a few simple (and fast!) heuristics.
+            self.vectorfield_planner,
+            self.greedyik_planner,
+            # Next, try a trajectory optimizer.
+            self.trajopt_planner or self.chomp_planner,
+            # If all else fails, call an RRT.
+            self.birrt_planner,
+            Only(
+                Fallback(
+                    # Try sampling the TSR and planning with BiRRT. This only
+                    # works for PlanToIK and PlanToTSR with strictly goal TSRs.
+                    TSRPlanner(delegate_planner=self.birrt_planner),
+                    # Fall back on CBiRRT, which also handles start and
+                    # constraint TSRs.
+                    self.cbirrt_planner,
+                ),
+                methods=['PlanToTSR']
+            )
+        )
         self.planner = Fallback(
-            Sequence(
-                # First, try the straight-line trajectory.
-                self.snap_planner,
-                # If that fails, try a few simple (and fast!) heuristics.
-                self.vectorfield_planner,
-                self.greedyik_planner,
-                # Next, try a trajectory optimizer.
-                self.trajopt_planner or self.chomp_planner,
-                # If all else fails, call an RRT.
-                self.birrt_planner,
-                # TSRPlanner adds support for planning to TSRs to the default
-                # OpenRAVE BiRRT planner. Otherwise, only TrajOpt or CHOMP from
-                # this list would implement PlanToTSR.
-                TSRPlanner(delegate_planner=self.birrt_planner)
-            ),
-            # Fall back on CBiRRT for constrained planning.
-            self.cbirrt_planner,
-            # Provide helper functions
-            self.named_planner,
-            self.ik_planner,
+            actual_planner,
+            # Special purpose meta-planners.
+            NamedPlanner(delegate_planner=actual_planner),
+            IKPlanner(delegate_planner=actual_planner),
         )
         
         # Base planning
