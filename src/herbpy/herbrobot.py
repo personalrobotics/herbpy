@@ -106,7 +106,12 @@ class HERBRobot(WAMRobot):
                             tsrs_path))
 
         # Initialize a default planning pipeline.
-        from prpy.planning import Fallback, Sequence, Ranked, Only
+        from prpy.planning import (
+            FirstSupported,
+            MethodMask,
+            Ranked,
+            Sequence,
+        )
         from prpy.planning import (
             BiRRTPlanner,
             CBiRRTPlanner,
@@ -164,8 +169,8 @@ class HERBRobot(WAMRobot):
             self.trajopt_planner or self.chomp_planner,
             # If all else fails, call an RRT.
             self.birrt_planner,
-            Only(
-                Fallback(
+            MethodMask(
+                FirstSupported(
                     # Try sampling the TSR and planning with BiRRT. This only
                     # works for PlanToIK and PlanToTSR with strictly goal TSRs.
                     TSRPlanner(delegate_planner=self.birrt_planner),
@@ -176,7 +181,7 @@ class HERBRobot(WAMRobot):
                 methods=['PlanToIK', 'PlanToTSR']
             )
         )
-        self.planner = Fallback(
+        self.planner = FirstSupported(
             actual_planner,
             # Special purpose meta-planner.
             NamedPlanner(delegate_planner=actual_planner),
