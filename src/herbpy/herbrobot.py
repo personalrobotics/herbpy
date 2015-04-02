@@ -173,14 +173,13 @@ class HERBRobot(WAMRobot):
                     # constraint TSRs.
                     self.cbirrt_planner,
                 ),
-                methods=['PlanToTSR']
+                methods=['PlanToIK', 'PlanToTSR']
             )
         )
         self.planner = Fallback(
             actual_planner,
-            # Special purpose meta-planners.
+            # Special purpose meta-planner.
             NamedPlanner(delegate_planner=actual_planner),
-            IKPlanner(delegate_planner=actual_planner),
         )
         
         # Base planning
