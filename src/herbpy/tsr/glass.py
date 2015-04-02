@@ -1,8 +1,7 @@
 import numpy
-from prpy.tsr.tsrlibrary import TSRFactory
-from prpy.tsr.tsr import *
+import prpy.tsr
 
-@TSRFactory('herb', 'plastic_glass', 'grasp')
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_glass', 'grasp')
 def glass_grasp(robot, glass, manip=None):
     '''
     @param robot The robot performing the grasp
@@ -27,12 +26,13 @@ def glass_grasp(robot, glass, manip=None):
     Bw[2,:] = [0.0, 0.02]  # Allow a little vertical movement
     Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
     
-    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = TSRChain(sample_start=False, sample_goal = True, constrain=False, TSR = grasp_tsr)
+    grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
+    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
+                                    constrain=False, TSR = grasp_tsr)
 
     return [grasp_chain]
 
-@TSRFactory('herb', 'plastic_glass', 'push_grasp')
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_glass', 'push_grasp')
 def glass_push_grasp(robot, glass, manip=None):
     '''
     This factory differes from glass_grasp in that it places the manipulator 
@@ -65,12 +65,13 @@ def glass_push_grasp(robot, glass, manip=None):
     Bw[2,:] = [-0.02, 0.02]  # Allow a little vertical movement
     Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
     
-    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = TSRChain(sample_start=False, sample_goal = True, constrain=False, TSR = grasp_tsr)
+    grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
+    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
+                                    constrain=False, TSR = grasp_tsr)
 
     return [grasp_chain]
                 
-@TSRFactory('herb', 'plastic_glass', 'place')
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_glass', 'place')
 def glass_on_table(robot, glass, pose_tsr_chain, manip=None):
     '''
     Generates end-effector poses for placing the glass on the table.
@@ -98,14 +99,14 @@ def glass_on_table(robot, glass, pose_tsr_chain, manip=None):
         if tsr.manipindex != manip_idx:
             raise Exception('pose_tsr_chain defined for a different manipulator.')
 
-    grasp_tsr = TSR(Tw_e = ee_in_glass, Bw = Bw, manip = manip_idx)
+    grasp_tsr = prpy.tsr.TSR(Tw_e = ee_in_glass, Bw = Bw, manip = manip_idx)
     all_tsrs = list(pose_tsr_chain.TSRs) + [grasp_tsr]
-    place_chain = TSRChain(sample_start = False, sample_goal = True, constrain = False,
+    place_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = True, constrain = False,
                            TSRs = all_tsrs)
 
     return  [ place_chain ]
     
-@TSRFactory('herb', 'plastic_glass', 'transport')
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_glass', 'transport')
 def glass_transport(robot, glass, manip=None, roll_epsilon=0.2, pitch_epsilon=0.2, yaw_epsilon=0.2):
     '''
     Generates a trajectory-wide constraint for transporting the object with little roll, pitch or yaw
@@ -136,11 +137,11 @@ def glass_transport(robot, glass, manip=None, roll_epsilon=0.2, pitch_epsilon=0.
                       [-roll_epsilon, roll_epsilon],
                       [-pitch_epsilon, pitch_epsilon],
                       [-yaw_epsilon, yaw_epsilon]])
-    transport_tsr = TSR(T0_w = glass.GetTransform(),
-                        Tw_e = ee_in_glass,
-                        Bw = Bw,
-                        manip = manip_idx)
-    transport_chain = TSRChain(sample_start = False, sample_goal=False, constrain=True,
-                               TSR = transport_tsr)
+    transport_tsr = prpy.tsr.TSR(T0_w = glass.GetTransform(),
+                                 Tw_e = ee_in_glass,
+                                 Bw = Bw,
+                                 manip = manip_idx)
+    transport_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal=False, constrain=True,
+                                        TSR = transport_tsr)
     
     return [ transport_chain ]

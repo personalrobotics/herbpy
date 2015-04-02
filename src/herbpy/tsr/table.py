@@ -1,8 +1,7 @@
 import numpy
-from prpy.tsr.tsrlibrary import TSRFactory
-from prpy.tsr.tsr import *
+import prpy.tsr
 
-@TSRFactory('herb', 'conference_table', 'point_on')
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'conference_table', 'point_on')
 def point_on(robot, table, manip=None):
     '''
     This creates a TSR that allows you to sample poses on the table.
@@ -34,7 +33,7 @@ def point_on(robot, table, manip=None):
     Bw[2,:] = [-0.38, 0.38]
     Bw[4,:] = [-numpy.pi, numpy.pi] # allow any rotation around y - which is the axis normal to the table top
     
-    table_top_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    table_top_chain = TSRChain(sample_start = False, sample_goal = True, constrain=False, 
+    table_top_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
+    table_top_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = True, constrain=False, 
                                TSR = table_top_tsr)
     return [table_top_chain]
