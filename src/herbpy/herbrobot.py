@@ -178,7 +178,7 @@ class HERBRobot(WAMRobot):
                     # constraint TSRs.
                     self.cbirrt_planner,
                 ),
-                methods=['PlanToIK', 'PlanToTSR']
+                methods=['PlanToIK', 'PlanToTSR', 'PlanToEndEffectorPose', 'PlanToEndEffectorOffset']
             )
         )
         self.planner = FirstSupported(
