@@ -6,7 +6,7 @@ class HERBPantilt(WAM):
     def __init__(self, sim, owd_namespace):
         # FIXME: We don't build the IK database because ikfast fails with a
         # compilation error on the pantilt. This should actually be LookAt3D.
-        WAM.__init__(self, sim, owd_namespace, None)
+        WAM.__init__(self, sim, owd_namespace, iktype=None)
 
     def CloneBindings(self, parent):
         WAM.CloneBindings(self, parent)
