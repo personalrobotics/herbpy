@@ -2,6 +2,11 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Small modifications to tray TSR as a result of robot testing
+* Contributors: Jennifer King
+
 1.5.0 (2015-04-07)
 ------------------
 * Adding tray to default list of TSRs that get loaded
