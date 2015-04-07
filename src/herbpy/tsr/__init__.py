@@ -5,3 +5,4 @@ from plate import *
 from bowl import * 
 from block import *
 from pitcher import *
+from tray import *
