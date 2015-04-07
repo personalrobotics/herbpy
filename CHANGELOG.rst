@@ -2,8 +2,8 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.5.1 (2015-04-07)
+------------------
 * Small modifications to tray TSR as a result of robot testing
 * Contributors: Jennifer King
 
