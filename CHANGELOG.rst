@@ -2,8 +2,8 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.5.0 (2015-04-07)
+------------------
 * Adding tray to default list of TSRs that get loaded
 * Merge pull request `#19 <https://github.com/personalrobotics/herbpy/issues/19>`_ from personalrobotics/feature/issue18
   Enable PlanToEndEffectorPose and PlanToEndEffectorOffset on TSR planners.

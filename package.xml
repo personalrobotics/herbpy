@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>herbpy</name>
-  <version>1.4.0</version>
+  <version>1.5.0</version>
   <description>
     Python library for interacting with HERB through OpenRAVE. HERB is a
     bimanual mobile manipulator developed by the Personal Robotics Lab at
