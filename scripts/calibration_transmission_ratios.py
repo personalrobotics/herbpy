@@ -234,7 +234,7 @@ if __name__ == '__main__':
     namespace = '/left/owd/'
     output_path = 'transmission_ratios.yaml'
 
-    env, robot = herbpy.initialize(sim=sim, segway_sim=True, vision_sim=True, head_sim=True, right_arm_sim=True, right_hand_sim=True, attach_viewer='interactivemarker')
+    env, robot = herbpy.initialize(sim=sim, segway_sim=True, head_sim=True, right_arm_sim=True, right_hand_sim=True, attach_viewer='interactivemarker')
     robot.planner = prpy.planning.SnapPlanner()
 
     # TODO: Hack to work around a race condition in or_interactivemarker.
