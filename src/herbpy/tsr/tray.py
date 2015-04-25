@@ -84,8 +84,8 @@ def handle_grasp(robot, tray, manip=None, handle=None):
                                    [0.,  0.,  0., 1.]])
 
     Bw = numpy.zeros((6,2))
-    epsilon = 0.05
-    Bw[0,:] = [-epsilon, epsilon] # Move laterally along handle
+    epsilon = 0.03
+    Bw[0,:] = [0., epsilon] # Move laterally along handle
     Bw[2,:] = [-0.01, 0.01] # Move up or down a little bit
     Bw[5,:] = [-5.*numpy.pi/180., 5.*numpy.pi/180.] # Allow 5 degrees of yaw
 
