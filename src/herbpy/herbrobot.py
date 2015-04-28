@@ -119,7 +119,6 @@ class HERBRobot(WAMRobot):
             SnapPlanner,
         )
 
-        # TODO: These should be meta-planners.
         self.snap_planner = SnapPlanner()
         self.cbirrt_planner = CBiRRTPlanner()
 
@@ -131,6 +130,14 @@ class HERBRobot(WAMRobot):
             actual_planner,
             NamedPlanner(delegate_planner=actual_planner),
         )
+
+        # Shortcut and stop at every waypoint.
+        from prpy.planning.retimer import ParabolicRetimer
+        from prpy.planning.ompl import OMPLSimplifier
+
+        self.simplifier = OMPLSimplifier()
+        self.retimer = ParabolicRetimer()
+        self.smoother = self.retimer
         
         # Base planning
         if prpy.dependency_manager.is_catkin():
