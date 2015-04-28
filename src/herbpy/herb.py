@@ -26,54 +26,25 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
         if not env.Load(env_path):
             raise Exception('Unable to load environment frompath %s' % env_path)
 
-    if prpy.dependency_manager.is_catkin():
-        # Find the HERB URDF and SRDF files.
-        from catkin.find_in_workspaces import find_in_workspaces
-        share_directories = find_in_workspaces(search_dirs=['share'],
-                                               project='herb_description')
-        if not share_directories:
-            logger.error('Unable to find the HERB model. Do you have the'
-                         ' package herb_description installed?')
-            raise ValueError('Unable to find HERB model.')
+    urdf_path = 'package://herb_description/robots/herb.urdf'
+    srdf_path = 'package://herb_description/robots/herb.srdf'
 
-        found_models = False
-        for share_directory in share_directories:
-            urdf_path = os.path.join(share_directories[0], 'robots', 'herb.urdf')
-            srdf_path = os.path.join(share_directories[0], 'robots', 'herb.srdf')
-            if os.path.exists(urdf_path) and os.path.exists(srdf_path):
-                found_models = True
-                break
+    # Load the URDF file into OpenRAVE.
+    urdf_module = openravepy.RaveCreateModule(env, 'urdf')
+    if urdf_module is None:
+        logger.error('Unable to load or_urdf module. Do you have or_urdf'
+                     ' built and installed in one of your Catkin workspaces?')
+        raise ValueError('Unable to load or_urdf plugin.')
 
-        if not found_models:
-            logger.error('Missing URDF file and/or SRDF file for HERB.'
-                         ' Is the herb_description package properly installed?')
-            raise ValueError('Unable to find HERB URDF and SRDF files.')
+    args = 'Load {:s} {:s}'.format(urdf_path, srdf_path)
+    herb_name = urdf_module.SendCommand(args)
+    if herb_name is None:
+        raise ValueError('Failed loading HERB model using or_urdf.')
 
-        # Load the URDF file into OpenRAVE.
-        urdf_module = openravepy.RaveCreateModule(env, 'urdf')
-        if urdf_module is None:
-            logger.error('Unable to load or_urdf module. Do you have or_urdf'
-                         ' built and installed in one of your Catkin workspaces?')
-            raise ValueError('Unable to load or_urdf plugin.')
-
-        args = 'Load {:s} {:s}'.format(urdf_path, srdf_path)
-        herb_name = urdf_module.SendCommand(args)
-        if herb_name is None:
-            raise ValueError('Failed loading HERB model using or_urdf.')
-
-        robot = env.GetRobot(herb_name)
-        if robot is None:
-            raise ValueError('Unable to find robot with name "{:s}".'.format(
-                             herb_name))
-    else:
-        if robot_xml is None:
-            import os, rospkg
-            rospack = rospkg.RosPack()
-            base_path = rospack.get_path('herb_description')
-            robot_xml = os.path.join(base_path, 'ordata', 'robots', 'herb.robot.xml')
-
-        robot = env.ReadRobotXMLFile(robot_xml)
-        env.Add(robot)
+    robot = env.GetRobot(herb_name)
+    if robot is None:
+        raise ValueError('Unable to find robot with name "{:s}".'.format(
+                         herb_name))
 
     # Default arguments.
     keys = [ 'left_arm_sim', 'left_hand_sim', 'left_ft_sim',
