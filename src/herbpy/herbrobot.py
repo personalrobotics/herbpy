@@ -123,8 +123,7 @@ class HERBRobot(WAMRobot):
         self.cbirrt_planner = CBiRRTPlanner()
 
         actual_planner = Sequence(
-            self.snap_planner,
-            self.cbirrt_planner,
+            self.cbirrt_planner
         )
         self.planner = FirstSupported(
             actual_planner,
