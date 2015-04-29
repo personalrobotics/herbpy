@@ -24,7 +24,7 @@ def try_and_warn(fn, exception_type, message, default_value=None):
 class HERBRobot(WAMRobot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
-                       head_sim, vision_sim, talker_sim, segway_sim):
+                       head_sim, talker_sim, segway_sim):
         WAMRobot.__init__(self, robot_name='herb')
 
         # Absolute path to this package.
@@ -221,13 +221,6 @@ class HERBRobot(WAMRobot):
         # Setting necessary sim flags
         self.talker_simulated = talker_sim
         self.segway_sim = segway_sim
-        self.vision_sim = vision_sim
-
-        if not self.vision_sim:
-          args = 'MarkerSensorSystem {0:s} {1:s} {2:s} {3:s} {4:s}'.format('herbpy', '/herbpy', '/head/wam2', 'herb', '/head/wam2')
-          self.vision_sensorsystem = openravepy.RaveCreateSensorSystem(self.GetEnv(), args)
-          if self.vision_sensorsystem is None:
-            raise Exception("creating the marker vision sensorsystem failed")
 
     def CloneBindings(self, parent):
         from prpy import Cloned
@@ -269,48 +262,6 @@ class HERBRobot(WAMRobot):
         self.head.SetStiffness(stiffness)
         self.left_arm.SetStiffness(stiffness)
         self.right_arm.SetStiffness(stiffness)
-
-    def WaitForObject(robot, obj_name, timeout=None, update_period=0.1):
-        """Wait for the perception system to detect an object.
-        This function will block until either: (1) an object of the appropriate
-        type has been detected by the perception system or (2) a timeout
-        occurs. The name of an object is generally equal to its filename
-        without the ".kinbody.xml" extension; e.g. the name of
-        fuze_bottle.kinbody.xml is fuze_bottle.
-        @param obj_name type of object to wait for
-        @param timeout maximum time to wait in seconds or None to wait forever
-        @param update_period period at which to poll the sensor
-        @return perceived KinBody or None if a timeout occured
-        """
-        import time
-
-        start = time.time()
-        found_body = None
-
-        if not robot.vision_sim:
-            robot.vision_sensorsystem.SendCommand('enable')
-        else:
-            # Timeout immediately in simulation.
-            timeout = 0
-
-        logger.info("Waiting for object %s to appear.", obj_name)
-        try:
-            while True:
-                # Check for an object with the appropriate name in the environment.
-                bodies = robot.GetEnv().GetBodies()
-                for body in bodies:
-                    if body.GetName().startswith('vision_' + obj_name):
-                        return body
-
-                # Check for a timeout.
-                if timeout is not None and time.time() - start >= timeout:
-                    logger.info("Timed out without finding object.")
-                    return None
-
-                time.sleep(update_period)
-        finally:
-            if not robot.vision_sim:
-                robot.vision_sensorsystem.SendCommand('Disable')
 
     def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
                                 max_distance=None, timeout=None, left_arm=True, right_arm=True):
