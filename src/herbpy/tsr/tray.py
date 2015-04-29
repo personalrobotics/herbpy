@@ -1,4 +1,4 @@
-import numpy
+import numpy, prpy
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
 
@@ -171,4 +171,77 @@ def lift(robot, tray, distance=0.1):
     movement_chain = TSRChain(sample_start = False, sample_goal = False, constrain=True,
                               TSRs = [tsr_0])
     
-    return [movement_chain, goal_right_chain, goal_left_chain ]
+    return [goal_right_chain, goal_left_chain, movement_chain ]
+
+@TSRFactory('herb', 'wicker_tray', 'pull')
+def pull_tray(robot, tray, manip=None, distance=0.0, direction=[1., 0., 0.], 
+              angular_tolerance=[0., 0., 0.],  position_tolerance=[0., 0., 0.]):
+    """
+    This creates a TSR for pulling the tray in a specified direction for a specified distance
+    It is assumed that when called, the robot is grasping the tray
+
+    @param robot The robot to perform the lift
+    @param tray The tray to lift
+    @param manip The manipulator to pull with (if None the active manipulator is used)
+    @param distance The distance to lift the tray
+    @param angular_tolerance A 3x1 vector describing the tolerance of the pose of the end-effector
+          in roll, pitch and yaw relative to a coordinate frame with z pointing in the pull direction
+    @param position_tolerance A 3x1 vector describing the tolerance of the pose of the end-effector
+          in x, y and z relative to a coordinate frame with z pointing in the pull direction
+    """
+    if manip is None:
+        manip = robot.GetActiveManipulator()
+        manip_idx = robot.GetActiveManipulatorIndex()
+    else:
+        with manip.GetRobot():
+            manip.SetActive()
+            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+            
+    # Create a w frame with z-axis pointing in direction of pull
+    ee_in_world = manip.GetEndEffectorTransform()
+    w_in_world = prpy.kin.H_from_op_diff(ee_in_world[:3,3], direction)
+
+    # Move the w frame the appropriate distance along the pull direction
+    end_in_w = numpy.eye(4)
+    end_in_w[2,3] = distance
+    desired_w_in_world = numpy.dot(w_in_world, end_in_w)
+
+    # Compute the current end-effector in w frame
+    ee_in_w = numpy.dot(numpy.linalg.inv(w_in_world), ee_in_world)
+
+    Bw_goal = numpy.zeros((6,2))
+    Bw_goal[0,:] = [-position_tolerance[0], position_tolerance[0]]
+    Bw_goal[1,:] = [-position_tolerance[1], position_tolerance[1]]
+    Bw_goal[2,:] = [-position_tolerance[2], position_tolerance[2]]
+    Bw_goal[3,:] = [-angular_tolerance[0], angular_tolerance[0]]
+    Bw_goal[4,:] = [-angular_tolerance[1], angular_tolerance[1]]
+    Bw_goal[5,:] = [-angular_tolerance[2], angular_tolerance[2]]
+    
+    goal_tsr = TSR(T0_w = desired_w_in_world,
+                   Tw_e = ee_in_w,
+                   Bw = Bw_goal,
+                   manip = manip_idx)
+
+    goal_tsr_chain = TSRChain(sample_start=False, 
+                              sample_goal=True, 
+                              constrain=False,
+                              TSRs=[goal_tsr])
+
+    Bw_constraint = numpy.zeros((6,2))
+    Bw_constraint[0,:] = [-position_tolerance[0], position_tolerance[0]]
+    Bw_constraint[1,:] = [-position_tolerance[1], position_tolerance[1]]
+    Bw_constraint[2,:] = [-position_tolerance[2], distance + position_tolerance[2]]
+    Bw_constraint[3,:] = [-angular_tolerance[0], angular_tolerance[0]]
+    Bw_constraint[4,:] = [-angular_tolerance[1], angular_tolerance[1]]
+    Bw_constraint[5,:] = [-angular_tolerance[2], angular_tolerance[2]]
+
+    traj_tsr = TSR(T0_w = w_in_world,
+                   Tw_e = ee_in_w,
+                   Bw = Bw_constraint,
+                   manip = manip_idx)
+    traj_tsr_chain = TSRChain(sample_start=False,
+                              sample_goal=False,
+                              constrain=True,
+                              TSRs = [traj_tsr])
+    
+    return [goal_tsr_chain, traj_tsr_chain]
