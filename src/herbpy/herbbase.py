@@ -66,7 +66,7 @@ class HerbBase(MobileBase):
         @return base trajectory
         """
         if self.simulated or not execute:
-            MobileBase.Rotate(self, angle_rad, execute=execute, timeout=timeout, **kwargs)
+            return MobileBase.Rotate(self, angle_rad, execute=execute, timeout=timeout, **kwargs)
         else:
             with prpy.util.Timer("Rotate segway"):
                 self.controller.SendCommand("Rotate " + str(angle_rad))
