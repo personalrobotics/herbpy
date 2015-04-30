@@ -166,27 +166,23 @@ class HERBRobot(WAMRobot):
             self.vectorfield_planner,
             self.greedyik_planner,
             # Next, try a trajectory optimizer.
-            self.trajopt_planner or self.chomp_planner,
-            # If all else fails, call an RRT.
-            self.birrt_planner,
-            MethodMask(
-                FirstSupported(
-                    # Try sampling the TSR and planning with BiRRT. This only
-                    # works for PlanToIK and PlanToTSR with strictly goal TSRs.
-                    TSRPlanner(delegate_planner=self.birrt_planner),
-                    # Fall back on CBiRRT, which also handles start and
-                    # constraint TSRs.
-                    self.cbirrt_planner,
-                ),
-                methods=['PlanToIK', 'PlanToTSR', 'PlanToEndEffectorPose', 'PlanToEndEffectorOffset']
-            )
+            self.trajopt_planner or self.chomp_planner
         )
         self.planner = FirstSupported(
-            actual_planner,
+            Sequence(actual_planner, 
+                     TSRPlanner(delegate_planner=actual_planner),
+                     self.cbirrt_planner),
             # Special purpose meta-planner.
             NamedPlanner(delegate_planner=actual_planner),
         )
         
+        from prpy.planning.retimer import HauserParabolicSmoother
+        self.smoother = HauserParabolicSmoother()
+        # TODO: This should not be HauserParabolicSmoother because it changes the path. This is a temporary
+        # hack because the ParabolicTrajectoryRetimer doesn't work on HERB.
+        self.retimer = HauserParabolicSmoother()
+        self.simplifier = None
+
         # Base planning
         if prpy.dependency_manager.is_catkin():
             from catkin.find_in_workspaces import find_in_workspaces
