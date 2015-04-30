@@ -178,6 +178,8 @@ class HERBRobot(WAMRobot):
         
         from prpy.planning.retimer import HauserParabolicSmoother
         self.smoother = HauserParabolicSmoother()
+        # TODO: This should not be HauserParabolicSmoother because it changes the path. This is a temporary
+        # hack because the ParabolicTrajectoryRetimer doesn't work on HERB.
         self.retimer = HauserParabolicSmoother()
         self.simplifier = None
 
