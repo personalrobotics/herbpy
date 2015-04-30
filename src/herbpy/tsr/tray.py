@@ -129,49 +129,62 @@ def lift(robot, tray, distance=0.1):
         robot.right_arm.SetActive()
         right_manip_idx = robot.GetActiveManipulatorIndex()
 
-
-    tray_in_world = tray.GetTransform()
-    left_in_world = robot.left_arm.GetEndEffectorTransform()
-    right_in_world = robot.right_arm.GetEndEffectorTransform()
-    
     # First create a goal for the right arm that is 
     #  the desired distance above the current tray pose
-    right_in_tray = numpy.dot(numpy.linalg.inv(tray_in_world),
-                              right_in_world)
-    left_in_tray = numpy.dot(numpy.linalg.inv(tray_in_world),
-                             left_in_world)
-    desired_tray_in_world = tray.GetTransform()
-    desired_tray_in_world[2,3] += distance
+    left_in_world = robot.left_arm.GetEndEffectorTransform()
+    desired_handle_in_world = tray.GetTransform()
 
-    tsr_right_goal = TSR(T0_w = desired_tray_in_world,
-                     Tw_e = right_in_tray,
-                     Bw = numpy.zeros((6,2)), 
-                     manip=right_manip_idx)
-    goal_right_chain = TSRChain(sample_start = False, sample_goal = True, constrain=False,
-                          TSRs = [tsr_right_goal])
+    desired_handle_in_world[:3,3] = left_in_world[:3,3]
+    left_in_handle = numpy.dot(numpy.linalg.inv(desired_handle_in_world), left_in_world)
+    desired_handle_in_world[2,3] += distance
 
-    tsr_left_goal = TSR(T0_w = desired_tray_in_world,
-                     Tw_e = left_in_tray,
-                     Bw = numpy.zeros((6,2)), 
+    Bw_goal = numpy.zeros((6,2))
+    epsilon = 0.05
+    Bw_goal[0,:] = [-epsilon, epsilon]
+    Bw_goal[1,:] = [-epsilon, epsilon]
+    Bw_goal[2,:] = [-epsilon, epsilon]
+    Bw_goal[3,:] = [-epsilon, epsilon]
+
+    tsr_left_goal = TSR(T0_w = desired_handle_in_world, 
+                     Tw_e = left_in_handle,
+                     Bw = Bw_goal,
                      manip=left_manip_idx)
     goal_left_chain = TSRChain(sample_start = False, sample_goal = True, constrain=False,
                           TSRs = [tsr_left_goal])
 
+    right_in_world = robot.right_arm.GetEndEffectorTransform()
+    new_desired_handle_in_world = tray.GetTransform()
+    new_desired_handle_in_world[:3,3] = right_in_world[:3,3]
+    right_in_handle = numpy.dot(numpy.linalg.inv(new_desired_handle_in_world), right_in_world)
+    new_desired_handle_in_world[2,3] += distance
+
+    tsr_right_goal = TSR(T0_w = new_desired_handle_in_world, 
+                     Tw_e = right_in_handle,
+                     Bw = Bw_goal,
+                     manip=right_manip_idx)
+    goal_right_chain = TSRChain(sample_start = False, sample_goal = True, constrain=False,
+                          TSRs = [tsr_right_goal])
+
     # Create a constrained chain for the left arm that keeps it
     #  in the appropriate pose relative to the right arm
-    left_in_right = numpy.dot(numpy.linalg.inv(right_in_world),
-                              left_in_world)
+    right_in_left = numpy.dot(numpy.linalg.inv(left_in_world),
+                              right_in_world)
                                                
     Bw = numpy.zeros((6,2))
+    epsilon = 0.1
+    Bw[0,:] = [-epsilon, epsilon]
+    Bw[1,:] = [-epsilon, epsilon]
+    Bw[2,:] = [-epsilon, epsilon]
+    Bw[3,:] = [-epsilon, epsilon]
     tsr_0 = TSR(T0_w = numpy.eye(4),
-                Tw_e = left_in_right,
+                Tw_e = right_in_left,
                 Bw = Bw,
-                manip=left_manip_idx,
-                bodyandlink='%s %s' % (robot.GetName(), robot.right_arm.GetEndEffector().GetName()))
+                manip=right_manip_idx,
+                bodyandlink='%s %s' % (robot.GetName(), robot.left_arm.GetEndEffector().GetName()))
     movement_chain = TSRChain(sample_start = False, sample_goal = False, constrain=True,
                               TSRs = [tsr_0])
     
-    return [goal_right_chain, goal_left_chain, movement_chain ]
+    return [movement_chain, goal_right_chain, goal_left_chain]
 
 @TSRFactory('herb', 'wicker_tray', 'pull')
 def pull_tray(robot, tray, manip=None, distance=0.0, direction=[1., 0., 0.], 
