@@ -86,6 +86,7 @@ def glass_on_table(robot, glass, pose_tsr_chain, manip=None):
             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     ee_in_glass = numpy.dot(numpy.linalg.inv(glass.GetTransform()), manip.GetEndEffectorTransform())
+    ee_in_glass[2,3] += 0.04 # Let go slightly above table
     Bw = numpy.zeros((6,2))
     Bw[2,:] = [0., 0.04]  # Allow some lateral movement
     
