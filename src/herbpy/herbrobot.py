@@ -80,7 +80,6 @@ class HERBRobot(Robot):
             Sequence,
         )
         from prpy.planning import (
-            BiRRTPlanner,
             CBiRRTPlanner,
             CHOMPPlanner,
             GreedyIKPlanner,
@@ -102,7 +101,6 @@ class HERBRobot(Robot):
         self.greedyik_planner = GreedyIKPlanner()
 
         # General-purpose planners.
-        self.birrt_planner = BiRRTPlanner()
         self.cbirrt_planner = CBiRRTPlanner()
 
         # Trajectory optimizer.
