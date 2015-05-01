@@ -2,6 +2,11 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Updating tray TSR
+* Contributors: Jennifer King
+
 1.6.0 (2015-05-01)
 ------------------
 * Removing reference to BiRRT planner
