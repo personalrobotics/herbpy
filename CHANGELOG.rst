@@ -2,8 +2,8 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.6.0 (2015-05-01)
+------------------
 * Removing reference to BiRRT planner
 * Lots of cleanup. Removing dead code. Removing support for fuerte.
 * Remove attempt at loading TSRs from yaml
