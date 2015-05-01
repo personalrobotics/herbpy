@@ -129,66 +129,63 @@ def lift(robot, tray, distance=0.1):
         robot.right_arm.SetActive()
         right_manip_idx = robot.GetActiveManipulatorIndex()
 
-    # First create a goal for the right arm that is 
-    #  the desired distance above the current tray pose
+    # First TSR defines a goal for the left arm
     left_in_world = robot.left_arm.GetEndEffectorTransform()
-    desired_handle_in_world = tray.GetTransform()
+    desired_left_in_world = robot.left_arm.GetEndEffectorTransform()
+    desired_left_in_world[2,3] += distance
 
-    desired_handle_in_world[:3,3] = left_in_world[:3,3]
-    left_in_handle = numpy.dot(numpy.linalg.inv(desired_handle_in_world), left_in_world)
-    desired_handle_in_world[2,3] += distance
-
-    Bw_goal = numpy.zeros((6,2))
+    Bw_left = numpy.zeros((6,2))
     epsilon = 0.05
-    Bw_goal[0,:] = [-epsilon, epsilon]
-    Bw_goal[1,:] = [-epsilon, epsilon]
-    Bw_goal[2,:] = [-epsilon, epsilon]
-    Bw_goal[3,:] = [-epsilon, epsilon]
+    Bw_left[0,:] = [-epsilon, epsilon]
+    Bw_left[1,:] = [-epsilon, epsilon]
+    Bw_left[4,:] = [-epsilon, epsilon] # a little bit of tilt around handle
 
-    tsr_left_goal = TSR(T0_w = desired_handle_in_world, 
-                     Tw_e = left_in_handle,
-                     Bw = Bw_goal,
-                     manip=left_manip_idx)
-    goal_left_chain = TSRChain(sample_start = False, sample_goal = True, constrain=False,
-                          TSRs = [tsr_left_goal])
+    tsr_left_goal = TSR(T0_w = desired_left_in_world,
+                        Tw_e = numpy.eye(4),
+                        Bw = Bw_left,
+                        manip = left_manip_idx)
 
+    # Now define a TSR that is the right hand relative to the left
     right_in_world = robot.right_arm.GetEndEffectorTransform()
-    new_desired_handle_in_world = tray.GetTransform()
-    new_desired_handle_in_world[:3,3] = right_in_world[:3,3]
-    right_in_handle = numpy.dot(numpy.linalg.inv(new_desired_handle_in_world), right_in_world)
-    new_desired_handle_in_world[2,3] += distance
+    right_in_left = numpy.dot(numpy.linalg.inv(left_in_world), right_in_world)
 
-    tsr_right_goal = TSR(T0_w = new_desired_handle_in_world, 
-                     Tw_e = right_in_handle,
-                     Bw = Bw_goal,
-                     manip=right_manip_idx)
-    goal_right_chain = TSRChain(sample_start = False, sample_goal = True, constrain=False,
-                          TSRs = [tsr_right_goal])
-
-    # Create a constrained chain for the left arm that keeps it
-    #  in the appropriate pose relative to the right arm
-    right_in_left = numpy.dot(numpy.linalg.inv(left_in_world),
-                              right_in_world)
-                                               
-    Bw = numpy.zeros((6,2))
-    epsilon = 0.1
-    Bw[0,:] = [-epsilon, epsilon]
-    Bw[1,:] = [-epsilon, epsilon]
-    Bw[2,:] = [-epsilon, epsilon]
-    Bw[3,:] = [-epsilon, epsilon]
-    tsr_0 = TSR(T0_w = numpy.eye(4),
-                Tw_e = right_in_left,
-                Bw = Bw,
-                manip=right_manip_idx,
-                bodyandlink='%s %s' % (robot.GetName(), robot.left_arm.GetEndEffector().GetName()))
-    movement_chain = TSRChain(sample_start = False, sample_goal = False, constrain=True,
-                              TSRs = [tsr_0])
+    Bw_right = numpy.zeros((6,2))
+    tsr_right_goal = TSR(T0_w = numpy.eye(4), # overwritten in planner
+                         Tw_e = right_in_left,
+                         Bw = Bw_right,
+                         manip = right_manip_idx)
+    goal_tsr_chain = TSRChain(sample_start = False,
+                              sample_goal = True,
+                              constrain = False,
+                              TSRs = [tsr_left_goal, tsr_right_goal])
     
-    return [movement_chain, goal_right_chain, goal_left_chain]
+    # Now define a TSR that constrains the movement of the arms
+    Bw_constrain = numpy.zeros((6,2))
+    Bw_constrain[0,:] = [-epsilon, epsilon]
+    Bw_constrain[1,:] = [-epsilon, epsilon]
+    Bw_constrain[2,:] = [-epsilon, epsilon+distance] 
+    Bw_constrain[3,:] = [-epsilon, epsilon]
+    Bw_constrain[4,:] = [-epsilon, epsilon]
+    Bw_constrain[5,:] = [-epsilon, epsilon]
+
+    tsr_left_constraint = TSR(T0_w = left_in_world,
+                              Tw_e = numpy.eye(4),
+                              Bw = Bw_constrain,
+                              manip = left_manip_idx)
+
+    tsr_right_constraint = TSR(T0_w = numpy.eye(4),
+                              Tw_e = right_in_left,
+                              Bw = Bw_constrain,
+                              manip=right_manip_idx,
+                              bodyandlink='%s %s' % (robot.GetName(), robot.left_arm.GetEndEffector().GetName()))
+    movement_chain = TSRChain(sample_start = False, sample_goal = False, constrain=True,
+                              TSRs = [tsr_right_constraint, tsr_left_constraint])
+    
+    return [goal_tsr_chain, movement_chain] 
 
 @TSRFactory('herb', 'wicker_tray', 'pull')
-def pull_tray(robot, tray, manip=None, distance=0.0, direction=[1., 0., 0.], 
-              angular_tolerance=[0., 0., 0.],  position_tolerance=[0., 0., 0.]):
+def pull_tray(robot, tray, manip=None, max_distance=0.0, min_distance=0.0, 
+              direction=[1., 0., 0.], angular_tolerance=[0., 0., 0.],  position_tolerance=[0., 0., 0.]):
     """
     This creates a TSR for pulling the tray in a specified direction for a specified distance
     It is assumed that when called, the robot is grasping the tray
@@ -196,7 +193,8 @@ def pull_tray(robot, tray, manip=None, distance=0.0, direction=[1., 0., 0.],
     @param robot The robot to perform the lift
     @param tray The tray to lift
     @param manip The manipulator to pull with (if None the active manipulator is used)
-    @param distance The distance to lift the tray
+    @param max_distance The max distance to pull the tray
+    @param min_distance The min distance to pull the tray
     @param angular_tolerance A 3x1 vector describing the tolerance of the pose of the end-effector
           in roll, pitch and yaw relative to a coordinate frame with z pointing in the pull direction
     @param position_tolerance A 3x1 vector describing the tolerance of the pose of the end-effector
@@ -214,18 +212,24 @@ def pull_tray(robot, tray, manip=None, distance=0.0, direction=[1., 0., 0.],
     ee_in_world = manip.GetEndEffectorTransform()
     w_in_world = prpy.kin.H_from_op_diff(ee_in_world[:3,3], direction)
 
-    # Move the w frame the appropriate distance along the pull direction
-    end_in_w = numpy.eye(4)
-    end_in_w[2,3] = distance
-    desired_w_in_world = numpy.dot(w_in_world, end_in_w)
-
     # Compute the current end-effector in w frame
     ee_in_w = numpy.dot(numpy.linalg.inv(w_in_world), ee_in_world)
 
+    # Convert the position and angular tolerances from end-effector frame
+    #  to world frame
+    position_tolerance = numpy.dot(ee_in_w[:3,:3], position_tolerance)
+    angular_tolerance = numpy.dot(ee_in_w[:3,:3], angular_tolerance)
+
+    # Move the w frame the appropriate distance along the pull direction
+    end_in_w = numpy.eye(4)
+    end_in_w[2,3] = max_distance
+    desired_w_in_world = numpy.dot(w_in_world, end_in_w)
+    
+    distance_diff = max_distance - min_distance
     Bw_goal = numpy.zeros((6,2))
     Bw_goal[0,:] = [-position_tolerance[0], position_tolerance[0]]
     Bw_goal[1,:] = [-position_tolerance[1], position_tolerance[1]]
-    Bw_goal[2,:] = [-position_tolerance[2], position_tolerance[2]]
+    Bw_goal[2,:] = [-(position_tolerance[2] + distance_diff), position_tolerance[2]]
     Bw_goal[3,:] = [-angular_tolerance[0], angular_tolerance[0]]
     Bw_goal[4,:] = [-angular_tolerance[1], angular_tolerance[1]]
     Bw_goal[5,:] = [-angular_tolerance[2], angular_tolerance[2]]
@@ -243,7 +247,7 @@ def pull_tray(robot, tray, manip=None, distance=0.0, direction=[1., 0., 0.],
     Bw_constraint = numpy.zeros((6,2))
     Bw_constraint[0,:] = [-position_tolerance[0], position_tolerance[0]]
     Bw_constraint[1,:] = [-position_tolerance[1], position_tolerance[1]]
-    Bw_constraint[2,:] = [-position_tolerance[2], distance + position_tolerance[2]]
+    Bw_constraint[2,:] = [-position_tolerance[2], max_distance + position_tolerance[2]]
     Bw_constraint[3,:] = [-angular_tolerance[0], angular_tolerance[0]]
     Bw_constraint[4,:] = [-angular_tolerance[1], angular_tolerance[1]]
     Bw_constraint[5,:] = [-angular_tolerance[2], angular_tolerance[2]]
