@@ -2,8 +2,8 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.6.1 (2015-05-01)
+------------------
 * Updating tray TSR
 * Contributors: Jennifer King
 
