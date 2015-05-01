@@ -2,6 +2,18 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Removing reference to BiRRT planner
+* Lots of cleanup. Removing dead code. Removing support for fuerte.
+* Remove attempt at loading TSRs from yaml
+* Changed the planning pipeline, retimer, and smoother.
+* Adding pull TSR to tray
+* Changing planning pipeline. Setting smoother and retimer to HauserParabolicSmoother.
+* Removed vision_sim and MarkerSensorSystem.
+* Explicitly pass iktype as a named parameter.
+* Contributors: Jennifer King, Michael Koval
+
 1.5.1 (2015-04-07)
 ------------------
 * Small modifications to tray TSR as a result of robot testing
