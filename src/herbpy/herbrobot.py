@@ -2,7 +2,7 @@ PACKAGE = 'herbpy'
 import logging
 import openravepy
 import prpy
-import prpy.util
+import prpy.rave, prpy.util
 from prpy.base.barretthand import BarrettHand
 from prpy.base.wam import WAM
 from prpy.base.robot import Robot
@@ -207,6 +207,8 @@ class HERBRobot(Robot):
         """
         # Use the kinbody detector to detect the environment
         import kinbody_detector.kinbody_detector as kd
+        kinbody_path = prpy.util.FindCatkinResource('pr_ordata',
+                                                        'data/objects')
         marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
                                                         'data/objects/tag_data.json')
         marker_topic = '/apriltags_kinect2/marker_array'
@@ -214,7 +216,9 @@ class HERBRobot(Robot):
         
         destination_frame = 'map'
         try:
-            detector = kd.KinBodyDetector(env, 
+            logger.info('Marker data path %s' % marker_data_path)
+            logger.info('Kinbody path %s' % kinbody_path)
+            detector = kd.KinBodyDetector(self.GetEnv(), 
                                           marker_data_path,
                                           kinbody_path,
                                           marker_topic,
@@ -224,5 +228,5 @@ class HERBRobot(Robot):
             detector.Update()
         except Exception, e:
             logger.error('Detection failed update: %s' % str(e))
-            raise e
+            raise
 
