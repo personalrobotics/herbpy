@@ -201,7 +201,9 @@ class HERBRobot(Robot):
         self.left_arm.SetStiffness(stiffness)
         self.right_arm.SetStiffness(stiffness)
 
-    def DetectObjects(self):
+    def DetectObjects(self, 
+                      detection_frame='head/kinect2/rgb',
+                      destination_frame='map'):
         """Use the kinbody detector to detect objects and add
         them to the environment
         """
@@ -212,9 +214,6 @@ class HERBRobot(Robot):
         marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
                                                         'data/objects/tag_data.json')
         marker_topic = '/apriltags_kinect2/marker_array'
-        detection_frame = 'head/kinect2/rgb'
-        
-        destination_frame = 'map'
         try:
             logger.info('Marker data path %s' % marker_data_path)
             logger.info('Kinbody path %s' % kinbody_path)
@@ -226,7 +225,7 @@ class HERBRobot(Robot):
                                           destination_frame)
             logger.info('Waiting to detect objects...')
             detector.Update()
+
         except Exception, e:
             logger.error('Detection failed update: %s' % str(e))
             raise
-
