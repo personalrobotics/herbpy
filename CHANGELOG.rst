@@ -2,6 +2,13 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Adding ability to add extra padding around handles picking a point on the tray
+* Updating tray TSR to correctly handle negative distance when lifting tray
+* Adding a function to detect objects to herbpy
+* Contributors: Jennifer King
+
 1.6.1 (2015-05-01)
 ------------------
 * Updating tray TSR
