@@ -163,7 +163,11 @@ def lift(robot, tray, distance=0.1):
     Bw_constrain = numpy.zeros((6,2))
     Bw_constrain[0,:] = [-epsilon, epsilon]
     Bw_constrain[1,:] = [-epsilon, epsilon]
-    Bw_constrain[2,:] = [-epsilon, epsilon+distance] 
+    if distance < 0:
+        Bw_constrain[2,:] = [-epsilon+distance, epsilon]
+    else:
+        Bw_constrain[2,:] = [-epsilon, epsilon+distance]
+
     Bw_constrain[3,:] = [-epsilon, epsilon]
     Bw_constrain[4,:] = [-epsilon, epsilon]
     Bw_constrain[5,:] = [-epsilon, epsilon]
