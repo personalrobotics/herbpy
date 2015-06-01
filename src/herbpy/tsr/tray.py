@@ -3,7 +3,7 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'wicker_tray', 'point_on')
-def point_on(robot, tray, manip=None, padding=0.0):
+def point_on(robot, tray, manip=None, padding=0.0, handle_padding=True):
     '''
     This creates a TSR that allows you to sample poses on the tray.
     The samples from this TSR should be used to find points for object placement.
@@ -16,6 +16,8 @@ def point_on(robot, tray, manip=None, padding=0.0):
        the active manipulator on the robot is used
     @param padding The amount of space around the edge to exclude from sampling
        If using this to place an object, this would be the maximum radius of the object
+    @param handle_padding If true add extra padding along the edges of the tray that
+       have the handles to prevent choosing a pose too near the handle of the tray
     '''
     if manip is None:
         manip_idx = robot.GetActiveManipulatorIndex()
@@ -32,11 +34,12 @@ def point_on(robot, tray, manip=None, padding=0.0):
 
     Bw = numpy.zeros((6,2))
 
-    # TODO - replace this with hard coded extents that make sense, this won't work
-    #  right if the tray isn't axis-aligned
-    xdim = 0.235 - 2.*padding #tray_extents[0] - 2.*padding
-    ydim = 0.33 - 2.*padding #tray_extents[1] - 2.*padding
-    Bw[0,:] = [-xdim, xdim ] # move along x and z directios to get any point on tray
+    xdim = max(0.205 - padding, 0.0)
+    if handle_padding:
+        ydim = max(0.25 - padding, 0.0)
+    else:
+        ydim = max(0.3 - padding, 0.0)
+    Bw[0,:] = [-xdim, xdim ] # move along x and y directions to get any point on tray
     Bw[1,:] = [-ydim, ydim]
     Bw[2,:] = [-0.02, 0.04] # verticle movement
     Bw[5,:] = [-numpy.pi, numpy.pi] # allow any rotation around z - which is the axis normal to the tray top
