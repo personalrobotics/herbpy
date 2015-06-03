@@ -202,7 +202,7 @@ class HERBRobot(Robot):
         self.right_arm.SetStiffness(stiffness)
 
     def DetectObjects(self, 
-                      detection_frame='head/kinect2/rgb',
+                      detection_frame='head/kinect2_rgb_optical_frame',
                       destination_frame='map'):
         """Use the kinbody detector to detect objects and add
         them to the environment
