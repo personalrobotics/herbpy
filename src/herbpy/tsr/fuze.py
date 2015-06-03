@@ -38,7 +38,7 @@ def point_at_obj(robot, bottle, manip=None):
     Bw_0[5, :] = [-numpy.pi, numpy.pi]
 
     Bw_1 = numpy.zeros((6, 2))
-    Bw_1[2, :] = [-0.75, 1.]
+    Bw_1[2, :] = [-0.5, 0.5]
  
     T_0 = TSR(T0_w=T0_w_0, Tw_e=TW_e_0, Bw=Bw_0, manip=manip_idx)
     T_1 = TSR(T0_w=T0_w_1, Tw_e=TW_e_1, Bw=Bw_1, manip=manip_idx)
