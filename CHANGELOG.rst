@@ -2,8 +2,8 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.7.1 (2015-06-04)
+------------------
 * Updating bowl tsr. Updating default detection frame to match latest perception changes.
 * Correction to tsr values for pointing tsr
 * Contributors: Jennifer King, Michael Koval, Rachel Holladay
