@@ -7,7 +7,7 @@ def point_at_obj(robot, bottle, manip=None):
     """
     @param robot The robot performing the point
     @param bottle The bottle to point at
-    @param manip The manipulator to point with. This must be the right arm 
+    @param manip The manipulator to point with. This must be the right arm. 
     """
     if manip is None:
         manip = robot.right_arm
@@ -47,6 +47,98 @@ def point_at_obj(robot, bottle, manip=None):
                      sample_start=False, constrain=False)
  
     return [chain]
+
+@TSRFactory('herb', 'fuze_bottle', 'present')
+def present_obj(robot, bottle, manip=None):
+    """
+    @param robot The robot performing the presentation gesture
+    @param bottle The bottle to present
+    @param manip The manipulator to present. This must be the right arm. 
+    """
+
+    if manip is None:
+        manip = robot.right_arm
+
+    with manip.GetRobot():
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+
+    if manip.GetName() != 'right':
+        raise prpy.exceptions.PrpyException('Presenting is only defined for the right arm.')
+
+    #Compute T0_w
+    T0_w = bottle.GetTransform()
+
+    #Compute TW_e with respect to right arm
+    TW_e = numpy.array([[-0.42480713,  0.81591405,  0.39220297, -0.10103751],
+                        [ 0.08541525, -0.39518032,  0.91462383, -0.2806636 ],
+                        [ 0.90124533,  0.42203884,  0.09818392,  0.16018878],
+                        [ 0.        ,  0.        ,  0.        ,  1.        ]])
+
+    #Compute Bw
+    Bw = numpy.zeros((6, 2))
+    Bw[5, :] = [-numpy.pi, numpy.pi]
+
+    T = TSR(T0_w=T0_w, Tw_e=TW_e, Bw=Bw, manip=manip_idx)
+    chain = TSRChain(TSRs=[T], sample_goal=True, sample_start=False, 
+            constrain=False)
+
+    return [chain]
+
+@TSRFactory('herb', 'fuze_bottle', 'lift')
+def lift(robot, bottle, manip=None, distance=0.1):
+    '''
+    This creates a TSR for lifting the bottle a specified distance. 
+    It is assumed that when called, the robot is grasping the bottle
+
+    @param robot The robot to perform the lift
+    @param bottle The bottle to lift
+    @param distance The distance to lift the tray
+    '''
+    print 'distance = %0.2f' % distance
+
+    if manip is None:
+        manip = robot.GetActiveManipulator()
+        manip_idx = robot.GetActiveManipulatorIndex()
+    else:
+         with manip.GetRobot():
+             manip.SetActive()
+             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+
+    #TSR for the goal
+    start_position = manip.GetEndEffectorTransform()
+    end_position = manip.GetEndEffectorTransform()
+    end_position[2, 3] += distance
+
+    Bw = numpy.zeros((6, 2))
+    epsilon = 0.05
+    Bw[0,:] = [-epsilon, epsilon]
+    Bw[1,:] = [-epsilon, epsilon]
+    Bw[4,:] = [-epsilon, epsilon]
+
+    tsr_goal = TSR(T0_w = start_position, Tw_e = numpy.eye(4),
+            Bw = Bw, manip = manip_idx)
+
+    goal_tsr_chain = TSRChain(sample_start = False, sample_goal = True, 
+            constrain = False, TSRs = [tsr_goal])
+
+    #TSR that constrains the movement
+    Bw_constrain = numpy.zeros((6, 2))
+    Bw_constrain[:, 0] = -epsilon
+    Bw_constrain[:, 1] = epsilon
+    if distance < 0:
+        Bw_constrain[1,:] = [-epsilon+distance, epsilon]
+    else:
+        Bw_constrain[1,:] = [-epsilon, epsilon+distance]
+
+    tsr_constraint = TSR(T0_w = start_position, Tw_e = numpy.eye(4),
+            Bw = Bw_constrain, manip = manip_idx)
+
+    movement_chain = TSRChain(sample_start = False, sample_goal = False, 
+            constrain = True, TSRs = [tsr_constraint])
+
+    return [goal_tsr_chain, movement_chain]
+
 
 @TSRFactory('herb', 'fuze_bottle', 'grasp')
 def fuze_grasp(robot, fuze, manip=None):
