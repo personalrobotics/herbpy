@@ -96,7 +96,7 @@ def Sweep(robot, focus_list, manip=None):
     raise NotImplementedError
 
 @ActionMethod
-def Exhibit(robot, obj, manip=None, distance=0.1, wait=5):
+def Exhibit(robot, obj, manip=None, distance=0.1, wait=2):
     """
     @param robot The robot performing the exhibit
     @param obj The object being exhibited
@@ -116,7 +116,7 @@ def Exhibit(robot, obj, manip=None, distance=0.1, wait=5):
 
     #'Unlift' the object, so place it back down
     unlift_tsr = robot.tsrlibrary(obj, 'lift', manip, distance=-distance)
-    robot.PlanToTSR(unlift_tsr, execte=True)
+    robot.PlanToTSR(unlift_tsr, execute=True)
 
 @ActionMethod
 def Multipoint(robot, focus_list, manip=None):

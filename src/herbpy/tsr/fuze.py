@@ -86,14 +86,15 @@ def present_obj(robot, bottle, manip=None):
     return [chain]
 
 @TSRFactory('herb', 'fuze_bottle', 'lift')
-def lift(robot, bottle, manip=None, distance=0.1):
+def fuze_lift(robot, bottle, manip=None, distance=0.1):
     '''
     This creates a TSR for lifting the bottle a specified distance. 
     It is assumed that when called, the robot is grasping the bottle
 
     @param robot The robot to perform the lift
     @param bottle The bottle to lift
-    @param distance The distance to lift the tray
+    @param manip The manipulator to lift 
+    @param distance The distance to lift the bottle
     '''
     print 'distance = %0.2f' % distance
 
@@ -116,7 +117,7 @@ def lift(robot, bottle, manip=None, distance=0.1):
     Bw[1,:] = [-epsilon, epsilon]
     Bw[4,:] = [-epsilon, epsilon]
 
-    tsr_goal = TSR(T0_w = start_position, Tw_e = numpy.eye(4),
+    tsr_goal = TSR(T0_w = end_position, Tw_e = numpy.eye(4),
             Bw = Bw, manip = manip_idx)
 
     goal_tsr_chain = TSRChain(sample_start = False, sample_goal = True, 
