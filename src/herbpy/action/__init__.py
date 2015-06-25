@@ -1,2 +1,2 @@
 from grasping import PushGrasp, Grasp
-from rogue import MiddleFinger, Nod, Stop
+from rogue import Point, Present, Exhibit, Nod, Stop, MiddleFinger

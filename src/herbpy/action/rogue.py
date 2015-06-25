@@ -1,24 +1,25 @@
-# pylint: disable-msg=C0103
-# pylint: disable-msg=E1101
 import logging, openravepy, prpy 
 from prpy.action import ActionMethod
 from prpy.planning.base import PlanningError
 from contextlib import contextmanager 
 from prpy.util import FindCatkinResource
-import offscreen_render, numpy, json, time, os.path
+import offscreen_render, numpy, cPickle, time, os.path
 
 logger = logging.getLogger('herbpy')
 
 @ActionMethod
-def Point(robot, focus, manip=None):
+def Point(robot, focus, manip=None, render=False):
     """
     @param robot The robot performing the point
-    @param focus The 3-D coordinate in space or object that is being pointed at
-    @param manip The manipulator to perform the point with. This mst be the right arm
+    @param focus The 3-D coordinate in space or object 
+                 that is being pointed at
+    @param manip The manipulator to perform the point with. 
+                 This must be the right arm
+    @param render Render tsr samples during planning
     """
 
     #Pointing at an object
-    if type(focus) == openravepy.Kinbody:
+    if type(focus) == openravepy.openravepy_int.KinBody:
         focus_trans = focus.GetTransform()
         goal_name = focus.GetName()
     #Pointing at a point in space
@@ -34,31 +35,34 @@ def Point(robot, focus, manip=None):
         raise prpy.exceptions.PrPyException('Focus of the point is an \
                 unknown object')
 
-    #TODO Remove this functionality from tsr lib?
     if manip is None:
+        print "Setting the right arm to be the active manipulator."
         manip = robot.right_arm
+        manip.SetActive()
 
     if manip.GetName() != 'right':
         raise prpy.exceptions.PrPyException('Pointing is only defined \
                 on the right arm.')
 
-    #Won't work in till add dummy flag capability 
-    point_tsr = robot.tsrlibrary(focus_trans, 'point', manip)
-    robot.PlanToTSR(point_tsr, execute=True, 
-            ranker=Naturalness(focus_trans, goal_name))
+    point_tsr = robot.tsrlibrary(None, 'point', focus_trans, manip)
+
+    with prpy.viz.RenderTSRList(point_tsr, robot.GetEnv(), render=render):
+        robot.PlanToTSR(point_tsr, execute=True, 
+              ranker=Naturalness(focus_trans, goal_name))
     robot.right_hand.MoveHand(f1=2.4, f2=0.8, f3=2.4, spread=3.14)
 
 @ActionMethod
-def Present(robot, focus, manip=None):
+def Present(robot, focus, manip=None, render=True):
     """
     @param robot The robot performing the presentation
     @param focus The 3-D coordinate in space or object that 
                  is being presented
     @param manip The manipulator to perform the presentation with. 
                  This must be the right arm.
+    @param render Render tsr samples during planning
     """
     #Presenting an object
-    if type(focus) == openravepy.Kinbody:
+    if type(focus) == openravepy.openravepy_int.KinBody:
         focus_trans = focus.GetTransform()
     #Presenting a point in space
     elif (type(focus) == numpy.ndarray) and (focus.ndim == 1):
@@ -71,52 +75,124 @@ def Present(robot, focus, manip=None):
         raise prpy.exceptions.PrPyException('Focus of the presentation is an \
                 unknown object')
 
-    #TODO Remove this functionality from tsr lib?
     if manip is None:
+        print "Setting the right arm to be the active manipulator."
         manip = robot.right_arm
+        manip.SetActive()
 
     if manip.GetName() != 'right':
         raise prpy.exceptions.PrPyException('Presenting is only defined \
                 on the right arm.')
 
-    #Won't work in till add dummy flag capability 
-    present_tsr = robot.tsrlibrary(focus_trans, 'present', manip)
-    robot.PlanToTSR(present_tsr, execute=True)
+    present_tsr = robot.tsrlibrary(None, 'present', focus_trans, manip)
+    
+    with prpy.viz.RenderTSRList(present_tsr, robot.GetEnv(), render=render):
+        robot.PlanToTSR(present_tsr, execute=True)
+    
     robot.right_hand.MoveHand(f1=1, f2=1, f3=1, spread=3.14)
 
 @ActionMethod
-def Sweep(robot, focus_list, manip=None):
+def Sweep(robot, start, end, manip=None, margin=0.3, render=True):
     """
     @param robot The robot performing the sweep
-    @param focus_list The list 3-D coordinates in space or objects 
-                      that are being sweeped at
-    @param manip The manipulator to perform the sweep. 
-                 This must be the right arm
+    @param start The object or 3-d position that marks the start
+    @param end The object of 3-d position that marks the end
+    @param manip The manipulator to perform the sweep
+    @param margin The distance between the start object and the hand,
+                  so the vertical space between the hand and objects. 
+                  This must be enough to clear the objects themselves.
+    @param render Render tsr samples during planning
     """
-    raise NotImplementedError
+
+    if type(start) == openravepy.openravepy_int.KinBody: 
+        start_trans = start.GetTransform()
+        start_coords = start_trans[0:3, 3]
+    elif (type(start) == numpy.ndarray) and (start.ndim == 1):
+        if len(start) != 3:
+            raise prpy.exceptions.PrPyExceptions('A point in space must \
+                    contain exactly three coordinates')
+        start_coords = start
+    else: 
+        raise prpy.exceptions.PrPyException('Focus of the point is an \
+                unknown object')
+
+    if type(end) == openravepy.openravepy_int.KinBody:
+        end_trans = end.GetTransform()
+        end_coords = end_trans[0:3, 3]
+    elif (type(end) == numpy.ndarray) and (end.ndim == 1):
+        if len(end) != 3:
+            raise prpy.exceptions.PrPyExceptions('A point in space must \
+                    contain exactly three coordinates')
+        end_coords = end
+        end_trans = numpy.eye(4)
+        end_trans[0:3, 3] = end_coords
+    else:
+        raise prpy.exceptions.PrPyException('Focus of the point is an \
+                unknown object')
+
+    if manip is None:
+        manip = robot.GetActiveManipulator()
+
+    #ee_offset : such that the hand, not wrist, is above the object
+    #hand_pose : places the hand above the start location
+    if manip.GetName() == 'right':
+        hand = robot.right_hand
+        ee_offset = -0.2
+        hand_pose = numpy.array([[ 0, -1, 0, start_coords[0]],
+                                 [ 0,  0, 1, (start_coords[1]+ee_offset)],
+                                 [-1,  0, 0, (start_coords[2]+margin)],
+                                 [ 0,  0, 0, 1]])
+
+    elif manip.GetName() == 'left':
+        hand = robot.left_hand
+        ee_offset = 0.2
+        hand_pose = numpy.array([[ 0,  1, 0, start_coords[0]],
+                                 [ 0,  0, -1, (start_coords[1]+ee_offset)],
+                                 [-1,  0, 0, (start_coords[2]+margin)],
+                                 [ 0,  0, 0, 1]])
+  
+    else:
+        raise prpy.exceptions.PrPyException('Manipulator does not have an \
+                 associated hand')
+
+    hand.MoveHand(f1=1, f2=1, f3=1, spread=3.14)
+    manip.PlanToEndEffectorPose(hand_pose)
+
+    #TSR to sweep to end position
+    sweep_tsr = robot.tsrlibrary(None, 'sweep', end_trans, manip)
+
+    with prpy.viz.RenderTSRList(sweep_tsr, robot.GetEnv(), render=render):
+        robot.PlanToTSR(sweep_tsr, execute=True)
 
 @ActionMethod
-def Exhibit(robot, obj, manip=None, distance=0.1, wait=2):
+def Exhibit(robot, obj, manip=None, distance=0.1, wait=2, render=True):
     """
     @param robot The robot performing the exhibit
     @param obj The object being exhibited
     @param manip The maniplator to perform the exhibit
     @param distance The distance the object will be lifted up
     @param wait The amount of time the object will be held up in seconds
+    @param render Render tsr samples during planning
     """
 
     robot.Grasp(obj)
 
     #Lift the object - write more tsrs
     lift_tsr = robot.tsrlibrary(obj, 'lift', manip, distance=distance)
-    robot.PlanToTSR(lift_tsr, execute=True)
+    
+    with prpy.viz.RenderTSRList(lift_tsr, robot.GetEnv(), render=render):
+        robot.PlanToTSR(lift_tsr, execute=True)
 
     #Wait for 'time'
     time.sleep(wait)
 
     #'Unlift' the object, so place it back down
     unlift_tsr = robot.tsrlibrary(obj, 'lift', manip, distance=-distance)
-    robot.PlanToTSR(unlift_tsr, execute=True)
+    
+    with prpy.viz.RenderTSRList(unlift_tsr, robot.GetEnv(), render=render):
+        robot.PlanToTSR(unlift_tsr, execute=True)
+
+    #TODO: possibly then release, openhand, retract. 
 
 @ActionMethod
 def Multipoint(robot, focus_list, manip=None):
@@ -127,10 +203,6 @@ def Multipoint(robot, focus_list, manip=None):
     @param manip The manipulator being used to point
     """
     raise NotImplementedError
-    #create tsr list for each object. 
-    #put all together and select plan based on ranking from 
-    #nominal configuration
-    #remove that object from the list and repeat
 
 @ActionMethod
 def Nod(robot, word='yes'):
@@ -207,7 +279,6 @@ def HighFive(robot, manip=None, wait=7):
     Stop(robot, manip)
 
     #TODO wait in till robot.right_hand.GetForceTorque() reads something
-    #Ask jen about testing this and reading from this
 
     #After having felt force, wait a few seconds 
     time.sleep(wait)
@@ -254,19 +325,16 @@ class Naturalness(object):
         self.sensor_width = 480
         self.sensor_weight = 255
         self.scoreMask = self.weightedScoreArray()
-
-        #test the new method
-        #feature_path = '../../../config/natural_feature_weights.txt'
-        #self.featureWeights = json.load(open(feature_path, 'rb'))
        
         feature_path = FindCatkinResource('herbpy', 
-                'config/natural_feature_weights.txt')
-
+                'config/natural_feature_weights.pickle')
+         
         try:
-            self.featureWeights = json.load(open(feature_path, 'rb'))
+            self.featureWeights = cPickle.load(open(feature_path, 'rb'))
         except IOError as e:
             raise ValueError('Failed loading pointing weights \
                     from "{:s}".'.format(feature_path))
+        
         
     def __call__(self, robot, ik_solutions):
         self.robot = robot
@@ -282,10 +350,13 @@ class Naturalness(object):
         self.sensor.SendCommand('setdims '+str(self.sensor_length)+
                 ' '+str(self.sensor_width))
         self.sensor.Configure(openravepy.Sensor.ConfigureCommand.PowerOn)
-              
+        resetDOFs = self.manip.GetDOFValues()             
+ 
         #Score each configuration
         for i in xrange(0, num_sols):
             results[i] = self.score_pose(ik_solutions[i])
+
+        self.manip.SetDOFValues(resetDOFs)
         return results
 
     def score_pose(self, ik_sol):
@@ -388,4 +459,4 @@ class Naturalness(object):
             score = (float(solo_goal - all_goal) / float(solo_goal))
 
         self.sensor.SendCommand('clearbodies')
-        return score*self.featureWeights['ShoulderRotation'] 
+        return score*self.featureWeights['OcculsionScore'] 
