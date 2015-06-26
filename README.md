@@ -7,6 +7,18 @@ a bimanual mobile manipulator designed and built by the [Personal Robotics Lab]
 (http://www.cmu.edu). HerbPy expands the robot-agnostic helper library [PrPy]
 (https://github.com/personalrobotics/prpy) by wrapping HERB-specific functionality.
 
+## Installation ##
+The following rosinstall can be used to get the minimum dependencies required
+to use HerbPy in a catkin workspace:
+```
+- git: {local-name: herbpy, uri: 'git@github.com:personalrobotics/herbpy'}
+- git: {local-name: prpy, uri: 'git@github.com:personalrobotics/prpy'}
+- git: {local-name: herb_description, uri: 'git@github.com:personalrobotics/herb_description'}
+- git: {local-name: openrave_catkin, uri: 'git@github.com:personalrobotics/openrave_catkin'}
+- git: {local-name: or_parabolicsmoother, uri: 'git@github.com:personalrobotics/or_parabolicsmoother'}
+- git: {local-name: or_trajopt, uri: 'git@github.com:personalrobotics/or_trajopt'}
+```
+
 ## Running HerbPy ##
 You use HerbPy in your script by simply calling the ``initialize`` function:
 
