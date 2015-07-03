@@ -195,16 +195,6 @@ def Exhibit(robot, obj, manip=None, distance=0.1, wait=2, render=True):
     #TODO: possibly then release, openhand, retract. 
 
 @ActionMethod
-def Multipoint(robot, focus_list, manip=None):
-    """
-    @param robot The robot performing the various points
-    @param focus_list The unordered list of 3-D coordinates in space 
-                      or objects to be pointed to 
-    @param manip The manipulator being used to point
-    """
-    raise NotImplementedError
-
-@ActionMethod
 def Nod(robot, word='yes'):
     """
     @param robot The robot being used to nod
@@ -226,7 +216,7 @@ def Nod(robot, word='yes'):
     robot.head.MoveTo(before)
 
 @ActionMethod
-def Stop(robot, manip=None):
+def HaltHand(robot, manip=None):
     """
     @param robot The robot being used for the stopping gesture
     @param manip The manipulator being used for the stopping gesture

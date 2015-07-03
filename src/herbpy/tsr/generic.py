@@ -152,4 +152,5 @@ def sweep_objs(robot, transform, manip=None):
     movement_chain = TSRChain(sample_start = False, sample_goal = False,
             constrain = True, TSRs = [tsr_constraint])
 
+
     return [goal_tsr_chain, movement_chain]
