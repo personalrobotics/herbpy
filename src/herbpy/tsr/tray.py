@@ -182,7 +182,7 @@ def lift(robot, tray, distance=0.1):
 
     tsr_right_constraint = TSR(T0_w = numpy.eye(4),
                               Tw_e = right_in_left,
-                              Bw = Bw_constrain,
+                              Bw = numpy.zeros((6,2)),#Bw_constrain,
                               manip=right_manip_idx,
                               bodyandlink='%s %s' % (robot.GetName(), robot.left_arm.GetEndEffector().GetName()))
     movement_chain = TSRChain(sample_start = False, sample_goal = False, constrain=True,
