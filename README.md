@@ -18,6 +18,7 @@ to use HerbPy in a catkin workspace:
 - git: {local-name: or_parabolicsmoother, uri: 'git@github.com:personalrobotics/or_parabolicsmoother'}
 - git: {local-name: or_trajopt, uri: 'git@github.com:personalrobotics/or_trajopt'}
 - git: {local-name: or_urdf, uri: 'git@github.com:personalrobotics/or_urdf'}
+- git: {local-name: comps, uri: 'git@github.com:personalrobotics/comps'}
 ```
 
 ## Running HerbPy ##
