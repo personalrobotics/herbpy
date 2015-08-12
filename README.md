@@ -17,6 +17,8 @@ to use HerbPy in a catkin workspace:
 - git: {local-name: openrave_catkin, uri: 'git@github.com:personalrobotics/openrave_catkin'}
 - git: {local-name: or_parabolicsmoother, uri: 'git@github.com:personalrobotics/or_parabolicsmoother'}
 - git: {local-name: or_trajopt, uri: 'git@github.com:personalrobotics/or_trajopt'}
+- git: {local-name: or_urdf, uri: 'git@github.com:personalrobotics/or_urdf'}
+- git: {local-name: comps, uri: 'git@github.com:personalrobotics/comps'}
 ```
 
 ## Running HerbPy ##
@@ -31,11 +33,11 @@ with HERB's hardware drivers. You can run HerbPy in simulation mode by passing
 the option ``sim=True``. In both cases, you can optionally attach a
 viewer to the OpenRAVE environment by passing ``attach_viewer=True``.
 
-See [herbpy.herb.initialize]() for the full list of initialization options.
+See [herbpy.herb.initialize][herbpy.herb.initialize] for the full list of initialization options.
 
 ## HerbPy Console ##
-HerbPy includes [console.py](), a helper script for launching an interactive
-Python environment. Several common [herbpy.herb.initialize]() options are
+HerbPy includes [console.py][console.py], a helper script for launching an interactive
+Python environment. Several common [herbpy.herb.initialize][herbpy.herb.initialize] options are
 exposed as command-line arguments:
 
 ```bash
@@ -45,8 +47,8 @@ rosrun herbpy console.py --viewer  # equivalent to attach_viewer=True
 ```
 
 ## Using HERBRobot ##
-The robot returned by [herbpy.herb.initialize]() is an OpenRAVE robot of type
-[herbpy.herbrobot.HERBRobot](). This object provides access to all of HERB's
+The robot returned by [herbpy.herb.initialize][herbpy.herb.initialize] is an OpenRAVE robot of type
+[herbpy.herbrobot.HERBRobot][herbpy.herbrobot.HERBRobot]. This object provides access to all of HERB's
 hardware-specific functionality:
 
 * ``left_arm``, ``right_arm`` : [prpy.base.wam.WAM]() - Barrett WAM arms
@@ -231,4 +233,8 @@ robot.base.PlanToBasePose(robot_pose_in_world)
 
 ### Other Examples ###
 
-[comprehensive documented example of picking up a fuze bottle](examples/graspFuzeBottle.py)
+* [Comprehensive example of picking up a fuze bottle](examples/graspFuzeBottle.py)
+
+[herbpy.herb.initialize]: src/herbpy/herb.py#L7
+[console.py]: scripts/console.py
+[herbpy.herbrobot.HERBRobot]: src/herbpy/herbrobot.py#L25
