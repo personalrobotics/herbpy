@@ -1,8 +1,7 @@
 import numpy
-from prpy.tsr.tsrlibrary import TSRFactory
-from prpy.tsr.tsr import *
+import prpy.tsr
 
-@TSRFactory('herb', 'plastic_plate', 'lift')
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_plate', 'lift')
 def plate_lift(robot, plate, manip=None, distance=0.1):
     '''
     This creates a TSR for lifting the plate a specified distance. 
@@ -34,10 +33,10 @@ def plate_lift(robot, plate, manip=None, distance=0.1):
     Bw[1,:] = [-epsilon, epsilon]
     Bw[4,:] = [-epsilon, epsilon]
 
-    tsr_goal = TSR(T0_w = end_position, Tw_e = numpy.eye(4),
+    tsr_goal = prpy.tsr.TSR(T0_w = end_position, Tw_e = numpy.eye(4),
             Bw = Bw, manip = manip_idx)
 
-    goal_tsr_chain = TSRChain(sample_start = False, sample_goal = True,
+    goal_tsr_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = True,
             constrain = False, TSRs = [tsr_goal])
 
     #TSR that constrains the movement
@@ -49,15 +48,15 @@ def plate_lift(robot, plate, manip=None, distance=0.1):
     else:
         Bw_constrain[1,:] = [-epsilon, epsilon+distance]
 
-    tsr_constraint = TSR(T0_w = start_position, Tw_e = numpy.eye(4),
+    tsr_constraint = prpy.tsr.TSR(T0_w = start_position, Tw_e = numpy.eye(4),
             Bw = Bw_constrain, manip = manip_idx)
 
-    movement_chain = TSRChain(sample_start = False, sample_goal = False,
+    movement_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = False,
             constrain = True, TSRs = [tsr_constraint])
 
     return [goal_tsr_chain, movement_chain]
 
-@TSRFactory('herb', 'plastic_plate', 'grasp')
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_plate', 'grasp')
 def plate_grasp(robot, plate, manip=None):
     '''
     @param robot The robot performing the grasp
@@ -82,12 +81,13 @@ def plate_grasp(robot, plate, manip=None):
     Bw[2,:] = [0.0, 0.01] # Allow a little verticle movement
     Bw[5,:] = [-numpy.pi, numpy.pi] # Allow any point around the edge of the plate
 
-    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = TSRChain(sample_start=False, sample_goal = True, constrain=False, TSR = grasp_tsr)
+    grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
+    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
+                                    constrain=False, TSR = grasp_tsr)
 
     return [grasp_chain]
     
-@TSRFactory('herb', 'plastic_plate', 'place')
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_plate', 'place')
 def plate_on_table(robot, plate, pose_tsr_chain, manip=None):
     '''
     Generates end-effector poses for placing the plate on the table.
@@ -142,10 +142,10 @@ def plate_on_table(robot, plate, pose_tsr_chain, manip=None):
     #plate_tsr = TSR(Tw_e = tilted_plate_in_table, Bw = numpy.zeros((6,2)), manip = manip_idx)
     plate_in_table = numpy.eye(4)
     plate_in_table[2,3] = 0.20
-    plate_tsr = TSR(Tw_e = plate_in_table, Bw = numpy.zeros((6,2)), manip = manip_idx)
-    grasp_tsr = TSR(Tw_e = ee_in_plate, Bw = Bw, manip = manip_idx)
+    plate_tsr = prpy.tsr.TSR(Tw_e = plate_in_table, Bw = numpy.zeros((6,2)), manip = manip_idx)
+    grasp_tsr = prpy.tsr.TSR(Tw_e = ee_in_plate, Bw = Bw, manip = manip_idx)
     all_tsrs = list(pose_tsr_chain.TSRs) + [plate_tsr, grasp_tsr]
-    place_chain = TSRChain(sample_start = False, sample_goal = True, constrain = False,
+    place_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = True, constrain = False,
                            TSRs = all_tsrs)
 
     return  [ place_chain ]
