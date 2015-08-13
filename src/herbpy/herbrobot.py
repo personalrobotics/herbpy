@@ -177,6 +177,14 @@ class HERBRobot(Robot):
         self.talker_simulated = talker_sim
         self.segway_sim = segway_sim
 
+        if not self.talker_simulated:
+            import rospy
+            import talker.msg
+            from actionlib import SimpleActionClient
+            self._say_action_client = SimpleActionClient('say', talker.msg.SayAction)
+            rospy.init_node('talker_client', anonymous=True)
+
+
     def CloneBindings(self, parent):
         from prpy import Cloned
         super(HERBRobot, self).CloneBindings(parent)
@@ -229,3 +237,20 @@ class HERBRobot(Robot):
         except Exception, e:
             logger.error('Detection failed update: %s' % str(e))
             raise
+
+    def Say(self, words, block=True):
+        """Speak 'words' using talker action service or espeak locally in simulation"""
+        if self.talker_simulated:
+            import subprocess
+            try:
+                proc = subprocess.Popen(['espeak', '-s', '160', '"{0}"'.format(words)])
+                if block:
+                    proc.wait()
+            except OSError:
+                logger.error('Unable to speak. Make sure "espeak" is installed locally.')
+        else:
+            import talker.msg
+            goal = talker.msg.SayGoal(text=words)
+            self._say_action_client.send_goal(goal)
+            if block:
+                self._say_action_client.wait_for_result()
