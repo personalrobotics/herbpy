@@ -52,6 +52,8 @@ raw_input('press enter to begin planning')
 # move to a good start position
 robot.head.MoveTo([0, -math.pi/16]) # look down slightly
 robot.PlanToNamedConfiguration('relaxed_home') # move the arms to the 'relaxed_home' position
+#indices, values = robot.configurations.get_configuration('relaxed_home') # Faster for testing
+#robot.SetDOFValues(values=values, dofindices=indices)
 
 # drive to the table
 robot_in_table = numpy.array([[0., 1., 0.,  0.], 
@@ -61,35 +63,10 @@ robot_in_table = numpy.array([[0., 1., 0.,  0.],
 base_pose = numpy.dot(table.GetTransform(), robot_in_table)
 base_pose[2,3] = 0
 robot.base.PlanToBasePose(base_pose)
-# robot.SetTransform(base_pose) # way faster for testing
+#robot.SetTransform(base_pose) # way faster for testing
 
-# get a pose for grabbing the fuze bottle
-pose_near_fuze = fuze.GetTransform()
-pose_near_fuze[:3,:3] = [ [ math.cos(math.pi/6), -math.sin(math.pi/6), 0 ], # z rotation matrix
-                           [ math.sin(math.pi/6), math.cos(math.pi/6), 0 ],
-                           [ 0, 0, 1 ] ]
-pose_near_fuze[2,3] += .1 # move up a bit so we're grasping the middle (not the bottom) of the bottle
-pose_near_fuze[:3,:3] = numpy.dot(pose_near_fuze[:3,:3], [ [ 1, 0, 0 ], # x rotation matrix
-                                                        [ 0, math.cos(math.pi/2), -math.sin(math.pi/2) ],
-                                                        [ 0, math.sin(math.pi/2), math.cos(math.pi/2) ], ])
-pose_near_fuze[:3,3] += numpy.dot(pose_near_fuze[:3,:3], [0, 0, -.21]) # move away from bottle, pose is centered at wrist not palm
-
-# visualize the pose
-Axes = openravepy.misc.DrawAxes(env, pose_near_fuze)
-Axes.SetShow(True)
-raw_input('press enter to stop visualizing the pose')
-Axes.SetShow(False)
-
-# plan the end effector to the pose
-config = robot.right_arm.FindIKSolution(pose_near_fuze, openravepy.IkFilterOptions.CheckEnvCollisions)
-if config == None:
-    raw_input('couldn\'t find config, next line is going to fail...')
-robot.right_arm.PlanToConfiguration(config)
-
-# grab the fuze bottle
-robot.right_arm.hand.CloseHand()
-robot.right_arm.SetActive()
-robot.Grab(fuze)
+# Grasp the bottle
+robot.right_arm.PushGrasp(fuze, push_required=False)
 robot.right_arm.PlanToNamedConfiguration('home')
 
 # we do this so the viewer doesn't close when the example is done

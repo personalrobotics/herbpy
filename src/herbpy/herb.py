@@ -1,13 +1,17 @@
 PACKAGE = 'herbpy'
-import logging, prpy, openravepy, prpy.dependency_manager
+import logging, prpy, openravepy, prpy.dependency_manager, os
 from herbbase import HerbBase
 
 logger = logging.getLogger('herbpy')
 
 def initialize(robot_xml=None, env_path=None, attach_viewer=False,
                sim=True, **kw_args):
-    import prpy
+    import prpy, os
+
     prpy.logger.initialize_logging()
+
+    # Hide TrajOpt logging.
+    os.environ.setdefault('TRAJOPT_LOG_THRESH', 'WARN')
 
     # Load plugins.
     if prpy.dependency_manager.is_catkin():
@@ -32,7 +36,6 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
                          ' package herb_description installed?')
             raise ValueError('Unable to find HERB model.')
 
-        import os.path
         found_models = False
         for share_directory in share_directories:
             urdf_path = os.path.join(share_directories[0], 'robots', 'herb.urdf')
@@ -75,13 +78,18 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
     # Default arguments.
     keys = [ 'left_arm_sim', 'left_hand_sim', 'left_ft_sim',
              'right_arm_sim', 'right_hand_sim', 'right_ft_sim',
-             'head_sim', 'vision_sim', 'talker_sim', 'segway_sim' ]
+             'head_sim', 'talker_sim', 'segway_sim' ]
     for key in keys:
         if key not in kw_args:
             kw_args[key] = sim
 
     from herbrobot import HERBRobot
     prpy.bind_subclass(robot, HERBRobot, **kw_args)
+
+    if sim:
+        dof_indices, dof_values \
+            = robot.configurations.get_configuration('relaxed_home')
+        robot.SetDOFValues(dof_values, dof_indices)
 
     # Start by attempting to load or_rviz.
     if attach_viewer == True:

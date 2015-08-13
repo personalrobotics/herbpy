@@ -2,25 +2,33 @@ PACKAGE = 'herbpy'
 import logging
 import openravepy
 import prpy
-from prpy.planning.base import UnsupportedPlanningError
+import prpy.rave, prpy.util
 from prpy.base.barretthand import BarrettHand
 from prpy.base.wam import WAM
-from prpy.base.wamrobot import WAMRobot
+from prpy.base.robot import Robot
+from prpy.exceptions import PrPyException
+from prpy.planning.base import UnsupportedPlanningError
 from herbbase import HerbBase
 from herbpantilt import HERBPantilt
 
 logger = logging.getLogger('herbpy')
 
-class HERBRobot(WAMRobot):
+
+def try_and_warn(fn, exception_type, message, default_value=None):
+    try:
+        return fn()
+    except exception_type:
+        logger.warning(message)
+        return None
+
+
+class HERBRobot(Robot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
-                       head_sim, vision_sim, talker_sim, segway_sim):
-        WAMRobot.__init__(self, robot_name='herb')
+                       head_sim, talker_sim, segway_sim):
+        from prpy.util import FindCatkinResource
 
-        # Absolute path to this package.
-        from rospkg import RosPack
-        ros_pack = RosPack()
-        package_path = ros_pack.get_path(PACKAGE)
+        Robot.__init__(self, robot_name='herb')
 
         # Convenience attributes for accessing self components.
         self.left_arm = self.GetManipulator('left')
@@ -57,80 +65,93 @@ class HERBRobot(WAMRobot):
         self.configurations.add_group('left_hand', self.left_hand.GetIndices())
         self.configurations.add_group('right_hand', self.right_hand.GetIndices())
 
-        if prpy.dependency_manager.is_catkin():
-            from catkin.find_in_workspaces import find_in_workspaces
-            configurations_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
-                    path='config/configurations.yaml', first_match_only=True)
-            if not configurations_paths:
-                raise ValueError('Unable to load named configurations from "config/configurations.yaml".')
-
-            configurations_path = configurations_paths[0]
-        else:
-            configurations_path = os.path.join(package_path, 'config/configurations.yaml')
-
+        configurations_path = FindCatkinResource('herbpy', 'config/configurations.yaml')
+        
         try:
             self.configurations.load_yaml(configurations_path)
         except IOError as e:
             raise ValueError('Failed laoding named configurations from "{:s}".'.format(
                 configurations_path))
 
-        # Load default TSRs from YAML.
-        if self.tsrlibrary is not None:
-            if prpy.dependency_manager.is_catkin():
-                from catkin.find_in_workspaces import find_in_workspaces
-                tsrs_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
-                                 path='config/tsrs.yaml', first_match_only=True)
-                if not tsrs_paths:
-                    logger.info('Unable to load named tsrs from "config/tsrs.yaml".')
-                    tsrs_path = None
-                else:
-                    tsrs_path = tsrs_paths[0]
-            else:
-                tsrs_path = os.path.join(package_path, 'config/tsrs.yaml')
-
-            if tsrs_path is not None:
-                try:
-                    self.tsrlibrary.load_yaml(tsrs_path)
-                except IOError as e:
-                    raise ValueError('Failed loading named tsrs from "{:s}".'.format(
-                            tsrs_path))
-
         # Initialize a default planning pipeline.
-        from prpy.planning import Planner, Sequence, Ranked
-        from prpy.planning import CBiRRTPlanner, CHOMPPlanner, IKPlanner, MKPlanner, NamedPlanner, SnapPlanner, SBPLPlanner, OMPLPlanner, GreedyIKPlanner
-        
-        potential_planners = [(SnapPlanner, 'snap_planner', {}),
-                              (GreedyIKPlanner, 'greedy_ik_planner', {}),
-                              (MKPlanner, 'mk_planner', {}),
-                              (NamedPlanner, 'named_planner', {}),
-                              (IKPlanner, 'ik_planner', {}),
-                              (OMPLPlanner, 'ompl_planner',
-                                            {'algorithm':'RRTConnect'}),
-                              (CBiRRTPlanner, 'cbirrt_planner', {}),
-                              (CHOMPPlanner, 'chomp_planner', {})]
-        planners = []
-        for potential_planner, attr_name, planner_args in potential_planners:
-            try:
-                planner = potential_planner(**planner_args)
-                setattr(self, attr_name, planner)
-                planners.append(planner)
-            except UnsupportedPlanningError:
-                pass
-        
-        self.planner = Sequence(*planners)
-        
-        # Base planning
-        if prpy.dependency_manager.is_catkin():
-            from catkin.find_in_workspaces import find_in_workspaces
-            planner_parameters_paths = find_in_workspaces(search_dirs=['share'], project='herbpy',
-                    path='config/base_planner_parameters.yaml', first_match_only=True)
-            if not planner_parameters_paths:
-                raise ValueError(
-                    'Unable to load base planner parameters from "config/base_planner_parameters.yaml".')
+        from prpy.planning import (
+            FirstSupported,
+            MethodMask,
+            Ranked,
+            Sequence,
+        )
+        from prpy.planning import (
+            CBiRRTPlanner,
+            CHOMPPlanner,
+            GreedyIKPlanner,
+            IKPlanner,
+            NamedPlanner,
+            SBPLPlanner,
+            SnapPlanner,
+            TSRPlanner,
+            VectorFieldPlanner
+        )
 
-            planner_parameters_path = planner_parameters_paths[0]
-        else:
-            planner_parameters_path = os.path.join(package_path, 'config/base_planner_parameters.yaml')
+        # TODO: These should be meta-planners.
+        self.named_planner = NamedPlanner()
+        self.ik_planner = IKPlanner()
+
+        # Special-purpose planners.
+        self.snap_planner = SnapPlanner()
+        self.vectorfield_planner = VectorFieldPlanner()
+        self.greedyik_planner = GreedyIKPlanner()
+
+        # General-purpose planners.
+        self.cbirrt_planner = CBiRRTPlanner()
+
+        # Trajectory optimizer.
+        try:
+            from or_trajopt import TrajoptPlanner
+
+            self.trajopt_planner = TrajoptPlanner()
+        except ImportError:
+            self.trajopt_planner = None
+            logger.warning('Failed creating TrajoptPlanner. Is the or_trajopt'
+                           ' package in your workspace and built?')
+
+        try:
+            self.chomp_planner = CHOMPPlanner()
+        except UnsupportedPlanningError:
+            self.chomp_planner = None
+            logger.warning('Failed loading the CHOMP module. Is the or_cdchomp'
+                           ' package in your workspace and built?')
+
+        if not (self.trajopt_planner or self.chomp_planner):
+            raise PrPyException('Unable to load both CHOMP and TrajOpt. At'
+                                ' least one of these packages is required.')
+        
+        actual_planner = Sequence(
+            # First, try the straight-line trajectory.
+            self.snap_planner,
+            # Then, try a few simple (and fast!) heuristics.
+            self.vectorfield_planner,
+            self.greedyik_planner,
+            # Next, try a trajectory optimizer.
+            self.trajopt_planner or self.chomp_planner
+        )
+        self.planner = FirstSupported(
+            Sequence(actual_planner, 
+                     TSRPlanner(delegate_planner=actual_planner),
+                     self.cbirrt_planner),
+            # Special purpose meta-planner.
+            NamedPlanner(delegate_planner=actual_planner),
+        )
+        
+        from prpy.planning.retimer import HauserParabolicSmoother
+        self.smoother = HauserParabolicSmoother()
+        # TODO: This should not be HauserParabolicSmoother because it changes the path. This is a temporary
+        # hack because the ParabolicTrajectoryRetimer doesn't work on HERB.
+        self.retimer = HauserParabolicSmoother()
+        self.simplifier = None
+
+        # Base planning
+        from prpy.util import FindCatkinResource
+        planner_parameters_path = FindCatkinResource('herbpy', 'config/base_planner_parameters.yaml')
 
         self.sbpl_planner = SBPLPlanner()
         try:
@@ -144,20 +165,21 @@ class HERBRobot(WAMRobot):
 
         self.base_planner = self.sbpl_planner
 
+        # Create action library
+        from prpy.action import ActionLibrary
+        self.actions = ActionLibrary()
+
+        # Register default actions and TSRs
+        import herbpy.action
+        import herbpy.tsr
+
         # Setting necessary sim flags
         self.talker_simulated = talker_sim
         self.segway_sim = segway_sim
-        self.vision_sim = vision_sim
-
-        if not self.vision_sim:
-          args = 'MarkerSensorSystem {0:s} {1:s} {2:s} {3:s} {4:s}'.format('herbpy', '/herbpy', '/head/wam2', 'herb', '/head/wam2')
-          self.vision_sensorsystem = openravepy.RaveCreateSensorSystem(self.GetEnv(), args)
-          if self.vision_sensorsystem is None:
-            raise Exception("creating the marker vision sensorsystem failed")
 
     def CloneBindings(self, parent):
         from prpy import Cloned
-        WAMRobot.CloneBindings(self, parent)
+        super(HERBRobot, self).CloneBindings(parent)
         self.left_arm = Cloned(parent.left_arm)
         self.right_arm = Cloned(parent.right_arm)
         self.head = Cloned(parent.head)
@@ -169,23 +191,6 @@ class HERBRobot(WAMRobot):
         self.planner = parent.planner
         self.base_planner = parent.base_planner
 
-    def Say(robot, message):
-        """Say a message using HERB's text-to-speech engine.
-        @param message
-        """
-        from pr_msgs.srv import AppletCommand
-        import rospy
-
-        if not robot.talker_simulated:
-            # XXX: HerbPy should not make direct service calls.
-            logger.info('Saying "%s".', message)
-            #rospy.wait_for_service('/talkerapplet')
-            talk = rospy.ServiceProxy('/talkerapplet', AppletCommand)    
-            try:
-                talk('say', message, 0, 0)
-            except rospy.ServiceException, e:
-                logger.error('Error talking.')
-
     def SetStiffness(self, stiffness):
         """Set the stiffness of HERB's arms and head.
         Zero is gravity compensation, one is position control. Stifness values
@@ -196,88 +201,31 @@ class HERBRobot(WAMRobot):
         self.left_arm.SetStiffness(stiffness)
         self.right_arm.SetStiffness(stiffness)
 
-    def WaitForObject(robot, obj_name, timeout=None, update_period=0.1):
-        """Wait for the perception system to detect an object.
-        This function will block until either: (1) an object of the appropriate
-        type has been detected by the perception system or (2) a timeout
-        occurs. The name of an object is generally equal to its filename
-        without the ".kinbody.xml" extension; e.g. the name of
-        fuze_bottle.kinbody.xml is fuze_bottle.
-        @param obj_name type of object to wait for
-        @param timeout maximum time to wait in seconds or None to wait forever
-        @param update_period period at which to poll the sensor
-        @return perceived KinBody or None if a timeout occured
+    def DetectObjects(self, 
+                      detection_frame='head/kinect2_rgb_optical_frame',
+                      destination_frame='map'):
+        """Use the kinbody detector to detect objects and add
+        them to the environment
         """
-        import time
-
-        start = time.time()
-        found_body = None
-
-        if not robot.vision_sim:
-            robot.vision_sensorsystem.SendCommand('enable')
-        else:
-            # Timeout immediately in simulation.
-            timeout = 0
-
-        logger.info("Waiting for object %s to appear.", obj_name)
+        # Use the kinbody detector to detect the environment
+        import kinbody_detector.kinbody_detector as kd
+        kinbody_path = prpy.util.FindCatkinResource('pr_ordata',
+                                                        'data/objects')
+        marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
+                                                        'data/objects/tag_data.json')
+        marker_topic = '/apriltags_kinect2/marker_array'
         try:
-            while True:
-                # Check for an object with the appropriate name in the environment.
-                bodies = robot.GetEnv().GetBodies()
-                for body in bodies:
-                    if body.GetName().startswith('vision_' + obj_name):
-                        return body
+            logger.info('Marker data path %s' % marker_data_path)
+            logger.info('Kinbody path %s' % kinbody_path)
+            detector = kd.KinBodyDetector(self.GetEnv(), 
+                                          marker_data_path,
+                                          kinbody_path,
+                                          marker_topic,
+                                          detection_frame, 
+                                          destination_frame)
+            logger.info('Waiting to detect objects...')
+            detector.Update()
 
-                # Check for a timeout.
-                if timeout is not None and time.time() - start >= timeout:
-                    logger.info("Timed out without finding object.")
-                    return None
-
-                time.sleep(update_period)
-        finally:
-            if not robot.vision_sim:
-                robot.vision_sensorsystem.SendCommand('Disable')
-
-    def DriveStraightUntilForce(robot, direction, velocity=0.1, force_threshold=3.0,
-                                max_distance=None, timeout=None, left_arm=True, right_arm=True):
-        """Deprecated. Use base.DriveStraightUntilForce instead.
-        """
-        logger.warning('DriveStraightUntilForce is deprecated. Use base.DriveStraightUntilForce instead.')
-        robot.base.DriveStraightUntilForce(direction, velocity, force_threshold,
-                                max_distance, timeout, left_arm, right_arm)
-
-    def DriveAlongVector(robot, direction, goal_pos):
-        import numpy
-        # TODO: Do we still need this? If so, we should move it into HERBBase.
-        direction = direction[:2]/numpy.linalg.norm(direction[:2])
-        herb_pose = robot.GetTransform()
-        distance = numpy.dot(goal_pos[:2]-herb_pose[:2,3], direction)
-        cur_angle = numpy.arctan2(herb_pose[1,0],herb_pose[0,0])
-        des_angle = numpy.arctan2(direction[1],direction[0])
-        robot.RotateSegway(des_angle-cur_angle)
-        robot.DriveSegway(distance)
-
-    def DriveSegway(robot, meters, **kw_args):
-        """Deprecated. Use base.Forward instead.
-        """
-        logger.warning('DriveSegway is deprecated. Use base.Forward instead.')
-        robot.base.Forward(meters, **kw_args)
-
-    def DriveSegwayToNamedPosition(robot, named_position):
-        """Deprecated. Use base.PlanToBasePose instead.
-        """
-        if robot.segway_sim:
-            raise Exception('Driving to named positions is not supported in simulation.')
-        else:
-            robot.base.controller.SendCommand("Goto " + named_position)
-
-    def RotateSegway(robot, angle_rad, **kw_args):
-        """Deprecated. Use base.Rotate instead.
-        """
-        logger.warning('RotateSegway is deprecated. Use base.Rotate instead.')
-        robot.base.Rotate(angle_rad, **kw_args)
-
-    def StopSegway(robot):
-        # TODO: This should be moved into HERBBase.
-        if not robot.segway_sim:
-            robot.base.controller.SendCommand("Stop")
+        except Exception, e:
+            logger.error('Detection failed update: %s' % str(e))
+            raise

@@ -1,17 +1,17 @@
 import numpy
 import prpy.tsr
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'fuze_bottle', 'lift')
-def fuze_lift(robot, bottle, manip=None, distance=0.1):
-    """
-    This creates a TSR for lifting the bottle a specified distance. 
-    It is assumed that when called, the robot is grasping the bottle
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'pop_tarts', 'lift')
+def poptarts_lift(robot, pop_tarts, manip=None, distance=0.1):
+    '''
+    This creates a TSR for lifting the pop tarts a specified distance. 
+    It is assumed that when called, the robot is grasping the pop tarts
 
     @param robot The robot to perform the lift
-    @param bottle The bottle to lift
+    @param pop_tarts The pop tarts box to lift
     @param manip The manipulator to lift 
     @param distance The distance to lift the bottle
-    """
+    '''
     print 'distance = %0.2f' % distance
 
     if manip is None:
@@ -54,33 +54,34 @@ def fuze_lift(robot, bottle, manip=None, distance=0.1):
     movement_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = False, 
             constrain = True, TSRs = [tsr_constraint])
 
-    return [goal_tsr_chain, movement_chain] 
+    return [goal_tsr_chain, movement_chain]
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'fuze_bottle', 'grasp')
-def fuze_grasp(robot, fuze, manip=None):
+
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'pop_tarts', 'grasp')
+def poptarts_grasp(robot, pop_tarts, manip=None):
     """
     @param robot The robot performing the grasp
-    @param fuze The fuze to grasp
+    @param pop_tarts The pop tarts box to grasp
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
     """
-    return _fuze_grasp(robot, fuze, manip = manip)
+    return _poptarts_grasp(robot, pop_tarts, manip = manip)
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'fuze_bottle', 'push_grasp')
-def fuze_grasp(robot, fuze, push_distance = 0.1, manip=None):
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'pop_tarts', 'push_grasp')
+def poptarts_grasp(robot, pop_tarts, push_distance = 0.1, manip=None):
     """
     @param robot The robot performing the grasp
-    @param fuze The fuze to grasp
+    @param pop_tarts The pop_tarts to grasp
     @param push_distance The distance to push before grasping
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
     """
-    return _fuze_grasp(robot, fuze, push_distance = push_distance, manip = manip)
+    return _poptarts_grasp(robot, pop_tarts, push_distance = push_distance, manip = manip)
 
-def _fuze_grasp(robot, fuze, push_distance = 0.0, manip = None):
+def _poptarts_grasp(robot, pop_tarts, push_distance = 0.0, manip = None):
     """
     @param robot The robot performing the grasp
-    @param fuze The fuze to grasp
+    @param pop_tarts The pop tarts box to grasp
     @param push_distance The distance to push before grasping
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
@@ -92,14 +93,14 @@ def _fuze_grasp(robot, fuze, push_distance = 0.0, manip = None):
             manip.SetActive()
             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
-    T0_w = fuze.GetTransform()
+    T0_w = pop_tarts.GetTransform()
     ee_to_palm_distance = 0.18
-    default_offset_distance = 0.05 # This is the radius of the fuze
+    default_offset_distance = 0.04 # This is the radius of the box
                                    # plus a little bit
     total_offset = ee_to_palm_distance + default_offset_distance + push_distance
     Tw_e = numpy.array([[ 0., 0., 1., -total_offset], 
                         [1., 0., 0., 0.], 
-                        [0., 1., 0., 0.108], # half of fuze bottle height
+                        [0., 1., 0., 0.08], # half of box height
                         [0., 0., 0., 1.]])
 
     Bw = numpy.zeros((6,2))
@@ -108,7 +109,7 @@ def _fuze_grasp(robot, fuze, push_distance = 0.0, manip = None):
     
     grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
     grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
-                                    constrain=False, TSR = grasp_tsr)
+            constrain=False, TSR = grasp_tsr)
 
     return [grasp_chain]
 

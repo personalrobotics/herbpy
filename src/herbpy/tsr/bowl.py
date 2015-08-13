@@ -53,7 +53,7 @@ def bowl_on_table(robot, bowl, pose_tsr_chain, manip=None):
 
     ee_in_bowl = numpy.dot(numpy.linalg.inv(bowl.GetTransform()), manip.GetEndEffectorTransform())
     Bw = numpy.zeros((6,2)) 
-    Bw[2,:] = [0., 0.04]  # Allow some vertical movement
+    Bw[2,:] = [0., 0.08]  # Allow some vertical movement
    
     for tsr in pose_tsr_chain.TSRs:
         if tsr.manipindex != manip_idx:
