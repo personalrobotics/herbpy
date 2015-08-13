@@ -246,8 +246,8 @@ class HERBRobot(Robot):
                 proc = subprocess.Popen(['espeak', '-s', '160', '"{0}"'.format(words)])
                 if block:
                     proc.wait()
-            except OSError:
-                logger.error('Unable to speak. Make sure "espeak" is installed locally.')
+            except OSError as e:
+                logger.error('Unable to speak. Make sure "espeak" is installed locally.\n%s' % str(e))
         else:
             import talker.msg
             goal = talker.msg.SayGoal(text=words)
