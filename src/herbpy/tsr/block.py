@@ -1,6 +1,5 @@
 import numpy
-from prpy.tsr.tsrlibrary import TSRFactory
-from prpy.tsr.tsr import *
+import prpy.tsr
 
 @TSRFactory('herb', 'block', 'place')
 def block_at_pose(robot, block, position, manip=None):
@@ -29,19 +28,19 @@ def block_at_pose(robot, block, position, manip=None):
     Bw = numpy.zeros((6,2))
     Bw[5,:] = [-numpy.pi, numpy.pi]
 
-    place_tsr = TSR(T0_w = T0_w,
-                    Tw_e = numpy.eye(4),
-                    Bw = Bw,
-                    manip = manip_idx)
+    place_tsr = prpy.tsr.TSR(T0_w = T0_w,
+                             Tw_e = numpy.eye(4),
+                             Bw = Bw,
+                             manip = manip_idx)
 
     ee_in_block = numpy.dot(numpy.linalg.inv(block.GetTransform()), manip.GetEndEffectorTransform())
-    ee_tsr = TSR(T0_w = numpy.eye(4), #ignored
-                 Tw_e = ee_in_block,
-                 Bw = numpy.zeros((6,2)),
-                 manip = manip_idx)
+    ee_tsr = prpy.tsr.TSR(T0_w = numpy.eye(4), #ignored
+                          Tw_e = ee_in_block,
+                          Bw = numpy.zeros((6,2)),
+                          manip = manip_idx)
 
-    place_tsr_chain = TSRChain(sample_start=False, 
-                               sample_goal = True,
-                               TSRs = [place_tsr, ee_tsr])
+    place_tsr_chain = prpy.tsr.TSRChain(sample_start=False, 
+                                        sample_goal = True,
+                                        TSRs = [place_tsr, ee_tsr])
     return [place_tsr_chain]
         

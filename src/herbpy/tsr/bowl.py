@@ -1,6 +1,5 @@
 import numpy
-from prpy.tsr.tsrlibrary import TSRFactory
-from prpy.tsr.tsr import *
+import prpy.tsr
 
 @TSRFactory('herb', 'plastic_bowl', 'grasp')
 def bowl_grasp(robot, bowl, manip=None):
@@ -26,8 +25,9 @@ def bowl_grasp(robot, bowl, manip=None):
     Bw[2,:] = [-0.02, 0.02] # Allow a little verticle movement
     Bw[5,:] = [-numpy.pi, numpy.pi] # Allow any orientation
 
-    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = TSRChain(sample_start=False, sample_goal = True, constrain=False, TSR = grasp_tsr)
+    grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
+    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
+                                    constrain=False, TSR = grasp_tsr)
 
     return [grasp_chain]
     
@@ -59,9 +59,9 @@ def bowl_on_table(robot, bowl, pose_tsr_chain, manip=None):
         if tsr.manipindex != manip_idx:
             raise Exception('pose_tsr_chain defined for a different manipulator.')
 
-    grasp_tsr = TSR(Tw_e = ee_in_bowl, Bw = Bw, manip = manip_idx)
+    grasp_tsr = prpy.tsr.TSR(Tw_e = ee_in_bowl, Bw = Bw, manip = manip_idx)
     all_tsrs = list(pose_tsr_chain.TSRs) + [grasp_tsr]
-    place_chain = TSRChain(sample_start = False, sample_goal = True, constrain = False,
+    place_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = True, constrain = False,
                            TSRs = all_tsrs)
 
     return  [ place_chain ]
