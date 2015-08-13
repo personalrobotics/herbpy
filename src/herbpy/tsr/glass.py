@@ -59,7 +59,7 @@ def glass_lift(robot, glass, manip=None, distance=0.1):
 
     return [goal_tsr_chain, movement_chain]
 
-@TSRFactory('herb', 'plastic_glass', 'grasp')
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_glass', 'grasp')
 def glass_grasp(robot, glass, manip=None, **kw_args):
     '''
     @param robot The robot performing the grasp
@@ -69,7 +69,7 @@ def glass_grasp(robot, glass, manip=None, **kw_args):
     '''
     return _glass_grasp(robot, glass, manip=manip, **kw_args)
     
-@TSRFactory('herb', 'plastic_glass', 'push_grasp')
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_glass', 'push_grasp')
 def glass_push_grasp(robot, glass, manip=None, push_distance=0.1, **kw_args):
     '''
     This factory differes from glass_grasp in that it places the manipulator 
