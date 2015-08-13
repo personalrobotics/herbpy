@@ -18,7 +18,7 @@ def bowl_grasp(robot, bowl, manip=None):
             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     T0_w = bowl.GetTransform()
-    Tw_e = numpy.array([[1.,  0.,  0., 0.],
+    Tw_e = numpy.array([[1.,  0.,  0., 0.08],
                         [0., -1.,  0., 0.],
                         [0.,  0., -1., 0.34],
                         [0.,  0.,  0., 1.]])

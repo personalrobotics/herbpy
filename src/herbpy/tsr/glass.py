@@ -2,6 +2,62 @@ import numpy
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import *
 
+@TSRFactory('herb', 'plastic_glass', 'lift')
+def glass_lift(robot, glass, manip=None, distance=0.1):
+    '''
+    This creates a TSR for lifting the glass a specified distance. 
+    It is assumed that when called, the robot is grasping the glass
+
+    @param robot The robot to perform the lift
+    @param glass The glass to lift
+    @param manip The manipulator to lift 
+    @param distance The distance to lift the glass
+    '''
+
+    print 'distance = %0.2f' % distance
+
+    if manip is None:
+        manip = robot.GetActiveManipulator()
+        manip_idx = robot.GetActiveManipulatorIndex()
+    else:
+         with manip.GetRobot():
+             manip.SetActive()
+             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+
+    #TSR for the goal
+    start_position = manip.GetEndEffectorTransform()
+    end_position = manip.GetEndEffectorTransform()
+    end_position[2, 3] += distance
+
+    Bw = numpy.zeros((6, 2))
+    epsilon = 0.05
+    Bw[0,:] = [-epsilon, epsilon]
+    Bw[1,:] = [-epsilon, epsilon]
+    Bw[4,:] = [-epsilon, epsilon]
+
+    tsr_goal = TSR(T0_w = end_position, Tw_e = numpy.eye(4),
+            Bw = Bw, manip = manip_idx)
+
+    goal_tsr_chain = TSRChain(sample_start = False, sample_goal = True,
+            constrain = False, TSRs = [tsr_goal])
+
+    #TSR that constrains the movement
+    Bw_constrain = numpy.zeros((6, 2))
+    Bw_constrain[:, 0] = -epsilon
+    Bw_constrain[:, 1] = epsilon
+    if distance < 0:
+        Bw_constrain[1,:] = [-epsilon+distance, epsilon]
+    else:
+        Bw_constrain[1,:] = [-epsilon, epsilon+distance]
+
+    tsr_constraint = TSR(T0_w = start_position, Tw_e = numpy.eye(4),
+            Bw = Bw_constrain, manip = manip_idx)
+
+    movement_chain = TSRChain(sample_start = False, sample_goal = False,
+            constrain = True, TSRs = [tsr_constraint])
+
+    return [goal_tsr_chain, movement_chain]
+
 @TSRFactory('herb', 'plastic_glass', 'grasp')
 def glass_grasp(robot, glass, manip=None, **kw_args):
     '''

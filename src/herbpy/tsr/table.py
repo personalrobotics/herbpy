@@ -2,8 +2,8 @@ import numpy
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import *
 
-@TSRFactory('herb', 'conference_table', 'point_on')
-def point_on(robot, table, manip=None):
+@TSRFactory('herb', 'table', 'point_on')
+def point_on(robot, table, padding=0.0, manip=None):
     '''
     This creates a TSR that allows you to sample poses on the table.
     The samples from this TSR should be used to find points for object placement.
@@ -30,8 +30,8 @@ def point_on(robot, table, manip=None):
                         [0., -1., 0., 0.], 
                         [0., 0., 0., 1.]])
     Bw = numpy.zeros((6,2))
-    Bw[0,:] = [-0.93, 0.93] # move along x and z directios to get any point on table
-    Bw[2,:] = [-0.38, 0.38]
+    Bw[0,:] = [-0.93+padding, 0.93-padding] # move along x and z directios to get any point on table
+    Bw[2,:] = [-0.38+padding, 0.38-padding]
     Bw[4,:] = [-numpy.pi, numpy.pi] # allow any rotation around y - which is the axis normal to the table top
     
     table_top_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
