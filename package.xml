@@ -34,6 +34,6 @@
   <run_depend>openrave</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>talker</run_depend>
-
-  <exec_depend>espeak</exec_depend>
+  
+  <!-- <exec_depend>espeak</exec_depend> -->
 </package>
