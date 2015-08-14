@@ -173,16 +173,20 @@ class HERBRobot(Robot):
         import herbpy.action
         import herbpy.tsr
 
+        # Initialize herbpy ROS Node
+        import rospy
+        if not rospy.core.is_initialized():
+            rospy.init_node('herbpy', anonymous=True)
+            logger.debug('Started ROS node with name "%s".', rospy.get_name())
+
         # Setting necessary sim flags
         self.talker_simulated = talker_sim
         self.segway_sim = segway_sim
 
         if not self.talker_simulated:
-            import rospy
             import talker.msg
             from actionlib import SimpleActionClient
             self._say_action_client = SimpleActionClient('say', talker.msg.SayAction)
-            rospy.init_node('talker_client', anonymous=True)
 
 
     def CloneBindings(self, parent):
