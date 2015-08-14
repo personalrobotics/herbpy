@@ -1,8 +1,7 @@
 import numpy
-from prpy.tsr.tsrlibrary import TSRFactory
-from prpy.tsr.tsr import TSR, TSRChain
+import prpy.tsr
 
-@TSRFactory('herb', 'fuze_bottle', 'lift')
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'fuze_bottle', 'lift')
 def fuze_lift(robot, bottle, manip=None, distance=0.1):
     """
     This creates a TSR for lifting the bottle a specified distance. 
@@ -34,10 +33,10 @@ def fuze_lift(robot, bottle, manip=None, distance=0.1):
     Bw[1,:] = [-epsilon, epsilon]
     Bw[4,:] = [-epsilon, epsilon]
 
-    tsr_goal = TSR(T0_w = end_position, Tw_e = numpy.eye(4),
+    tsr_goal = prpy.tsr.TSR(T0_w = end_position, Tw_e = numpy.eye(4),
             Bw = Bw, manip = manip_idx)
 
-    goal_tsr_chain = TSRChain(sample_start = False, sample_goal = True, 
+    goal_tsr_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = True, 
             constrain = False, TSRs = [tsr_goal])
 
     #TSR that constrains the movement
@@ -49,15 +48,15 @@ def fuze_lift(robot, bottle, manip=None, distance=0.1):
     else:
         Bw_constrain[1,:] = [-epsilon, epsilon+distance]
 
-    tsr_constraint = TSR(T0_w = start_position, Tw_e = numpy.eye(4),
+    tsr_constraint = prpy.tsr.TSR(T0_w = start_position, Tw_e = numpy.eye(4),
             Bw = Bw_constrain, manip = manip_idx)
 
-    movement_chain = TSRChain(sample_start = False, sample_goal = False, 
+    movement_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = False, 
             constrain = True, TSRs = [tsr_constraint])
 
     return [goal_tsr_chain, movement_chain] 
 
-@TSRFactory('herb', 'fuze_bottle', 'grasp')
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'fuze_bottle', 'grasp')
 def fuze_grasp(robot, fuze, manip=None):
     """
     @param robot The robot performing the grasp
@@ -67,7 +66,7 @@ def fuze_grasp(robot, fuze, manip=None):
     """
     return _fuze_grasp(robot, fuze, manip = manip)
 
-@TSRFactory('herb', 'fuze_bottle', 'push_grasp')
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'fuze_bottle', 'push_grasp')
 def fuze_grasp(robot, fuze, push_distance = 0.1, manip=None):
     """
     @param robot The robot performing the grasp
@@ -107,8 +106,9 @@ def _fuze_grasp(robot, fuze, push_distance = 0.0, manip = None):
     Bw[2,:] = [0.0, 0.02]  # Allow a little vertical movement
     Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
     
-    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = TSRChain(sample_start=False, sample_goal = True, constrain=False, TSR = grasp_tsr)
+    grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
+    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
+                                    constrain=False, TSR = grasp_tsr)
 
     return [grasp_chain]
 
