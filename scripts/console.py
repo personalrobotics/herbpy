@@ -23,6 +23,8 @@ if __name__ == "__main__":
                         help='environment XML file; defaults to an empty environment')
     parser.add_argument('-b', '--segway-sim', action='store_true',
                         help='simulate base')
+    parser.add_argument('-p', '--perception-sim', action='store_true',
+                        help='simulate perception')
     parser.add_argument('--debug', action='store_true',
                         help='enable debug logging')
     args = parser.parse_args()
@@ -37,7 +39,8 @@ if __name__ == "__main__":
                    'attach_viewer':args.viewer,
                    'robot_xml':args.robot_xml,
                    'env_path':args.env_xml,
-                   'segway_sim':args.segway_sim}
+                   'segway_sim':args.segway_sim,
+                   'perception_sim': args.perception_sim}
     if args.sim and not args.segway_sim:
         herbpy_args['segway_sim'] = args.sim
     
