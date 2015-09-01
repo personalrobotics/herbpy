@@ -32,7 +32,7 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
     ee_in_world = numpy.dot(block_in_world, ee_in_block)
     
     # Plan to a pose above the block
-    manip.PlanToEndEffectorPose(ee_in_world, smoothingitrs=100)
+    manip.PlanToEndEffectorPose(ee_in_world)
 
     # Move down until touching the table
     try:
