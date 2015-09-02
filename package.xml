@@ -33,5 +33,4 @@
   <exec_depend>or_ompl</exec_depend>
   <exec_depend>or_sbpl</exec_depend>
   <exec_depend>openrave</exec_depend>
-  <exec_depend>talker</exec_depend>
 </package>
