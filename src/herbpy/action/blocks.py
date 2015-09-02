@@ -20,19 +20,13 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
     # First move the hand to the right preshape
     manip.hand.MoveHand(*preshape)
 
-    offset = 0.05 #vertical offset relative to block
-    alpha = 0.5 # orientation of end-effector relative to end-effector
-
-    block_in_world = block.GetTransform()
-    ee_in_block = numpy.array([[numpy.cos(alpha), 0., -numpy.sin(alpha), 0.3*numpy.sin(alpha)+0.04],
-                               [ 0., -1, 0, 0.],
-                               [-numpy.sin(alpha), 0., -numpy.cos(alpha), 0.25+offset],
-                               [ 0., 0., 0., 1.]])
-        
-    ee_in_world = numpy.dot(block_in_world, ee_in_block)
+    # Get a tsr to move near the block
+    block_tsr_list = robot.tsrlibrary(block, 'grasp', manip=manip)
     
     # Plan to a pose above the block
-    manip.PlanToEndEffectorPose(ee_in_world)
+    with prpy.viz.RenderTSRList(block_tsr_list, robot.GetEnv()):
+        with prpy.rave.Disabled(table, padding_only=True):
+            manip.PlanToTSR(block_tsr_list)
 
     # Move down until touching the table
     try:
@@ -43,11 +37,15 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
         current_ee_height = manip.GetEndEffectorTransform()[2,3]
         with prpy.rave.Disabled(table):
             with prpy.rave.Disabled(block):
-                manip.PlanToEndEffectorOffset(direction=[0, 0, -1], distance=current_ee_height - desired_ee_height, timelimit=15)
+                manip.PlanToEndEffectorOffset(direction=[0, 0, -1], 
+                                              distance=current_ee_height - desired_ee_height, 
+                                              timelimit=5)
 
                 # Now move the hand parallel to the table to funnel the block into the fingers
-                funnel_direction = [0,1,0];
-                manip.PlanToEndEffectorOffset(direction=funnel_direction, distance=0.04, max_distance=0.1)
+                funnel_direction = -1.0*manip.GetEndEffectorTransform()[:3,0] #Negative x direction of end-effector
+                funnel_direction[2] = 0.0 # project onto xy plane
+                with prpy.viz.RenderVector(manip.GetEndEffectorTransform()[:3,3], funnel_direction, 0.1, robot.GetEnv()):
+                    manip.PlanToEndEffectorOffset(direction=funnel_direction, distance=0.04, max_distance=0.1)
         
         # Close the finger to grab the block
         manip.hand.MoveHand(f3=1.7)
@@ -76,5 +74,30 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
         raise
 
 @ActionMethod
-def PlaceBlock(robot, block, on_obj, center=True, **kw_args):
-    pass
+def PlaceBlock(robot, block, on_obj, center=True, manip=None, **kw_args):
+    """
+    Place a block on an object
+    """
+
+    # Get a tsr for this position
+    object_place_list = robot.tsrlibrary(on_obj, 'point_on', manip=manip)
+    place_tsr_list = robot.tsrlibrary(block, 'place_on', 
+                                      pose_tsr_chain=object_place_list[0], 
+                                      manip=manip)
+
+    # Plan there
+    with prpy.viz.RenderTSRList(place_tsr_list, robot.GetEnv()):
+        manip.PlanToTSR(place_tsr_list)
+
+    # Open the hand and drop the block
+    manip.hand.MoveHand(f3=0.2)
+    manip.GetRobot().Release(block)
+
+    # Move the block down until it hits something
+    block_pose = block.GetTransform()
+    env = robot.GetEnv()
+    while not env.CheckCollision(block) and block_pose[2,3] > 0.0:
+        block_pose[2,3] -= 0.02
+        block.SetTransform(block_pose)
+    
+    

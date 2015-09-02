@@ -1,7 +1,46 @@
 import numpy
 import prpy.tsr 
+from prpy.tsr.tsrlibrary import TSRFactory
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'block', 'place')
+@TSRFactory('herb', 'block', 'grasp')
+def block_grasp(robot, block, manip=None):
+    """
+    Generates end-effector poses for moving the arm near the block
+    @param robot The robot grasping the block
+    @param block The block being grasped
+    @param manip The manipulator to move near the block, if None
+       the active manipulator of the robot is used
+    """
+    if manip is None:
+        manip_idx = robot.GetActiveManipulatorIndex()
+        manip = robot.GetActiveManipulator()
+    else:
+        with manip.GetRobot():
+            manip.SetActive()
+            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+
+    offset = 0.05 #vertical offset relative to block
+    alpha = 0.5 # orientation of end-effector relative to end-effector
+
+    block_in_world = block.GetTransform()
+    ee_in_block = numpy.array([[numpy.cos(alpha), 0., -numpy.sin(alpha), 0.3*numpy.sin(alpha)+0.04],
+                               [ 0., -1, 0, 0.],
+                               [-numpy.sin(alpha), 0., -numpy.cos(alpha), 0.25+offset],
+                               [ 0., 0., 0., 1.]])
+    Bw = numpy.zeros((6,2))
+    Bw[5,:] = [-numpy.pi, numpy.pi]
+        
+    pose_tsr = prpy.tsr.TSR(T0_w = block_in_world,
+                             Tw_e = ee_in_block,
+                             Bw = Bw,
+                             manip = manip_idx)
+
+    pose_tsr_chain = prpy.tsr.TSRChain(sample_start=False, 
+                                        sample_goal = True,
+                                        TSRs = [pose_tsr])
+    return [pose_tsr_chain]
+            
+@TSRFactory('herb', 'block', 'place')
 def block_at_pose(robot, block, position, manip=None):
     '''
     Generates end-effector poses for placing the block on another object
@@ -43,4 +82,39 @@ def block_at_pose(robot, block, position, manip=None):
                                         sample_goal = True,
                                         TSRs = [place_tsr, ee_tsr])
     return [place_tsr_chain]
-        
+
+@TSRFactory('herb', 'block', 'place_on')        
+def block_on_surface(robot, block, pose_tsr_chain, manip=None):
+    '''
+    Generates end-effector poses for placing the block on a surface.
+    This factory assumes the block is grasped at the time it is called.
+    
+    @param robot The robot grasping the block
+    @param block The grasped object
+    @param pose_tsr_chain The tsr chain for sampling placement poses for the block
+    @param manip The manipulator grasping the object, if None the active
+       manipulator of the robot is used
+    '''
+    if manip is None:
+        manip_idx = robot.GetActiveManipulatorIndex()
+        manip = robot.GetActiveManipulator()
+    else:
+        with manip.GetRobot():
+            manip.SetActive()
+            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+
+    ee_in_block = numpy.dot(numpy.linalg.inv(block.GetTransform()), manip.GetEndEffectorTransform())
+    Bw = numpy.zeros((6,2)) 
+    Bw[2,:] = [0., 0.04]  # Allow some vertical movement
+   
+    for tsr in pose_tsr_chain.TSRs:
+        if tsr.manipindex != manip_idx:
+            raise Exception('pose_tsr_chain defined for a different manipulator.')
+
+    grasp_tsr = prpy.tsr.TSR(Tw_e = ee_in_block, Bw = Bw, manip = manip_idx)
+    all_tsrs = list(pose_tsr_chain.TSRs) + [grasp_tsr]
+    place_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = True, constrain = False,
+                           TSRs = all_tsrs)
+
+    return  [ place_chain ]
+
