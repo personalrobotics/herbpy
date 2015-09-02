@@ -19,7 +19,10 @@
 
   <depend>python</depend>
 
+  <exec_depend>actionlib</exec_depend>
+  <exec_depend>actionlib_msgs</exec_depend>
   <exec_depend>cbirrt2</exec_depend>
+  <exec_depend>espeak</exec_depend>
   <exec_depend>prpy</exec_depend>
   <exec_depend>ipython</exec_depend>
   <exec_depend>python-argparse</exec_depend>
@@ -30,4 +33,5 @@
   <exec_depend>or_ompl</exec_depend>
   <exec_depend>or_sbpl</exec_depend>
   <exec_depend>openrave</exec_depend>
+  <exec_depend>talker</exec_depend>
 </package>
