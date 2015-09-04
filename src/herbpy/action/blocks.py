@@ -1,6 +1,7 @@
 import logging, numpy, openravepy, prpy
 from prpy.action import ActionMethod
 from prpy.planning.base import PlanningError
+from prpy.util import ComputeEnabledAABB
 
 logger = logging.getLogger('herbpy')
 
@@ -31,8 +32,8 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
     # Move down until touching the table
     try:
         #self.manip.MoveUntilTouch(direction=[0, 0, -1], distance=offset*2.)
-        table_aabb = table.ComputeAABB()
-        table_height = table_aabb.pos()[2] + table_aabb.extents()[2] + 0.01
+        table_aabb = ComputeEnabledAABB(table)
+        table_height = table_aabb.pos()[2] + table_aabb.extents()[2]
         desired_ee_height = 0.204 + table_height
         current_ee_height = manip.GetEndEffectorTransform()[2,3]
         with prpy.rave.Disabled(table):
