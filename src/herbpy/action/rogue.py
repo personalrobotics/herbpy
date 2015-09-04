@@ -201,34 +201,35 @@ def Exhibit(robot, obj, manip=None, distance=0.1, wait=2, release=True, render=T
         manip.PlanToConfiguration(preconfig)
 
 @ActionMethod
-def Nod(robot, word='yes'):
+def Nod(robot, word='yes', inc=4):
     """
     @param robot The robot being used to nod
     @param word Shakes up and down for 'yes' and left and right for 'no'
     """
 
     import time
+    pause = 0.15
 
     if word == 'no':
-        for i in xrange(2):
+        for i in xrange(inc):
             robot.head.Servo([ 1, 0])
-            time.sleep(.2)
-        for i in xrange(4):
+            time.sleep(pause)
+        for i in xrange((inc*3)):
             robot.head.Servo([-1, 0])
-            time.sleep(.2)
-        for i in xrange(2):
+            time.sleep(pause)
+        for i in xrange((inc*2)):
             robot.head.Servo([ 1, 0])
-            time.sleep(.2)
+            time.sleep(pause)
     elif word == 'yes':
-        for i in xrange(2):
+        for i in xrange(inc):
             robot.head.Servo([ 0,  1])
-            time.sleep(.2)
-        for i in xrange(4):
+            time.sleep(pause)
+        for i in xrange((inc*3)):
             robot.head.Servo([ 0, -1])
-            time.sleep(.2)
-        for i in xrange(2):
+            time.sleep(pause)
+        for i in xrange((inc*2)):
             robot.head.Servo([ 0,  1])
-            time.sleep(.2)
+            time.sleep(pause)
     else:
         raise prpy.exceptions.PrPyException('Word Not Recognized')
 
