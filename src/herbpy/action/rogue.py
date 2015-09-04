@@ -17,7 +17,7 @@ def Point(robot, focus, manip=None, render=False):
                  This must be the right arm
     @param render Render tsr samples during planning
     """
-    import offscreen_render
+
     #Pointing at an object
     if type(focus) == openravepy.openravepy_int.KinBody:
         focus_trans = focus.GetTransform()
@@ -47,8 +47,7 @@ def Point(robot, focus, manip=None, render=False):
     point_tsr = robot.tsrlibrary(None, 'point', focus_trans, manip)
 
     with prpy.viz.RenderTSRList(point_tsr, robot.GetEnv(), render=render):
-        robot.PlanToTSR(point_tsr, execute=True, 
-              ranker=Naturalness(focus_trans, goal_name))
+        robot.PlanToTSR(point_tsr, execute=True)
     robot.right_hand.MoveHand(f1=2.4, f2=0.8, f3=2.4, spread=3.14)
 
 @ActionMethod
@@ -165,7 +164,7 @@ def Sweep(robot, start, end, manip=None, margin=0.3, render=True):
         robot.PlanToTSR(sweep_tsr, execute=True)
 
 @ActionMethod
-def Exhibit(robot, obj, manip=None, distance=0.1, wait=2, render=True):
+def Exhibit(robot, obj, manip=None, distance=0.1, wait=2, release=True, render=True):
     """
     @param robot The robot performing the exhibit
     @param obj The object being exhibited
@@ -175,6 +174,10 @@ def Exhibit(robot, obj, manip=None, distance=0.1, wait=2, render=True):
     @param render Render tsr samples during planning
     """
 
+    if manip is None:
+        manip = robot.GetActiveManipulator()
+
+    preconfig = manip.GetDOFValues()
     robot.Grasp(obj)
 
     #Lift the object - write more tsrs
@@ -192,7 +195,10 @@ def Exhibit(robot, obj, manip=None, distance=0.1, wait=2, render=True):
     with prpy.viz.RenderTSRList(unlift_tsr, robot.GetEnv(), render=render):
         robot.PlanToTSR(unlift_tsr, execute=True)
 
-    #TODO: possibly then release, openhand, retract. 
+    if release:
+        robot.Release(obj)
+        manip.hand.OpenHand()
+        manip.PlanToConfiguration(preconfig)
 
 @ActionMethod
 def Nod(robot, word='yes'):
@@ -200,20 +206,32 @@ def Nod(robot, word='yes'):
     @param robot The robot being used to nod
     @param word Shakes up and down for 'yes' and left and right for 'no'
     """
-    before = robot.head.GetDOFValues()
 
-    if word == 'yes':
-        first = numpy.array([ 0., -0.43588399]) #Down
-        second = numpy.array([ 0.,  0.26307139]) #Up
-    elif word == 'no':
-        first = numpy.array([-0.45916359,  0.]) #Left 
-        second = numpy.array([0.45916359,  0.]) #Right
+    import time
+
+    if word == 'no':
+        for i in xrange(2):
+            robot.head.Servo([ 1, 0])
+            time.sleep(.2)
+        for i in xrange(4):
+            robot.head.Servo([-1, 0])
+            time.sleep(.2)
+        for i in xrange(2):
+            robot.head.Servo([ 1, 0])
+            time.sleep(.2)
+    elif word == 'yes':
+        for i in xrange(2):
+            robot.head.Servo([ 0,  1])
+            time.sleep(.2)
+        for i in xrange(4):
+            robot.head.Servo([ 0, -1])
+            time.sleep(.2)
+        for i in xrange(2):
+            robot.head.Servo([ 0,  1])
+            time.sleep(.2)
     else:
         raise prpy.exceptions.PrPyException('Word Not Recognized')
 
-    robot.head.MoveTo(first)
-    robot.head.MoveTo(second)
-    robot.head.MoveTo(before)
 
 @ActionMethod
 def HaltHand(robot, manip=None):
@@ -266,7 +284,7 @@ def HighFive(robot, manip=None, wait=7):
     hand.TareForceTorqueSensor()
 
     #Move into canonical high fiving position
-    Stop(robot, manip)
+    HaltHand(robot, manip)
 
     #TODO wait in till robot.right_hand.GetForceTorque() reads something
 
@@ -304,149 +322,3 @@ def MiddleFinger(robot, manip=None):
     else: 
         raise prpy.exceptions.PrPyException('The middle finger is only defined \
                                 for the left and right arm.')
-
-class Naturalness(object):
-    def __init__(self, focus_trans, goal_name):
-        self.focus_trans = focus_trans
-        self.goal_name = goal_name
-
-        #Set up sensor parameters
-        self.sensor_length = 640
-        self.sensor_width = 480
-        self.sensor_weight = 255
-        self.scoreMask = self.weightedScoreArray()
-       
-        feature_path = FindCatkinResource('herbpy', 
-                'config/natural_feature_weights.pickle')
-         
-        try:
-            self.featureWeights = cPickle.load(open(feature_path, 'rb'))
-        except IOError as e:
-            raise ValueError('Failed loading pointing weights \
-                    from "{:s}".'.format(feature_path))
-        
-        
-    def __call__(self, robot, ik_solutions):
-        self.robot = robot
-        self.env = self.robot.GetEnv()
-        self.manip = robot.GetActiveManipulator()
-        num_sols = ik_solutions.shape[0]
-        results = numpy.zeros(num_sols)
-
-        #Create sensor
-        self.sensor = openravepy.RaveCreateSensor(self.env,
-                'offscreen_render_camera')
-        self.sensor.SendCommand('setintrinsic 529 525 328 267 0.01 10')
-        self.sensor.SendCommand('setdims '+str(self.sensor_length)+
-                ' '+str(self.sensor_width))
-        self.sensor.Configure(openravepy.Sensor.ConfigureCommand.PowerOn)
-        resetDOFs = self.manip.GetDOFValues()             
- 
-        #Score each configuration
-        for i in xrange(0, num_sols):
-            results[i] = self.score_pose(ik_solutions[i])
-
-        self.manip.SetDOFValues(resetDOFs)
-        return results
-
-    def score_pose(self, ik_sol):
-        """Set the robot in the configuration and then total up, 
-        for each scoring parameter, the weight of that parameter
-        times its score"""
-        self.manip.SetDOFValues(ik_sol)
-        self.pose = self.manip.GetEndEffectorTransform()
-
-        total = 0
-        total += self.compute_score('/right/j1', 'ShoulderRotation', 1.5, 2, 0) 
-        total += self.compute_score('/right/j5', 'ElbowRotation', -0.5, 2, 1.5)
-        total += self.compute_score('/right/j6', 'WristAngle', 0, 1, 0)
-        total += self.compute_score('/right/j7', 'WristRotation', 0, 1, 0)
-        total += self.wristOffset('WristRelative')
-        total += self.objectDistance('Distance')
-
-        #If the focus is a point in space, not an object, there
-        #is no concept of occulsion
-        if self.goal_name is not None:
-            total += self.score_occulsion()
-        return total
-
-    def compute_score(self, joint, dict_name, optimal, full_range, offset):
-        """For the generic joint based parameter, score based on 
-        who far the configuration differs from the 'optimal' """
-        actual = self.robot.GetJoint(joint).GetValue(1)+(offset*numpy.pi)
-        optimal_val = (optimal+offset)*numpy.pi
-        full_range_val = full_range*numpy.pi
-        weight = self.featureWeights[dict_name]
-        return (abs(optimal_val - actual) / full_range_val)*weight
-
-    def wristOffset(self, dict_name):
-        """For finding how far the rotation of the wrist is offset
-        from being horizontal, find the angle between z value of the
-        wrist pose and the j unit vector. Then score by how much it
-        differs from the optimal, being horizontal."""
-        z = self.pose[0:3, 2]
-        z_length = numpy.sqrt(z[0]**2 + z[1]**2 + z[2]**2)
-        angle = (numpy.arccos(z[1] / z_length)) / numpy.pi
-        optimal = 0
-        full_range = 2
-        offset = abs(optimal - angle) / full_range
-        return self.featureWeights[dict_name] * offset 
-
-    def objectDistance(self, dict_name):
-        """Compute the distance between the end effector and the object."""
-        [px, py, pz] = self.pose[0:3, 3]
-        [gx, gy, gz] = self.focus_trans[0:3, 3]
-        dist = numpy.sqrt((px-gx)**2 + (py - gy)**2 + (pz - gz)**2)
-        return self.featureWeights[dict_name]*dist
-
-    def weightedScoreArray(self):
-        """The occulsion value is scored against a weighted array that
-        weights items closer to the center, i.e near the point's focus
-        higher then the periphery."""
-        l = (self.sensor_length - 1) / 2
-        w = (self.sensor_width - 1) /2
-        w = numpy.fromfunction(lambda i, j: 1 / (1+numpy.sqrt((l-i)**2 
-            +(w-j)**2)), (self.sensor_length, self.sensor_width), dtype=int)
-        return numpy.ravel(w)
-
-    def valFromPhoto(self, img):
-        """Takes the image generated by sensor and computes
-        the weighted score."""
-        data = img.imagedata
-        compact_array = numpy.apply_over_axes(numpy.sum, data, [2])
-        reshape_array = numpy.ravel(compact_array)
-        divide_out = reshape_array / self.sensor_weight
-        goal = numpy.dot(self.scoreMask, divide_out)
-        return goal
-
-    def score_occulsion(self):
-        """Sensor captures base photo with just the goal object
-        and scores it against a photo with all objects in the scene
-        overlaid on the base photo."""
-        pose = self.manip.GetEndEffectorTransform()
-        self.sensor.SetTransform(pose)
-       
-        self.sensor.SendCommand('addbody '+self.goal_name+' '+
-                str(self.sensor_weight)+' 0 0')
-        self.sensor.SimulationStep(0.01)
-        data_solo = self.sensor.GetSensorData()
-        solo_goal = self.valFromPhoto(data_solo)
-       
-        #Get all other objects in the scene and add them to the image
-        allObjs = self.env.GetBodies()
-        for j in allObjs:
-            name = j.GetName()
-            if ((name != self.goal_name) and (name != self.robot.GetName())):
-                self.sensor.SendCommand('addbody '+name+' 0 0 0 0')
-
-        self.sensor.SimulationStep(0.01)
-        data_all = self.sensor.GetSensorData()
-        all_goal = self.valFromPhoto(data_all)
- 
-        if solo_goal == 0:
-            score = 0
-        else:
-            score = (float(solo_goal - all_goal) / float(solo_goal))
-
-        self.sensor.SendCommand('clearbodies')
-        return score*self.featureWeights['OcculsionScore'] 
