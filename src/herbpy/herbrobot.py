@@ -173,6 +173,7 @@ class HERBRobot(Robot):
         import herbpy.action
         import herbpy.tsr
 
+
         # Setting necessary sim flags
         self.talker_simulated = talker_sim
         self.segway_sim = segway_sim
@@ -192,6 +193,17 @@ class HERBRobot(Robot):
                                             kinbody_path=kinbody_path,
                                             detection_frame='head/kinect2_rgb_optical_frame',
                                             destination_frame='map')
+        if not self.talker_simulated:
+            # Initialize herbpy ROS Node
+            import rospy
+            if not rospy.core.is_initialized():
+                rospy.init_node('herbpy', anonymous=True)
+                logger.debug('Started ROS node with name "%s".', rospy.get_name())
+
+            import talker.msg
+            from actionlib import SimpleActionClient
+            self._say_action_client = SimpleActionClient('say', talker.msg.SayAction)
+
 
     def CloneBindings(self, parent):
         from prpy import Cloned
