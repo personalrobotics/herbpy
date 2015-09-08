@@ -229,4 +229,19 @@ class HERBRobot(Robot):
         self.left_arm.SetStiffness(stiffness)
         self.right_arm.SetStiffness(stiffness)
 
-
+    def Say(self, words, block=True):
+        """Speak 'words' using talker action service or espeak locally in simulation"""
+        if self.talker_simulated:
+            import subprocess
+            try:
+                proc = subprocess.Popen(['espeak', '-s', '160', '"{0}"'.format(words)])
+                if block:
+                    proc.wait()
+            except OSError as e:
+                logger.error('Unable to speak. Make sure "espeak" is installed locally.\n%s' % str(e))
+        else:
+            import talker.msg
+            goal = talker.msg.SayGoal(text=words)
+            self._say_action_client.send_goal(goal)
+            if block:
+                self._say_action_client.wait_for_result()
