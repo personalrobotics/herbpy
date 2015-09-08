@@ -20,9 +20,10 @@ def block_grasp(robot, block, manip=None):
             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     offset = 0.05 #vertical offset relative to block
-    alpha = 0.5 # orientation of end-effector relative to end-effector
+    alpha = 0.5 # orientation of end-effector relative to block
 
     block_in_world = block.GetTransform()
+    block_in_world[:3,:3] = numpy.eye(3) # ignore orientation
     ee_in_block = numpy.array([[numpy.cos(alpha), 0., -numpy.sin(alpha), 0.3*numpy.sin(alpha)+0.04],
                                [ 0., -1, 0, 0.],
                                [-numpy.sin(alpha), 0., -numpy.cos(alpha), 0.25+offset],
