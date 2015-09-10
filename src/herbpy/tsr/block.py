@@ -19,7 +19,7 @@ def block_grasp(robot, block, manip=None):
             manip.SetActive()
             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
-    offset = 0.03 #vertical offset relative to block
+    offset = 0.01 #vertical offset relative to block
     alpha = 0.5 # orientation of end-effector relative to block
 
     block_in_world = block.GetTransform()
@@ -29,7 +29,7 @@ def block_grasp(robot, block, manip=None):
                                [-numpy.sin(alpha), 0., -numpy.cos(alpha), 0.25+offset],
                                [ 0., 0., 0., 1.]])
     Bw = numpy.zeros((6,2))
-    Bw[5,:] = [-numpy.pi, numpy.pi]
+    Bw[5,:] = [-numpy.pi, numpy.pi-.0001]
         
     pose_tsr = prpy.tsr.TSR(T0_w = block_in_world,
                              Tw_e = ee_in_block,

@@ -46,7 +46,7 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
                 funnel_direction = -1.0*manip.GetEndEffectorTransform()[:3,0] #Negative x direction of end-effector
                 funnel_direction[2] = 0.0 # project onto xy plane
                 with prpy.viz.RenderVector(manip.GetEndEffectorTransform()[:3,3], funnel_direction, 0.1, robot.GetEnv()):
-                    manip.PlanToEndEffectorOffset(direction=funnel_direction, distance=0.04, max_distance=0.1, timelimit=5)
+                    manip.PlanToEndEffectorOffset(direction=funnel_direction, distance=0.06, max_distance=0.1, timelimit=5)
         
         # Close the finger to grab the block
         manip.hand.MoveHand(f3=1.7)
