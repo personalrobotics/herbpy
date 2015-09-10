@@ -31,16 +31,16 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
 
     # Move down until touching the table
     try:
-        #self.manip.MoveUntilTouch(direction=[0, 0, -1], distance=offset*2.)
-        table_aabb = ComputeEnabledAABB(table)
-        table_height = table_aabb.pos()[2] + table_aabb.extents()[2]
-        desired_ee_height = 0.204 + table_height
-        current_ee_height = manip.GetEndEffectorTransform()[2,3]
+        with prpy.rave.Disabled(table, padding_only=True):
+            table_aabb = ComputeEnabledAABB(table)
+            table_height = table_aabb.pos()[2] + table_aabb.extents()[2]
+            current_finger_height = manip.GetEndEffectorTransform()[2,3] - 0.14 # distance from finger tip to end-effector frame
+            min_distance = current_finger_height - table_height
+            print min_distance
         with prpy.rave.Disabled(table):
             with prpy.rave.Disabled(block):
-                manip.PlanToEndEffectorOffset(direction=[0, 0, -1], 
-                                              distance=current_ee_height - desired_ee_height, 
-                                              timelimit=5)
+                manip.MoveUntilTouch(direction=[0, 0, -1], distance=min_distance,
+                                          timelimit=5)
 
                 # Now move the hand parallel to the table to funnel the block into the fingers
                 funnel_direction = -1.0*manip.GetEndEffectorTransform()[:3,0] #Negative x direction of end-effector
@@ -62,7 +62,7 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
         # Now lift the block up off the table
         with prpy.rave.Disabled(table):
             with prpy.rave.Disabled(block):
-                manip.PlanToEndEffectorOffset(direction=[0, 0, 1], distance=0.2, timelimit=5)
+                manip.PlanToEndEffectorOffset(direction=[0, 0, 1], distance=0.05, timelimit=5)
             
         # OpenRAVE trick to hallucinate the block into the correct pose relative to the hand
         hand_pose = manip.GetEndEffectorTransform()

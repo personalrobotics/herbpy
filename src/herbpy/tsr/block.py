@@ -19,7 +19,7 @@ def block_grasp(robot, block, manip=None):
             manip.SetActive()
             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
-    offset = 0.05 #vertical offset relative to block
+    offset = 0.03 #vertical offset relative to block
     alpha = 0.5 # orientation of end-effector relative to block
 
     block_in_world = block.GetTransform()
@@ -104,7 +104,9 @@ def block_on_surface(robot, block, pose_tsr_chain, manip=None):
             manip.SetActive()
             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
-    ee_in_block = numpy.dot(numpy.linalg.inv(block.GetTransform()), manip.GetEndEffectorTransform())
+    block_pose = block.GetTransform()
+    block_pose[:3,:3] = numpy.eye(3) # ignore orientation
+    ee_in_block = numpy.dot(numpy.linalg.inv(block_pose), manip.GetEndEffectorTransform())
     Bw = numpy.zeros((6,2)) 
     Bw[2,:] = [0., 0.04]  # Allow some vertical movement
    
