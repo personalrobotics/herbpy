@@ -204,6 +204,26 @@ class HERBRobot(Robot):
         self.planner = parent.planner
         self.base_planner = parent.base_planner
 
+    def ExecuteTrajectory(self, traj, *args, **kwargs):
+        from prpy.exceptions import TrajectoryAborted
+
+        active_manipulators = self.GetTrajectoryManipulators(traj)
+
+        for manipulator in active_manipulators:
+            manipulator.ClearTrajectoryStatus()
+
+        value = super(HERBRobot, self).ExecuteTrajectory(traj, *args, **kwargs)
+
+        for manipulator in active_manipulators:
+            status = manipulator.GetTrajectoryStatus()
+            if status == 'aborted':
+                raise TrajectoryAborted()
+
+        return value
+
+    # Inherit docstring from the parent class.
+    ExecuteTrajectory.__doc__ = Robot.ExecuteTrajectory.__doc__
+
     def SetStiffness(self, stiffness):
         """Set the stiffness of HERB's arms and head.
         Zero is gravity compensation, one is position control. Stifness values
