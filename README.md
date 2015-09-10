@@ -9,16 +9,14 @@ a bimanual mobile manipulator designed and built by the [Personal Robotics Lab]
 
 ## Installation ##
 The following rosinstall can be used to get the minimum dependencies required
-to use HerbPy in a catkin workspace:
+to use HerbPy in simulation:
+```shell
+$ wstool merge https://raw.githubusercontent.com/personalrobotics/pr-rosinstalls/master/herb-minimal-sim.rosinstall
 ```
-- git: {local-name: herbpy, uri: 'git@github.com:personalrobotics/herbpy'}
-- git: {local-name: prpy, uri: 'git@github.com:personalrobotics/prpy'}
-- git: {local-name: herb_description, uri: 'git@github.com:personalrobotics/herb_description'}
-- git: {local-name: openrave_catkin, uri: 'git@github.com:personalrobotics/openrave_catkin'}
-- git: {local-name: or_parabolicsmoother, uri: 'git@github.com:personalrobotics/or_parabolicsmoother'}
-- git: {local-name: or_trajopt, uri: 'git@github.com:personalrobotics/or_trajopt'}
-- git: {local-name: or_urdf, uri: 'git@github.com:personalrobotics/or_urdf'}
-- git: {local-name: comps, uri: 'git@github.com:personalrobotics/comps'}
+If you plan to connect to the real robot, then you will need a larger set of
+dependencies:
+```shell
+$ wstool merge https://raw.githubusercontent.com/personalrobotics/pr-rosinstalls/master/herb-minimal-remote-op.rosinstall
 ```
 
 ## Running HerbPy ##
