@@ -323,3 +323,27 @@ def MiddleFinger(robot, manip=None):
     else: 
         raise prpy.exceptions.PrPyException('The middle finger is only defined \
                                 for the left and right arm.')
+
+@ActionMethod
+def Wave(robot):
+    """
+    @param robot The robot waving with their right arm
+    """
+
+    import prpy.rave
+    env = robot.GetEnv()
+
+    manip = robot.right_arm
+    manip.SetActive()
+    print "Setting right arm as the active manipulator"
+
+    traj0 = prpy.rave.load_trajectory(env, 'herbpy/config/waveTrajs/wave0.xml')
+    traj1 = prpy.rave.load_trajectory(env, 'herbpy/config/waveTrajs/wave1.xml')
+    traj2 = prpy.rave.load_trajectory(env, 'herbpy/config/waveTrajs/wave2.xml')
+    traj3 = prpy.rave.load_trajectory(env, 'herbpy/config/waveTrajs/wave3.xml')
+
+    robot.HaltHand(manip=manip)
+    robot.ExecuteTrajectory(traj0)
+    robot.ExecuteTrajectory(traj1)
+    robot.ExecuteTrajectory(traj2)
+    robot.ExecuteTrajectory(traj3)
