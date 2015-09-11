@@ -330,17 +330,23 @@ def Wave(robot):
     @param robot The robot waving with their right arm
     """
 
-    import prpy.rave
+    from prpy.rave import load_trajectory
+    from prpy.util import FindCatkinResource
     env = robot.GetEnv()
 
     manip = robot.right_arm
     manip.SetActive()
     print "Setting right arm as the active manipulator"
 
-    traj0 = prpy.rave.load_trajectory(env, 'herbpy/config/waveTrajs/wave0.xml')
-    traj1 = prpy.rave.load_trajectory(env, 'herbpy/config/waveTrajs/wave1.xml')
-    traj2 = prpy.rave.load_trajectory(env, 'herbpy/config/waveTrajs/wave2.xml')
-    traj3 = prpy.rave.load_trajectory(env, 'herbpy/config/waveTrajs/wave3.xml')
+    wave_path = FindCatkinResource('herbpy', 'config/waveTrajs/')
+    try:
+        traj0 = load_trajectory(env, wave_path+'wave0.xml')
+        traj1 = load_trajectory(env, wave_path+'wave1.xml')
+        traj2 = load_trajectory(env, wave_path+'wave2.xml')
+        traj3 = load_trajectory(env, wave_path+'wave3.xml')
+    except IOError as e:
+        raise ValueError('Failed loading wave trajectory from "{:s}".'.format(
+            wave_path))
 
     robot.HaltHand(manip=manip)
     robot.ExecuteTrajectory(traj0)
