@@ -106,7 +106,7 @@ def PlaceBlock(robot, block, on_obj, center=True, manip=None, **kw_args):
                                       manip=manip)
 
     # Plan there
-    with prpy.viz.RenderTSRList(place_tsr_list, robot.GetEnv()):
+    with prpy.viz.RenderTSRList(object_place_list, robot.GetEnv()):
         manip.PlanToTSR(place_tsr_list)
 
     # Open the hand and drop the block

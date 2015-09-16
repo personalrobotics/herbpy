@@ -2,7 +2,7 @@ import numpy, prpy
 import prpy.tsr
 
 @prpy.tsr.tsrlibrary.TSRFactory('herb', 'block_bin', 'point_on')
-def point_on(robot, block_bin, manip=None, padding=0.0):
+def point_on(robot, block_bin, manip=None, padding=0.04):
     '''
     This creates a TSR that allows you to sample poses on the tray.
     The samples from this TSR should be used to find points for object placement.
@@ -32,12 +32,12 @@ def point_on(robot, block_bin, manip=None, padding=0.0):
 
     Bw = numpy.zeros((6,2))
 
-    xdim = max(0.10 - padding, 0.0)
-    ydim = max(0.15 - padding, 0.0)
+    xdim = max(0.085 - padding, 0.0)
+    ydim = max(0.135 - padding, 0.0)
     Bw[0,:] = [-xdim, xdim ] # move along x and y directions to get any point on tray
     Bw[1,:] = [-ydim, ydim]
     Bw[2,:] = [-0.02, 0.04] # verticle movement
-    Bw[5,:] = [-numpy.pi, numpy.pi] # allow any rotation around z - which is the axis normal to the tray top
+    Bw[5,:] = [-numpy.pi, numpy.pi-.0001] # allow any rotation around z - which is the axis normal to the tray top
 
     
     manip_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
