@@ -30,7 +30,6 @@ def Point(robot, focus, manip=None, render=False):
         focus_trans = numpy.eye(4)
         focus_trans[0:3, 3] = focus
         goal_name = None
-    #Possible feature: if many objects then pass to multipoint
     else:
         raise prpy.exceptions.PrPyException('Focus of the point is an \
                 unknown object')
