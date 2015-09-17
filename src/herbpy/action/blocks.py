@@ -5,8 +5,10 @@ from prpy.util import ComputeEnabledAABB
 
 logger = logging.getLogger('herbpy')
 
-@ActionMethod
-def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
+class NoTSRException(Exception):
+    pass
+
+def _GrabBlock(robot, blocks, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
               **kw_args):
     """
     @param robot The robot performing the grasp
@@ -19,6 +21,7 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
     from prpy.viz import RenderTSRList, RenderVector
 
     env = robot.GetEnv()
+    block = None
 
     if manip is None:
         manip = robot.GetActiveManipulator()
@@ -26,16 +29,28 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
     # First move the hand to the right preshape
     manip.hand.MoveHand(*preshape)
 
-    # Get a TSR to move near the block.
-    block_tsr_list = robot.tsrlibrary(block, 'grasp', manip=manip)
+    block_tsr_list = []
+    for b in blocks:
+        # Get a TSR to move near the block.
+        tsr_list = robot.tsrlibrary(b, 'grasp', manip=manip)
+        block_tsr_list += tsr_list
     
     # Plan to a pose above the block
     with RenderTSRList(block_tsr_list, robot.GetEnv()):
         with Disabled(table, padding_only=True):
             manip.PlanToTSR(block_tsr_list, execute=True)
 
+    with manip.GetRobot().GetEnv():
+        ee_pose = manip.GetEndEffectorTransform()
+    
+    block_idxs = [ idx for idx, tsr_chain in enumerate(block_tsr_list)
+                  if tsr_chain.contains(ee_pose) ]
+    if len(block_idxs) == 0:
+        raise NoTSRException("Failed to find the TSR PlanToTSR planned to")
+    block = blocks[block_idxs[0]]
+    
     try:
-        with AllDisabled(env, [table, block], padding_only=True):
+        with AllDisabled(env, [table] + blocks, padding_only=True):
             # Move down until touching the table
             with env:
                 start_point = manip.GetEndEffectorTransform()[0:3, 3]
@@ -43,13 +58,13 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
                 table_height = table_aabb.pos()[2] + table_aabb.extents()[2]
                 # 0.14 is the distance from finger tip to end-effector frame
                 current_finger_height = manip.GetEndEffectorTransform()[2,3] - 0.14
-                min_distance = 0.04# current_finger_height - table_height
+                min_distance = 0.10# current_finger_height - table_height
 
             down_direction = [0., 0., -1.]
             with RenderVector(start_point, down_direction, min_distance, env):
                 manip.MoveUntilTouch(direction=down_direction, timelimit=5,
                     distance=min_distance, max_distance=min_distance + 0.05,
-                    ignore_collisions=[block, table])
+                    ignore_collisions=blocks + [table])
 
             # Move parallel to the table to funnel the block into the fingers
             # by projecting the -x direction of end-effector onto the xy-plane.
@@ -60,7 +75,7 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
 
             # TODO: We should only have to disable the block for this. Why does
             # this fail if we do not disable the table?
-            with AllDisabled(env, [block, table]):
+            with AllDisabled(env, blocks + [table]):
                 with RenderVector(start_point, funnel_direction, 0.1, env):
                     manip.PlanToEndEffectorOffset(direction=funnel_direction,
                                                   distance=0.08, max_distance=0.12, 
@@ -79,7 +94,7 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
             block_relative = numpy.dot(numpy.linalg.inv(hand_pose), block_pose)
         
         # Now lift the block up off the table
-        with AllDisabled(env, [block, table]):
+        with AllDisabled(env, blocks + [table]):
             manip.PlanToEndEffectorOffset(direction=[0, 0, 1], distance=0.05, 
                                           timelimit=5, execute=True)
             
@@ -93,6 +108,30 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
     except PlanningError as e:
         logger.error('Failed to complete block grasp')
         raise
+    finally:
+        return block
+
+@ActionMethod
+def GrabBlocks(robot, blocks, table, **kw_args):
+    """
+    @param robot The robot performing the grasp
+    @param block The block to grab
+    @param table The table, or object, the block is resting on
+    @param manip The manipulator to use to grab the block
+      (if None active manipulator is used)
+    """
+    return _GrabBlock(robot, blocks, table, **kw_args)
+
+@ActionMethod
+def GrabBlock(robot, block, table, **kw_args):
+    """
+    @param robot The robot performing the grasp
+    @param block The block to grab
+    @param table The table, or object, the block is resting on
+    @param manip The manipulator to use to grab the block
+      (if None active manipulator is used)
+    """
+    return _GrabBlock(robot, [block], table, **kw_args)
 
 @ActionMethod
 def PlaceBlock(robot, block, on_obj, center=True, manip=None, **kw_args):

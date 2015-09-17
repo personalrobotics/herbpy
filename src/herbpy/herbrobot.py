@@ -130,7 +130,7 @@ class HERBRobot(Robot):
             self.snap_planner,
             # Then, try a few simple (and fast!) heuristics.
             self.vectorfield_planner,
-            self.greedyik_planner,
+            #self.greedyik_planner,
             # Next, try a trajectory optimizer.
             self.trajopt_planner or self.chomp_planner
         )
@@ -197,7 +197,7 @@ class HERBRobot(Robot):
             # Initialize herbpy ROS Node
             import rospy
             if not rospy.core.is_initialized():
-                rospy.init_node('herbpy', anonymous=True)
+#                rospy.init_node('herbpy', anonymous=True)
                 logger.debug('Started ROS node with name "%s".', rospy.get_name())
 
             import talker.msg

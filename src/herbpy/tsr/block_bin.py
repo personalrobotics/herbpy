@@ -28,7 +28,7 @@ def point_on(robot, block_bin, manip=None, padding=0.04):
     T0_w = block_bin.GetTransform() # Coordinate system on bottom of bin
 
     Tw_e = numpy.eye(4)
-    Tw_e[2,3] = 0.15 # set the object on top of the bin - bin is 13cm high
+    Tw_e[2,3] = 0.17 # set the object on top of the bin - bin is 13cm high
 
     Bw = numpy.zeros((6,2))
 
