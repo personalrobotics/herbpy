@@ -32,7 +32,7 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
     # Plan to a pose above the block
     with RenderTSRList(block_tsr_list, robot.GetEnv()):
         with Disabled(table, padding_only=True):
-            manip.PlanToTSR(block_tsr_list)
+            manip.PlanToTSR(block_tsr_list, execute=True)
 
     try:
         with AllDisabled(env, [table, block], padding_only=True):
@@ -43,7 +43,7 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
                 table_height = table_aabb.pos()[2] + table_aabb.extents()[2]
                 # 0.14 is the distance from finger tip to end-effector frame
                 current_finger_height = manip.GetEndEffectorTransform()[2,3] - 0.14
-                min_distance = current_finger_height - table_height
+                min_distance = 0.04# current_finger_height - table_height
 
             down_direction = [0., 0., -1.]
             with RenderVector(start_point, down_direction, min_distance, env):
@@ -63,7 +63,8 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
             with AllDisabled(env, [block, table]):
                 with RenderVector(start_point, funnel_direction, 0.1, env):
                     manip.PlanToEndEffectorOffset(direction=funnel_direction,
-                        distance=0.06, max_distance=0.1, timelimit=5.)
+                                                  distance=0.08, max_distance=0.12, 
+                                                  timelimit=5., execute=True)
         
         # Close the finger to grab the block
         manip.hand.MoveHand(f3=1.7)
@@ -79,7 +80,8 @@ def GrabBlock(robot, block, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
         
         # Now lift the block up off the table
         with AllDisabled(env, [block, table]):
-            manip.PlanToEndEffectorOffset(direction=[0, 0, 1], distance=0.05, timelimit=5)
+            manip.PlanToEndEffectorOffset(direction=[0, 0, 1], distance=0.05, 
+                                          timelimit=5, execute=True)
             
         # OpenRAVE trick to hallucinate the block into the correct pose relative to the hand
         with env:
@@ -107,7 +109,7 @@ def PlaceBlock(robot, block, on_obj, center=True, manip=None, **kw_args):
 
     # Plan there
     with prpy.viz.RenderTSRList(object_place_list, robot.GetEnv()):
-        manip.PlanToTSR(place_tsr_list)
+        manip.PlanToTSR(place_tsr_list, execute=True)
 
     # Open the hand and drop the block
     manip.hand.MoveHand(f3=0.2)
