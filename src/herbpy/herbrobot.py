@@ -173,9 +173,22 @@ class HERBRobot(Robot):
         import herbpy.action
         import herbpy.tsr
 
+
         # Setting necessary sim flags
         self.talker_simulated = talker_sim
         self.segway_sim = segway_sim
+
+        if not self.talker_simulated:
+            # Initialize herbpy ROS Node
+            import rospy
+            if not rospy.core.is_initialized():
+                rospy.init_node('herbpy', anonymous=True)
+                logger.debug('Started ROS node with name "%s".', rospy.get_name())
+
+            import talker.msg
+            from actionlib import SimpleActionClient
+            self._say_action_client = SimpleActionClient('say', talker.msg.SayAction)
+
 
     def CloneBindings(self, parent):
         from prpy import Cloned
@@ -190,6 +203,26 @@ class HERBRobot(Robot):
         self.manipulators = [ self.left_arm, self.right_arm, self.head ]
         self.planner = parent.planner
         self.base_planner = parent.base_planner
+
+    def ExecuteTrajectory(self, traj, *args, **kwargs):
+        from prpy.exceptions import TrajectoryAborted
+
+        active_manipulators = self.GetTrajectoryManipulators(traj)
+
+        for manipulator in active_manipulators:
+            manipulator.ClearTrajectoryStatus()
+
+        value = super(HERBRobot, self).ExecuteTrajectory(traj, *args, **kwargs)
+
+        for manipulator in active_manipulators:
+            status = manipulator.GetTrajectoryStatus()
+            if status == 'aborted':
+                raise TrajectoryAborted()
+
+        return value
+
+    # Inherit docstring from the parent class.
+    ExecuteTrajectory.__doc__ = Robot.ExecuteTrajectory.__doc__
 
     def SetStiffness(self, stiffness):
         """Set the stiffness of HERB's arms and head.
@@ -229,3 +262,20 @@ class HERBRobot(Robot):
         except Exception, e:
             logger.error('Detection failed update: %s' % str(e))
             raise
+
+    def Say(self, words, block=True):
+        """Speak 'words' using talker action service or espeak locally in simulation"""
+        if self.talker_simulated:
+            import subprocess
+            try:
+                proc = subprocess.Popen(['espeak', '-s', '160', '"{0}"'.format(words)])
+                if block:
+                    proc.wait()
+            except OSError as e:
+                logger.error('Unable to speak. Make sure "espeak" is installed locally.\n%s' % str(e))
+        else:
+            import talker.msg
+            goal = talker.msg.SayGoal(text=words)
+            self._say_action_client.send_goal(goal)
+            if block:
+                self._say_action_client.wait_for_result()

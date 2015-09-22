@@ -65,7 +65,8 @@ def HerbGrasp(robot, obj, push_distance=None, manip=None,
     @param render Render tsr samples and push direction vectors during planning
     """
     if manip is None:
-        manip = robot.GetActiveManipulator()
+        with robot.GetEnv():
+            manip = robot.GetActiveManipulator()
 
     # Move the hand to the grasp preshape
     manip.hand.MoveHand(*preshape)
@@ -112,9 +113,10 @@ def HerbGrasp(robot, obj, push_distance=None, manip=None,
         with prpy.viz.RenderVector(ee_in_world[:3,3], push_direction,
                                    push_distance, robot.GetEnv(), render=render):
             try:
-                manip.PlanToEndEffectorOffset(direction = push_direction,
-                                              distance = push_distance,
-                                              **kw_args)
+                with prpy.rave.Disabled(obj):
+                    manip.PlanToEndEffectorOffset(direction = push_direction,
+                                                  distance = push_distance,
+                                                  **kw_args)
             except PlanningError, e:
                 if push_required:
                     raise
@@ -132,3 +134,84 @@ def HerbGrasp(robot, obj, push_distance=None, manip=None,
         robot.SetActiveManipulator(manip)
         robot.Grab(obj)
 
+@ActionMethod
+def Lift(robot, obj, distance=0.05, manip=None, render=True, **kw_args):
+    """
+    @param robot The robot performing the push grasp
+    @param obj The object to lift
+    @param distance The distance to lift the cup
+    @param manip The manipulator to perform the grasp with 
+       (if None active manipulator is used)
+    @param render Render tsr samples and push direction vectors during planning
+    """
+    if manip is None:
+        with robot.GetEnv():
+            manip = robot.GetActiveManipulator()
+
+    # Check for collision and disable anything in collision
+    creport = openravepy.CollisionReport()    
+    disabled_objects = []
+
+    # Resolve inconsistencies in grabbed objects
+    if robot.CheckSelfCollision():
+        grabbed_objs = robot.GetGrabbed()
+        for obj in grabbed_objs:
+            robot.Release(obj)
+        for obj in grabbed_objs:
+            robot.Grab(obj)
+
+    # Create list of any current collisions so those can be disabled
+    while robot.GetEnv().CheckCollision(robot, creport):
+        collision_obj = creport.plink2.GetParent()
+        disabled_objects.append(collision_obj)
+        collision_obj.Enable(False)
+        
+    for obj in disabled_objects:
+        obj.Enable(True)
+
+    # Perform the lift
+    with prpy.rave.AllDisabled(robot.GetEnv(), disabled_objects):
+        lift_direction = [0., 0., 1.]
+        lift_distance = distance
+        ee_in_world = manip.GetEndEffectorTransform()
+        with prpy.viz.RenderVector(ee_in_world[:3,3], lift_direction,
+                                   distance, robot.GetEnv(), render=render):
+            manip.PlanToEndEffectorOffset(direction=lift_direction,
+                                          distance=lift_distance,
+                                          **kw_args)
+
+@ActionMethod
+def Place(robot, obj, on_obj, manip=None, render=True, **kw_args):
+    """
+    Place an object onto another object
+    This assumes the 'point_on' tsr is defined for the on_obj and
+    the 'place' tsr is defined for obj
+    @param robot The robot performing the push grasp
+    @param obj The object to place
+    @param on_obj The object to place obj on
+    @param manip The manipulator to perform the grasp with 
+       (if None active manipulator is used)
+    @param render Render tsr samples and push direction vectors during planning
+    """
+
+    if manip is None:
+        with robot.GetEnv():
+            manip = robot.GetActiveManipulator()
+
+    # Get a tsr to sample places to put the glass
+    obj_extents = obj.ComputeAABB().extents()
+    obj_radius = max(obj_extents[0], obj_extents[1])
+    tray_top_tsr = robot.tsrlibrary(on_obj, 'point_on', padding=obj_radius)
+
+    #  Now use this to get a tsr for sampling ee_poses
+    place_tsr = robot.tsrlibrary(obj, 'place', pose_tsr_chain = tray_top_tsr[0])
+
+    # Plan to the grasp
+    with prpy.viz.RenderTSRList(place_tsr, robot.GetEnv(), render=render):
+        manip.PlanToTSR(place_tsr)
+
+    # Open the hand
+    manip.hand.OpenHand()
+
+    # Release the object
+    robot.Release(obj)

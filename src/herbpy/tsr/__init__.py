@@ -6,3 +6,4 @@ from bowl import *
 from block import *
 from pitcher import *
 from tray import *
+from pop_tarts import *
