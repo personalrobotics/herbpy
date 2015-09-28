@@ -115,7 +115,7 @@ def _glass_grasp(robot, glass, manip=None, push_distance=0.0, **kw_args):
 
     Bw = numpy.zeros((6,2))
     Bw[2,:] = [0.0, 0.02]  # Allow a little vertical movement
-    Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
+    Bw[5,:] = [-numpy.pi, numpy.pi-0.0001]  # Allow any orientation
     
     grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
     grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
