@@ -223,8 +223,8 @@ def pull_tray(robot, tray, manip=None, max_distance=0.0, min_distance=0.0,
 
     # Convert the position and angular tolerances from end-effector frame
     #  to world frame
-    position_tolerance = numpy.dot(ee_in_w[:3,:3], position_tolerance)
-    angular_tolerance = numpy.dot(ee_in_w[:3,:3], angular_tolerance)
+    position_tolerance = abs(numpy.dot(ee_in_w[:3,:3], position_tolerance))
+    angular_tolerance = abs(numpy.dot(ee_in_w[:3,:3], angular_tolerance))
 
     # Move the w frame the appropriate distance along the pull direction
     end_in_w = numpy.eye(4)
