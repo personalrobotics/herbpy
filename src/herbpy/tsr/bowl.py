@@ -16,7 +16,7 @@ def bowl_grasp(robot, bowl, manip=None):
         else:
             with robot.CreateRobotStateSaver(
                     Robot.SaveParameters.ActiveManipulator):
-                robot.SetActiveManipulator(manip)
+                manip.GetRobot().SetActiveManipulator(manip)
                 manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
         T0_w = bowl.GetTransform()
