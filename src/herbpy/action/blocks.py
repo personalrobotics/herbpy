@@ -134,9 +134,16 @@ def GrabBlock(robot, block, table, **kw_args):
     return _GrabBlock(robot, [block], table, **kw_args)
 
 @ActionMethod
-def PlaceBlock(robot, block, on_obj, center=True, manip=None, **kw_args):
+def PlaceBlock(robot, block, on_obj, manip=None, **kw_args):
     """
-    Place a block on an object
+    Place a block on an object. This function assumes the block
+    is grabbed by the robot when the method is called.
+    @param robot The robot performing the block placement
+    @param block The block to be placed
+    @param on_obj The object to place the block on, this object
+    must have a 'point_tsr defined
+    @param manip The manipulator used to perform the placement
+    If none, the active manipulator is used.
     """
     env = robot.GetEnv()
 
