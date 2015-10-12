@@ -8,7 +8,7 @@ logger = logging.getLogger('herbpy')
 class NoTSRException(Exception):
     pass
 
-def _GrabBlock(robot, blocks, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
+def _GrabBlock(robot, blocks, table, manip=None, preshape=None,
               **kw_args):
     """
     @param robot The robot performing the grasp
@@ -16,6 +16,8 @@ def _GrabBlock(robot, blocks, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
     @param table The table, or object, the block is resting on
     @param manip The manipulator to use to grab the block
       (if None active manipulator is used)
+    @param preshape The shape (dof_values) to move the hand to before
+      executing the grab
     """
     from prpy.rave import AllDisabled, Disabled
     from prpy.viz import RenderTSRList, RenderVector
@@ -24,8 +26,12 @@ def _GrabBlock(robot, blocks, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
     block = None
 
     if manip is None:
-        manip = robot.GetActiveManipulator()
+        with env:
+            manip = robot.GetActiveManipulator()
     
+    if preshape is None:
+        preshape=[1.7, 1.7, 0.2, 2.45]
+
     # First move the hand to the right preshape
     manip.hand.MoveHand(*preshape)
 
@@ -104,12 +110,10 @@ def _GrabBlock(robot, blocks, table, manip=None, preshape=[1.7, 1.7, 0.2, 2.45],
             block_pose = numpy.dot(hand_pose, block_relative)
             block.SetTransform(block_pose)
             manip.GetRobot().Grab(block)
-
+        return block
     except PlanningError as e:
         logger.error('Failed to complete block grasp')
         raise
-    finally:
-        return block
 
 @ActionMethod
 def GrabBlocks(robot, blocks, table, **kw_args):
