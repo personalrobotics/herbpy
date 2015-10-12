@@ -95,4 +95,4 @@ def pitcher_pour(robot, pitcher, min_tilt = 1.4, max_tilt = 1.57, manip=None, gr
                                   constrain = False,
                                   TSRs = [tsr_0, tsr_1_goal])
 
-    return [pour_chain, pour_goal]
+    return [pour_chain, pour_goal], min_tilt, max_tilt

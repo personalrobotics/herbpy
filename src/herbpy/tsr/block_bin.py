@@ -37,7 +37,7 @@ def point_on(robot, block_bin, manip=None, padding=0.04):
     Bw[0,:] = [-xdim, xdim ] # move along x and y directions to get any point on tray
     Bw[1,:] = [-ydim, ydim]
     Bw[2,:] = [-0.02, 0.04] # verticle movement
-    Bw[5,:] = [-numpy.pi, numpy.pi-.0001] # allow any rotation around z - which is the axis normal to the tray top
+    Bw[5,:] = [-numpy.pi, numpy.pi] # allow any rotation around z - which is the axis normal to the tray top
 
     
     manip_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)

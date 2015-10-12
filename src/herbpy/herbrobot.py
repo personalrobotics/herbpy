@@ -197,7 +197,6 @@ class HERBRobot(Robot):
             # Initialize herbpy ROS Node
             import rospy
             if not rospy.core.is_initialized():
-#                rospy.init_node('herbpy', anonymous=True)
                 logger.debug('Started ROS node with name "%s".', rospy.get_name())
 
             import talker.msg

@@ -29,7 +29,7 @@ def block_grasp(robot, block, manip=None):
                                [-numpy.sin(alpha), 0., -numpy.cos(alpha), 0.25+offset],
                                [ 0., 0., 0., 1.]])
     Bw = numpy.zeros((6,2))
-    Bw[5,:] = [-numpy.pi, numpy.pi-.0001]
+    Bw[5,:] = [-numpy.pi, numpy.pi]
         
     pose_tsr = prpy.tsr.TSR(T0_w = block_in_world,
                              Tw_e = ee_in_block,
@@ -112,7 +112,7 @@ def block_on_surface(robot, block, pose_tsr_chain, manip=None):
    
     for tsr in pose_tsr_chain.TSRs:
         if tsr.manipindex != manip_idx:
-            raise Exception('pose_tsr_chain defined for a different manipulator.')
+            raise ValueError('pose_tsr_chain defined for a different manipulator.')
 
     grasp_tsr = prpy.tsr.TSR(Tw_e = ee_in_block, Bw = Bw, manip = manip_idx)
     all_tsrs = list(pose_tsr_chain.TSRs) + [grasp_tsr]
