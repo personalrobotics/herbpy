@@ -41,7 +41,7 @@ def point_on(robot, tray, manip=None, padding=0.0, handle_padding=True):
     Bw[0,:] = [-xdim, xdim ] # move along x and y directions to get any point on tray
     Bw[1,:] = [-ydim, ydim]
     Bw[2,:] = [-0.02, 0.04] # verticle movement
-    Bw[5,:] = [-numpy.pi, numpy.pi] # allow any rotation around z - which is the axis normal to the tray top
+    Bw[5,:] = [-numpy.pi, numpy.pi-.0001] # allow any rotation around z - which is the axis normal to the tray top
 
     
     tray_top_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
@@ -86,7 +86,7 @@ def handle_grasp(robot, tray, manip=None, handle=None):
                                    [0.,  0.,  0., 1.]])
 
     Bw = numpy.zeros((6,2))
-    epsilon = 0.03
+    epsilon = 0.05
     Bw[0,:] = [0., epsilon] # Move laterally along handle
     Bw[2,:] = [-0.01, 0.01] # Move up or down a little bit
     Bw[5,:] = [-5.*numpy.pi/180., 5.*numpy.pi/180.] # Allow 5 degrees of yaw
@@ -95,10 +95,11 @@ def handle_grasp(robot, tray, manip=None, handle=None):
     chains = []
     best_dist = float('inf')
     for handle_in_tray in handle_poses:
-        dist = numpy.linalg.norm(handle_in_tray[:2,3] - manip.GetEndEffectorTransform()[:2,3])
+        handle_in_world = numpy.dot(tray_in_world, handle_in_tray)
+        dist = numpy.linalg.norm(handle_in_world[:2,3] - manip.GetEndEffectorTransform()[:2,3])
+        print 'Dist: ', dist, 'best dist: ', best_dist
         if handle == 'closest' and dist > best_dist:
             continue
-        handle_in_world = numpy.dot(tray_in_world, handle_in_tray)
         tray_grasp_tsr = prpy.tsr.TSR(T0_w = handle_in_world, 
                                       Tw_e = grasp_in_handle, 
                                       Bw = Bw, 
@@ -110,6 +111,7 @@ def handle_grasp(robot, tray, manip=None, handle=None):
         if handle == 'closest':
             chains = []
         chains.append(tray_grasp_chain)
+        best_dist = dist
     return chains
 
 @prpy.tsr.tsrlibrary.TSRFactory('herb', 'wicker_tray', 'lift')

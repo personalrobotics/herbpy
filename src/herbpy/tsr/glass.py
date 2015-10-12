@@ -14,8 +14,6 @@ def glass_lift(robot, glass, manip=None, distance=0.1):
     @param distance The distance to lift the glass
     '''
 
-    print 'distance = %0.2f' % distance
-
     if manip is None:
         manip = robot.GetActiveManipulator()
         manip_idx = robot.GetActiveManipulatorIndex()
