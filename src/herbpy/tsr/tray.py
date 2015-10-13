@@ -65,6 +65,7 @@ def handle_grasp(robot, tray, manip=None, handle=None):
         if manip is None:
             manip_idx = robot.GetActiveManipulatorIndex()
         else:
+            from openravepy import Robot
             with manip.GetRobot().CreateRobotStateSaver(
                     Robot.SaveParameters.ActiveManipulator):
                 manip.GetRobot().SetActiveManipulator(manip)
