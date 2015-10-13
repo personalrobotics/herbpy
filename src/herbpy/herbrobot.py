@@ -196,8 +196,8 @@ class HERBRobot(Robot):
                                                 detection_frame='head/kinect2_rgb_optical_frame',
                                                 destination_frame='map')
             except IOError as e:
-                 logger.warning('Failed to find apriltags resource path. ' \
-                                'pr-ordata package cannot bee found. ' \
+                 logger.warning('Failed to find required resource path. ' \
+                                'pr-ordata package cannot be found. ' \
                                 'Perception detector will not be loaded.')
 
         if not self.talker_simulated:
