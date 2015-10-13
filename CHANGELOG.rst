@@ -2,8 +2,8 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.8.0 (2015-10-12)
+------------------
 * Changes for the block sorting demo (`#48 <https://github.com/personalrobotics/herbpy/issues/48>`_)
 * Changes to table clearing TSRs
 * Added perception pipeline
