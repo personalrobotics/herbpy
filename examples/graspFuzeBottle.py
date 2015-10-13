@@ -20,6 +20,7 @@ print objects_path # for me this is '/home/eashapir/ros-hydro/src/pr-ordata/data
 # ===========================
 
 env, robot = herbpy.initialize(sim=True, attach_viewer='rviz')
+print robot
 
 # add a table to the environment
 table_file = os.path.join(objects_path, 'table.kinbody.xml')

@@ -107,8 +107,8 @@ class HERBRobot(Robot):
         # Trajectory optimizer.
         try:
             from or_trajopt import TrajoptPlanner
-
-            self.trajopt_planner = TrajoptPlanner()
+            #self.trajopt_planner = TrajoptPlanner()  *********************************CHANGE IN THE CODE DEU TO TRAJOPT BUG
+            self.trajopt_planner = None
         except ImportError:
             self.trajopt_planner = None
             logger.warning('Failed creating TrajoptPlanner. Is the or_trajopt'
@@ -259,6 +259,30 @@ class HERBRobot(Robot):
             logger.info('Waiting to detect objects...')
             detector.Update()
 
+        except Exception, e:
+            logger.error('Detection failed update: %s' % str(e))
+            raise
+        
+    def DetectHuman(self,env):
+        """Use the kinbody detector to detect objects and add
+        them to the environment
+        """
+        import or_skeletons.load_skeletons as sk
+        import rospy
+        from tf import TransformListener
+      
+        humans = []
+
+        try:        
+            logger.info('Humans_tracking')
+            rospy.init_node('humans')
+            tf = TransformListener()      
+            
+            while not rospy.is_shutdown():
+                sk.addRemoveHumans(tf, humans, env)
+                for human in humans:
+                    sk.human.update(tf)       
+                    logger.info('Updating...')
         except Exception, e:
             logger.error('Detection failed update: %s' % str(e))
             raise
