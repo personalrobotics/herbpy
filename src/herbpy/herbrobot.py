@@ -179,20 +179,27 @@ class HERBRobot(Robot):
         self.segway_sim = segway_sim
 
         # Set up perception
+        self.detector=None
         if perception_sim:
             from prpy.perception import SimulatedPerceptionModule
             self.detector = SimulatedPerceptionModule()
         else:
             from prpy.perception import ApriltagsModule
-            kinbody_path = prpy.util.FindCatkinResource('pr_ordata',
-                                                        'data/objects')
-            marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
-                                                            'data/objects/tag_data.json')
-            self.detector = ApriltagsModule(marker_topic='/apriltags_kinect2/marker_array',
-                                            marker_data_path=marker_data_path,
-                                            kinbody_path=kinbody_path,
-                                            detection_frame='head/kinect2_rgb_optical_frame',
-                                            destination_frame='map')
+            try:
+                kinbody_path = prpy.util.FindCatkinResource('pr_ordata',
+                                                            'data/objects')
+                marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
+                                                                'data/objects/tag_data.json')
+                self.detector = ApriltagsModule(marker_topic='/apriltags_kinect2/marker_array',
+                                                marker_data_path=marker_data_path,
+                                                kinbody_path=kinbody_path,
+                                                detection_frame='head/kinect2_rgb_optical_frame',
+                                                destination_frame='map')
+            except IOError as e:
+                 logger.warning('Failed to find apriltags resource path. ' \
+                                'pr-ordata package cannot bee found. ' \
+                                'Perception detector will not be loaded.')
+
         if not self.talker_simulated:
             # Initialize herbpy ROS Node
             import rospy
