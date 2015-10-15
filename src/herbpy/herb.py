@@ -78,7 +78,7 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
     # Default arguments.
     keys = [ 'left_arm_sim', 'left_hand_sim', 'left_ft_sim',
              'right_arm_sim', 'right_hand_sim', 'right_ft_sim',
-             'head_sim', 'talker_sim', 'segway_sim' ]
+             'head_sim', 'talker_sim', 'segway_sim', 'perception_sim' ]
     for key in keys:
         if key not in kw_args:
             kw_args[key] = sim
