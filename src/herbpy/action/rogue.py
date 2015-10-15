@@ -262,39 +262,6 @@ def HaltHand(robot, manip=None):
                                                 for the left and right arm.')
 
 @ActionMethod
-def HighFive(robot, manip=None, wait=7):
-    """
-    @param robot The robot being used to high five
-    @param manip The manipulator being used to high five
-    @param wait The time to hold the hand up after feeling the 
-                force before the hand retracts
-    """
-    if manip is None:
-        manip = robot.GetActiveManipulator()
-        
-    if manip.GetName() == 'left':
-        hand = robot.left_hand
-    elif manip.GetName() == 'right':
-        hand = robot.right_hand
-    else:
-        prpy.exceptions.PrPyException('High Fiving is only defined \
-                for the left and right arm')
-
-    before = manip.GetDOFValues()
-    hand.TareForceTorqueSensor()
-
-    #Move into canonical high fiving position
-    HaltHand(robot, manip)
-
-    #TODO wait in till robot.right_hand.GetForceTorque() reads something
-
-    #After having felt force, wait a few seconds 
-    time.sleep(wait)
-
-    #Retract the arm to where it was before the interaction
-    manip.PlanToConfiguration(before)
-
-@ActionMethod
 def MiddleFinger(robot, manip=None):
     """
     @param robot The robot being used to give the middle finger
