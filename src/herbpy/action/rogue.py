@@ -8,7 +8,7 @@ import numpy, cPickle, time, os.path
 logger = logging.getLogger('herbpy')
 
 @ActionMethod
-def Point(robot, focus, manip=None, render=False):
+def PointAt(robot, focus, manip=None, render=False):
     """
     @param robot The robot performing the point
     @param focus The 3-D coordinate in space or object 
@@ -17,40 +17,12 @@ def Point(robot, focus, manip=None, render=False):
                  This must be the right arm
     @param render Render tsr samples during planning
     """
-
-    #Pointing at an object
-    if type(focus) == openravepy.openravepy_int.KinBody:
-        focus_trans = focus.GetTransform()
-        goal_name = focus.GetName()
-    #Pointing at a point in space
-    elif (type(focus) == numpy.ndarray) and (focus.ndim == 1):
-        if len(focus) != 3:
-            raise prpy.exceptions.PrPyExceptions('A point in space must \
-                    contain exactly three coordinates')
-        focus_trans = numpy.eye(4)
-        focus_trans[0:3, 3] = focus
-        goal_name = None
-    else:
-        raise prpy.exceptions.PrPyException('Focus of the point is an \
-                unknown object')
-
-    if manip is None:
-        print "Setting the right arm to be the active manipulator."
-        manip = robot.right_arm
-        manip.SetActive()
-
-    if manip.GetName() != 'right':
-        raise prpy.exceptions.PrPyException('Pointing is only defined \
-                on the right arm.')
-
-    point_tsr = robot.tsrlibrary(None, 'point', focus_trans, manip)
-
-    with prpy.viz.RenderTSRList(point_tsr, robot.GetEnv(), render=render):
-        robot.PlanToTSR(point_tsr, execute=True)
-    robot.right_hand.MoveHand(f1=2.4, f2=0.8, f3=2.4, spread=3.14)
+    env = robot.GetEnv()
+    pointing_coord = GetPointFrom(env, focus)
+    Point(robot, pointing_coord, manip, render)
 
 @ActionMethod
-def Present(robot, focus, manip=None, render=True):
+def PresentAt(robot, focus, manip=None, render=True):
     """
     @param robot The robot performing the presentation
     @param focus The 3-D coordinate in space or object that 
@@ -59,38 +31,12 @@ def Present(robot, focus, manip=None, render=True):
                  This must be the right arm.
     @param render Render tsr samples during planning
     """
-    #Presenting an object
-    if type(focus) == openravepy.openravepy_int.KinBody:
-        focus_trans = focus.GetTransform()
-    #Presenting a point in space
-    elif (type(focus) == numpy.ndarray) and (focus.ndim == 1):
-        if len(focus) != 3:
-            raise prpy.exceptions.PrPyExceptions('A presentation in space \
-                    must contain exactly three coordinates')
-        focus_trans = numpy.eye(4)
-        focus_trans[0:3, 3] = focus
-    else:
-        raise prpy.exceptions.PrPyException('Focus of the presentation is an \
-                unknown object')
-
-    if manip is None:
-        print "Setting the right arm to be the active manipulator."
-        manip = robot.right_arm
-        manip.SetActive()
-
-    if manip.GetName() != 'right':
-        raise prpy.exceptions.PrPyException('Presenting is only defined \
-                on the right arm.')
-
-    present_tsr = robot.tsrlibrary(None, 'present', focus_trans, manip)
-    
-    with prpy.viz.RenderTSRList(present_tsr, robot.GetEnv(), render=render):
-        robot.PlanToTSR(present_tsr, execute=True)
-    
-    robot.right_hand.MoveHand(f1=1, f2=1, f3=1, spread=3.14)
+    env = robot.GetEnv()
+    presenting_coord = GetPointFrom(env, focus)
+    Present(robot, presenting_coord, manip, render)
 
 @ActionMethod
-def Sweep(robot, start, end, manip=None, margin=0.3, render=True):
+def SweepAt(robot, start, end, manip=None, margin=0.3, render=True):
     """
     @param robot The robot performing the sweep
     @param start The object or 3-d position that marks the start
@@ -101,33 +47,108 @@ def Sweep(robot, start, end, manip=None, margin=0.3, render=True):
                   This must be enough to clear the objects themselves.
     @param render Render tsr samples during planning
     """
+    env = robot.GetEnv()
+    start_coord = GetPointFrom(env, start)
+    end_coord = GetPointFrom(env, end)
+    Sweep(robot, start_coord, end_coord, manip, margin, render)
 
-    if type(start) == openravepy.openravepy_int.KinBody: 
-        start_trans = start.GetTransform()
-        start_coords = start_trans[0:3, 3]
-    elif (type(start) == numpy.ndarray) and (start.ndim == 1):
-        if len(start) != 3:
-            raise prpy.exceptions.PrPyExceptions('A point in space must \
-                    contain exactly three coordinates')
-        start_coords = start
-    else: 
-        raise prpy.exceptions.PrPyException('Focus of the point is an \
-                unknown object')
 
-    if type(end) == openravepy.openravepy_int.KinBody:
-        end_trans = end.GetTransform()
-        end_coords = end_trans[0:3, 3]
-    elif (type(end) == numpy.ndarray) and (end.ndim == 1):
-        if len(end) != 3:
-            raise prpy.exceptions.PrPyExceptions('A point in space must \
-                    contain exactly three coordinates')
-        end_coords = end
-        end_trans = numpy.eye(4)
-        end_trans[0:3, 3] = end_coords
+def GetPointFrom(env, focus):
+    """
+    @param env The environment where the item exists
+    @param focus The area to be referred to
+    """
+    #Pointing at an object
+    if isinstance(focus, openravepy.KinBody):
+        with env: 
+            focus_trans = focus.GetTransform()
+        coord = list(focus_trans[0:3, 3])
+
+    #Pointing at a point in space as numpy array
+    elif (isinstance(focus, numpy.ndarray) and (focus.ndim == 1) 
+           and (len(focus) == 3)):
+        coord = list(focus)
+
+    #Pointing at a point in space as list
+    elif isinstance(focus, list):
+        coord = focus
+
+    #Pointing at a point in space as tuple
+    elif isinstance(focus, tuple):
+        coord = list(focus)
+
     else:
         raise prpy.exceptions.PrPyException('Focus of the point is an \
                 unknown object')
 
+    return coord
+
+def Point(robot, coord, manip=None, render=False):
+    """
+    @param robot The robot performing the point
+    @param focus The 3-D coordinate in space that is being pointed at
+    @param manip The manipulator to perform the point with. 
+                 This must be the right arm
+    @param render Render tsr samples during planning
+    """
+    if manip is None:
+        manip = robot.right_arm
+
+    if manip.GetName() != 'right':
+        raise prpy.exceptions.PrPyException('Pointing is only defined \
+                on the right arm.')
+
+    focus_trans = numpy.eye(4)
+    focus_trans[0:3, 3] = coord
+    point_tsr = robot.tsrlibrary(None, 'point', focus_trans, manip)
+
+    p = openravepy.KinBody.SaveParameters
+    with robot.CreateRobotStateSaver(p.ActiveManipulator):
+        robot.SetActiveManipulator(manip)
+        with prpy.viz.RenderTSRList(point_tsr, robot.GetEnv(), render=render):
+            robot.PlanToTSR(point_tsr, execute=True)
+    manip.hand.MoveHand(f1=2.4, f2=0.8, f3=2.4, spread=3.14)
+
+def Present(robot, coord, manip=None, render=True):
+    """
+    @param robot The robot performing the presentation
+    @param focus The 3-D coordinate in space or object that 
+                 is being presented
+    @param manip The manipulator to perform the presentation with. 
+                 This must be the right arm.
+    @param render Render tsr samples during planning
+    """
+    focus_trans = numpy.eye(4)
+    focus_trans[0:3, 3] = coord
+
+    present_tsr = robot.tsrlibrary(None, 'present', focus_trans, manip)
+
+    if manip is None:
+        manip = robot.right_arm
+
+    if manip.GetName() != 'right':
+        raise prpy.exceptions.PrPyException('Presenting is only defined \
+                on the right arm.')
+    
+    p = openravepy.KinBody.SaveParameters
+    with robot.CreateRobotStateSaver(p.ActiveManipulator):
+        robot.SetActiveManipulator(manip)
+        with prpy.viz.RenderTSRList(present_tsr, robot.GetEnv(), render=render):
+            robot.PlanToTSR(present_tsr, execute=True)
+    manip.hand.MoveHand(f1=1, f2=1, f3=1, spread=3.14)
+
+
+def Sweep(robot, start_coords, end_coords, manip=None, margin=0.3, render=True):
+    """
+    @param robot The robot performing the sweep
+    @param start The object or 3-d position that marks the start
+    @param end The object of 3-d position that marks the end
+    @param manip The manipulator to perform the sweep
+    @param margin The distance between the start object and the hand,
+                  so the vertical space between the hand and objects. 
+                  This must be enough to clear the objects themselves.
+    @param render Render tsr samples during planning
+    """
     if manip is None:
         manip = robot.GetActiveManipulator()
 
@@ -153,14 +174,20 @@ def Sweep(robot, start, end, manip=None, margin=0.3, render=True):
         raise prpy.exceptions.PrPyException('Manipulator does not have an \
                  associated hand')
 
+    end_trans = numpy.eye(4)
+    end_trans[0:3, 3] = end_coords
+
     hand.MoveHand(f1=1, f2=1, f3=1, spread=3.14)
     manip.PlanToEndEffectorPose(hand_pose)
 
     #TSR to sweep to end position
     sweep_tsr = robot.tsrlibrary(None, 'sweep', end_trans, manip)
 
-    with prpy.viz.RenderTSRList(sweep_tsr, robot.GetEnv(), render=render):
-        robot.PlanToTSR(sweep_tsr, execute=True)
+    p = openravepy.KinBody.SaveParameters
+    with robot.CreateRobotStateSaver(p.ActiveManipulator):
+        robot.SetActiveManipulator(manip)
+        with prpy.viz.RenderTSRList(sweep_tsr, robot.GetEnv(), render=render):
+             robot.PlanToTSR(sweep_tsr, execute=True)
 
 @ActionMethod
 def Exhibit(robot, obj, manip=None, distance=0.1, wait=2, release=True, render=True):
@@ -172,12 +199,11 @@ def Exhibit(robot, obj, manip=None, distance=0.1, wait=2, release=True, render=T
     @param wait The amount of time the object will be held up in seconds
     @param render Render tsr samples during planning
     """
-
-    if manip is None:
-        manip = robot.GetActiveManipulator()
-
-    preconfig = manip.GetDOFValues()
-    robot.Grasp(obj)
+    with robot.GetEnv():
+        if manip is None:
+            manip = robot.GetActiveManipulator()
+        preconfig = manip.GetDOFValues()
+        robot.Grasp(obj)
 
     #Lift the object - write more tsrs
     lift_tsr = robot.tsrlibrary(obj, 'lift', manip, distance=distance)
@@ -195,43 +221,48 @@ def Exhibit(robot, obj, manip=None, distance=0.1, wait=2, release=True, render=T
         robot.PlanToTSR(unlift_tsr, execute=True)
 
     if release:
-        robot.Release(obj)
+        with robot.GetEnv():
+            robot.Release(obj)
         manip.hand.OpenHand()
         manip.PlanToConfiguration(preconfig)
 
 @ActionMethod
-def Nod(robot, word='yes', inc=4):
+def NodYes(robot):
     """
     @param robot The robot being used to nod
-    @param word Shakes up and down for 'yes' and left and right for 'no'
     """
-
     import time
     pause = 0.15
+    inc = 4
 
-    if word == 'no':
-        for i in xrange(inc):
-            robot.head.Servo([ 1, 0])
-            time.sleep(pause)
-        for i in xrange((inc*3)):
-            robot.head.Servo([-1, 0])
-            time.sleep(pause)
-        for i in xrange((inc*2)):
-            robot.head.Servo([ 1, 0])
-            time.sleep(pause)
-    elif word == 'yes':
-        for i in xrange(inc):
-            robot.head.Servo([ 0,  1])
-            time.sleep(pause)
-        for i in xrange((inc*3)):
-            robot.head.Servo([ 0, -1])
-            time.sleep(pause)
-        for i in xrange((inc*2)):
-            robot.head.Servo([ 0,  1])
-            time.sleep(pause)
-    else:
-        raise prpy.exceptions.PrPyException('Word Not Recognized')
+    for i in xrange(inc):
+        robot.head.Servo([ 0,  1])
+        time.sleep(pause)
+    for i in xrange((inc*3)):
+        robot.head.Servo([ 0, -1])
+        time.sleep(pause)
+    for i in xrange((inc*2)):
+        robot.head.Servo([ 0,  1])
+        time.sleep(pause)
 
+@ActionMethod
+def NodNo(robot):
+    """
+    @param robot The robot being used to nod
+    """
+    import time
+    pause = 0.15
+    inc = 4
+
+    for i in xrange(inc):
+        robot.head.Servo([ 1, 0])
+        time.sleep(pause)
+    for i in xrange((inc*3)):
+        robot.head.Servo([-1, 0])
+        time.sleep(pause)
+    for i in xrange((inc*2)):
+        robot.head.Servo([ 1, 0])
+        time.sleep(pause)
 
 @ActionMethod
 def HaltHand(robot, manip=None):
@@ -248,14 +279,14 @@ def HaltHand(robot, manip=None):
                             2.06769058, -1.66834313,
                             1.53679821,  0.21175342])
         
-        manip.PlanToConfiguration(pose)
+        manip.PlanToConfiguration(pose, execute=True)
         robot.right_hand.MoveHand(f1=0, f2=0, f3=0, spread=3.14)
     elif manip.GetName() == 'left':
         pose = numpy.array([ 1.30614268, -1.76      , -1.57063853,
                              2.07228362,  1.23918377,
                              1.46215605, -0.12918424])
 
-        manip.PlanToConfiguration(pose)
+        manip.PlanToConfiguration(pose, execute=True)
         robot.left_hand.MoveHand(f1=0, f2=0, f3=0, spread=3.14)
     else: 
         raise prpy.exceptions.PrPyException('Stop is only defined \
@@ -290,6 +321,7 @@ def MiddleFinger(robot, manip=None):
         raise prpy.exceptions.PrPyException('The middle finger is only defined \
                                 for the left and right arm.')
 
+
 @ActionMethod
 def Wave(robot):
     """
@@ -298,24 +330,25 @@ def Wave(robot):
 
     from prpy.rave import load_trajectory
     from prpy.util import FindCatkinResource
+    from os.path import join
     env = robot.GetEnv()
-
-    manip = robot.right_arm
-    manip.SetActive()
-    print "Setting right arm as the active manipulator"
 
     wave_path = FindCatkinResource('herbpy', 'config/waveTrajs/')
     try:
-        traj0 = load_trajectory(env, wave_path+'wave0.xml')
-        traj1 = load_trajectory(env, wave_path+'wave1.xml')
-        traj2 = load_trajectory(env, wave_path+'wave2.xml')
-        traj3 = load_trajectory(env, wave_path+'wave3.xml')
+        traj0 = load_trajectory(env, join(wave_path, 'wave0.xml'))
+        traj1 = load_trajectory(env, join(wave_path, 'wave1.xml'))
+        traj2 = load_trajectory(env, join(wave_path, 'wave2.xml'))
+        traj3 = load_trajectory(env, join(wave_path, 'wave3.xml'))
     except IOError as e:
-        raise ValueError('Failed loading wave trajectory from "{:s}".'.format(
-            wave_path))
+        raise IOError(str(e))
 
-    robot.HaltHand(manip=manip)
-    robot.ExecuteTrajectory(traj0)
-    robot.ExecuteTrajectory(traj1)
-    robot.ExecuteTrajectory(traj2)
-    robot.ExecuteTrajectory(traj3)
+    p = openravepy.KinBody.SaveParameters
+    with robot.CreateRobotStateSaver(p.ActiveManipulator):
+        manip = robot.right_arm
+        robot.SetActiveManipulator(manip)
+
+        robot.HaltHand(manip=manip)
+        robot.ExecuteTrajectory(traj0)
+        robot.ExecuteTrajectory(traj1)
+        robot.ExecuteTrajectory(traj2)
+        robot.ExecuteTrajectory(traj3)

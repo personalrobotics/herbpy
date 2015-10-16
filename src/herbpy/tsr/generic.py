@@ -9,12 +9,15 @@ def point_obj(robot, transform, manip=None):
     @param transform The location of where the robot is pointing to
     @param manip The manipulator to point with. This must be the right arm. 
     """
-    if manip is None:
-        manip = robot.right_arm
 
-    with manip.GetRobot():
-        manip.SetActive()
-        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+    with robot.GetEnv():
+        if manip is None:
+            manip = robot.right_arm
+
+        with robot.CreateRobotStateSaver(
+                robot.SaveParameters.ActiveManipulator):
+            robot.SetActiveManipulator(manip)
+            manip_idx = manip.GetRobot().GetActiveManipulatorIndex() 
     
     if manip.GetName() != 'right':
         raise prpy.exceptions.PrPyException('Pointing is only defined on the right arm.')
@@ -56,12 +59,14 @@ def present_obj(robot, transform, manip=None):
     @param manip The manipulator to present. This must be the right arm. 
     """
 
-    if manip is None:
-        manip = robot.right_arm
+    with robot.GetEnv():
+        if manip is None:
+            manip = robot.right_arm
 
-    with manip.GetRobot():
-        manip.SetActive()
-        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        with robot.CreateRobotStateSaver(
+                robot.SaveParameters.ActiveManipulator):
+            robot.SetActiveManipulator(manip)
+            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     if manip.GetName() != 'right':
         raise prpy.exceptions.PrpyException('Presenting is only defined for the right arm.')
@@ -96,13 +101,14 @@ def sweep_objs(robot, transform, manip=None):
     @param manip The manipulator to sweep.
     """
 
-    if manip is None:
-        manip = robot.GetActiveManipulator()
-        manip_idx = robot.GetActiveManipulatorIndex()
-    else:
-         with manip.GetRobot():
-             manip.SetActive()
-             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+    with robot.GetEnv():
+        if manip is None:
+            manip = robot.right_arm
+
+        with robot.CreateRobotStateSaver(
+                robot.SaveParameters.ActiveManipulator):
+            robot.SetActiveManipulator(manip)
+            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     #TSR for the goal
     ee_offset = 0.2
