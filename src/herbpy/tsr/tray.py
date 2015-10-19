@@ -61,14 +61,18 @@ def handle_grasp(robot, tray, manip=None, handle=None):
     @param manip The manipulator to perform the grasp, if None
       the active manipulator on the robot is used
     '''
-    if manip is None:
-        manip_idx = robot.GetActiveManipulatorIndex()
-    else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+    with robot.GetEnv():
+        if manip is None:
+            manip_idx = robot.GetActiveManipulatorIndex()
+        else:
+            from openravepy import Robot
+            with manip.GetRobot().CreateRobotStateSaver(
+                    Robot.SaveParameters.ActiveManipulator):
+                manip.GetRobot().SetActiveManipulator(manip)
+                manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
             
-    tray_in_world = tray.GetTransform()
+        tray_in_world = tray.GetTransform()
+        ee_in_world = manip.GetEndEffectorTransform()
 
     # Compute the pose of both handles in the tray
     handle_one_in_tray = numpy.eye(4)
@@ -86,7 +90,7 @@ def handle_grasp(robot, tray, manip=None, handle=None):
                                    [0.,  0.,  0., 1.]])
 
     Bw = numpy.zeros((6,2))
-    epsilon = 0.03
+    epsilon = 0.05
     Bw[0,:] = [0., epsilon] # Move laterally along handle
     Bw[2,:] = [-0.01, 0.01] # Move up or down a little bit
     Bw[5,:] = [-5.*numpy.pi/180., 5.*numpy.pi/180.] # Allow 5 degrees of yaw
@@ -95,10 +99,10 @@ def handle_grasp(robot, tray, manip=None, handle=None):
     chains = []
     best_dist = float('inf')
     for handle_in_tray in handle_poses:
-        dist = numpy.linalg.norm(handle_in_tray[:2,3] - manip.GetEndEffectorTransform()[:2,3])
+        handle_in_world = numpy.dot(tray_in_world, handle_in_tray)
+        dist = numpy.linalg.norm(handle_in_world[:2,3] - ee_in_world[:2,3])
         if handle == 'closest' and dist > best_dist:
             continue
-        handle_in_world = numpy.dot(tray_in_world, handle_in_tray)
         tray_grasp_tsr = prpy.tsr.TSR(T0_w = handle_in_world, 
                                       Tw_e = grasp_in_handle, 
                                       Bw = Bw, 
@@ -110,6 +114,7 @@ def handle_grasp(robot, tray, manip=None, handle=None):
         if handle == 'closest':
             chains = []
         chains.append(tray_grasp_chain)
+        best_dist = dist
     return chains
 
 @prpy.tsr.tsrlibrary.TSRFactory('herb', 'wicker_tray', 'lift')
@@ -223,8 +228,8 @@ def pull_tray(robot, tray, manip=None, max_distance=0.0, min_distance=0.0,
 
     # Convert the position and angular tolerances from end-effector frame
     #  to world frame
-    position_tolerance = numpy.dot(ee_in_w[:3,:3], position_tolerance)
-    angular_tolerance = numpy.dot(ee_in_w[:3,:3], angular_tolerance)
+    position_tolerance = abs(numpy.dot(ee_in_w[:3,:3], position_tolerance))
+    angular_tolerance = abs(numpy.dot(ee_in_w[:3,:3], angular_tolerance))
 
     # Move the w frame the appropriate distance along the pull direction
     end_in_w = numpy.eye(4)

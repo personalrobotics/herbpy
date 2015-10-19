@@ -69,7 +69,8 @@ def pitcher_pour(robot, pitcher, min_tilt = 1.4, max_tilt = 1.57, manip=None, gr
     ee_in_pitcher = numpy.dot(numpy.linalg.inv(pitcher_in_world), ee_in_world)
     ee_in_spout = numpy.dot(numpy.linalg.inv(spout_in_pitcher), ee_in_pitcher)
     Bw_pour = numpy.zeros((6,2))
-    Bw_pour[4,:] = [ -0.2, 1.57 ]
+    Bw_pour[4,:] = [0, 2*numpy.pi ]
+    Bw_pour[3,:] = [-10*numpy.pi/180, 10*numpy.pi/180]
         
     tsr_0 = prpy.tsr.TSR(T0_w = pitcher_pose,
                          Tw_e = spout_in_pitcher,
@@ -95,4 +96,4 @@ def pitcher_pour(robot, pitcher, min_tilt = 1.4, max_tilt = 1.57, manip=None, gr
                                   constrain = False,
                                   TSRs = [tsr_0, tsr_1_goal])
 
-    return [pour_chain, pour_goal]
+    return [pour_chain, pour_goal], min_tilt, max_tilt
