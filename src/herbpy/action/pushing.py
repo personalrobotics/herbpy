@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import logging
+import logging, numpy
 from prpy.action import ActionMethod
 from prpy.planning.base import PlanningError
 logger = logging.getLogger('herbpy')
@@ -28,9 +28,13 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
 
     # Make the state bounds be at the edges of the table
     with robot.GetEnv():
-        table_aabb = table.ComputeAABB()
+        from prpy.rave import Disabled
+        from prpy.util import ComputeEnabledAABB
+        with Disabled(table, padding_only=True):
+            table_aabb = ComputeEnabledAABB(table)
     table_pos = table_aabb.pos()
     table_extents = table_aabb.extents()
+
     sbounds = {'high': [table_pos[0] + table_extents[0],
                         table_pos[1] + table_extents[1],
                         2.*numpy.pi],
@@ -38,12 +42,11 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
                        table_pos[1] - table_extents[1],
                        0]}
     
-    # This should be the pose and the height of the manipulator
-    # for pushing - parallel to table, 0.1m above surface  
-    ee_pushing_transform = numpy.array([[ 0.,  0., 1., 0], 
-                                        [-1.,  0., 0., 0], 
-                                        [ 0., -1., 0., table_pos[2] + table_extents[2] + 0.1], 
-                                        [ 0.,  0., 0., 1]])
+    # Get the current pose of the manipulator and assume we want to keep that pose throughout
+    #  the push
+    with robot.GetEnv():
+        ee_pushing_transform = manip.GetEndEffectorTransform()
+    ee_pushing_transform[:2,3] = [0., 0.] #ignore x,y pose
 
     # Compute the goal pose
     with robot.GetEnv():
