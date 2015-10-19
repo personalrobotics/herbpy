@@ -77,7 +77,7 @@ def HerbGrasp(robot, obj, push_distance=None, manip=None,
     
     # Plan to the grasp
     with prpy.viz.RenderTSRList(tsrlist, robot.GetEnv(), render=render):
-        manip.PlanToTSR(tsrlist)
+        manip.PlanToTSR(tsrlist, execute=True)
 
     if push_distance is not None:
         ee_in_world = manip.GetEndEffectorTransform()
@@ -116,6 +116,7 @@ def HerbGrasp(robot, obj, push_distance=None, manip=None,
                 with prpy.rave.Disabled(obj):
                     manip.PlanToEndEffectorOffset(direction = push_direction,
                                                   distance = push_distance,
+                                                  execute=True,
                                                   **kw_args)
             except PlanningError, e:
                 if push_required:
@@ -178,6 +179,7 @@ def Lift(robot, obj, distance=0.05, manip=None, render=True, **kw_args):
                                    distance, robot.GetEnv(), render=render):
             manip.PlanToEndEffectorOffset(direction=lift_direction,
                                           distance=lift_distance,
+                                          execute=True,
                                           **kw_args)
 
 @ActionMethod
@@ -208,7 +210,7 @@ def Place(robot, obj, on_obj, manip=None, render=True, **kw_args):
 
     # Plan to the grasp
     with prpy.viz.RenderTSRList(place_tsr, robot.GetEnv(), render=render):
-        manip.PlanToTSR(place_tsr)
+        manip.PlanToTSR(place_tsr, execute=True)
 
     # Open the hand
     manip.hand.OpenHand()
