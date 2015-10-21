@@ -2,6 +2,13 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Added logic to warn, but not fail, if the perception module cannot be loaded
+* Added execute=True flags to actions (`#56 <https://github.com/personalrobotics/herbpy/issues/56>`_)
+* Changed pr_ordata to be an optional dependency (`#52 <https://github.com/personalrobotics/herbpy/issues/52>`_)
+* Contributors: Jennifer King, Michael Koval, Vinitha Ranganeni
+
 1.8.0 (2015-10-12)
 ------------------
 * Changes for the block sorting demo (`#48 <https://github.com/personalrobotics/herbpy/issues/48>`_)
