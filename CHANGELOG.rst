@@ -2,8 +2,8 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.8.1 (2015-10-21)
+------------------
 * Added logic to warn, but not fail, if the perception module cannot be loaded
 * Added execute=True flags to actions (`#56 <https://github.com/personalrobotics/herbpy/issues/56>`_)
 * Changed pr_ordata to be an optional dependency (`#52 <https://github.com/personalrobotics/herbpy/issues/52>`_)
