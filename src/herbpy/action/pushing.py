@@ -7,7 +7,7 @@ logger = logging.getLogger('herbpy')
 @ActionMethod
 def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius, 
                       manip=None, max_plan_duration=30.0, 
-                      shortcut_time=0., **kw_args):
+                      shortcut_time=3., **kw_args):
     """
     @param robot The robot performing the push
     @param obj The object to push
@@ -72,12 +72,12 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
     from prpy.viz import RenderTrajectory
     with RenderTrajectory(robot, traj, color=[1, 0, 0, 1]):
         if shortcut_time > 0:
-            traj = planner.ShortcutPath()
+            traj = planner.ShortcutPath(timelimit=shortcut_time)
         with RenderTrajectory(robot, traj, color=[0, 0, 1, 1]):
-#           if manip.simulated:
-#               planner.ExecutePlannedPath()
-#           else:
-            robot.ExecuteTrajectory(traj)
-    planner.SetFinalObjectPoses()
+          if manip.simulated:
+              planner.ExecutePlannedPath()
+          else:
+              robot.ExecuteTrajectory(traj)
+              planner.SetFinalObjectPoses()
 
     return traj
