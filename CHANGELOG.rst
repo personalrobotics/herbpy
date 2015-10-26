@@ -2,6 +2,26 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.8.1 (2015-10-21)
+------------------
+* Added logic to warn, but not fail, if the perception module cannot be loaded
+* Added execute=True flags to actions (`#56 <https://github.com/personalrobotics/herbpy/issues/56>`_)
+* Changed pr_ordata to be an optional dependency (`#52 <https://github.com/personalrobotics/herbpy/issues/52>`_)
+* Contributors: Jennifer King, Michael Koval, Vinitha Ranganeni
+
+1.8.0 (2015-10-12)
+------------------
+* Changes for the block sorting demo (`#48 <https://github.com/personalrobotics/herbpy/issues/48>`_)
+* Changes to table clearing TSRs
+* Added perception pipeline
+* Added support of OWD trajectory execution options (`#41 <https://github.com/personalrobotics/herbpy/issues/41>`_)
+* Added missing dependencies to package.xml and switched to format 2 (`#40 <https://github.com/personalrobotics/herbpy/issues/40>`_))
+* Added lift and place actions (`#37 <https://github.com/personalrobotics/herbpy/issues/37>`_)
+* Added robot.Say() function (`#39 <https://github.com/personalrobotics/herbpy/issues/39>`_)
+* Fixed README to use pr-rosinstalls
+* Fixed broken links in README (`#34 <https://github.com/personalrobotics/herbpy/issues/34>`_)
+* Contributors: Aaron Johnson, Clint Liddick, Jennifer King, Michael Koval, Pras Velagapudi, Rachel Holladay, Shushman, Vinitha Ranganeni
+
 1.7.1 (2015-06-04)
 ------------------
 * Updating bowl tsr. Updating default detection frame to match latest perception changes.

@@ -25,7 +25,7 @@ def try_and_warn(fn, exception_type, message, default_value=None):
 class HERBRobot(Robot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
-                       head_sim, talker_sim, segway_sim):
+                       head_sim, talker_sim, segway_sim, perception_sim):
         from prpy.util import FindCatkinResource
 
         Robot.__init__(self, robot_name='herb')
@@ -130,7 +130,7 @@ class HERBRobot(Robot):
             self.snap_planner,
             # Then, try a few simple (and fast!) heuristics.
             self.vectorfield_planner,
-            self.greedyik_planner,
+            #self.greedyik_planner,
             # Next, try a trajectory optimizer.
             self.trajopt_planner or self.chomp_planner
         )
@@ -177,11 +177,32 @@ class HERBRobot(Robot):
         self.talker_simulated = talker_sim
         self.segway_sim = segway_sim
 
+        # Set up perception
+        self.detector=None
+        if perception_sim:
+            from prpy.perception import SimulatedPerceptionModule
+            self.detector = SimulatedPerceptionModule()
+        else:
+            from prpy.perception import ApriltagsModule
+            try:
+                kinbody_path = prpy.util.FindCatkinResource('pr_ordata',
+                                                            'data/objects')
+                marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
+                                                                'data/objects/tag_data.json')
+                self.detector = ApriltagsModule(marker_topic='/apriltags_kinect2/marker_array',
+                                                marker_data_path=marker_data_path,
+                                                kinbody_path=kinbody_path,
+                                                detection_frame='head/kinect2_rgb_optical_frame',
+                                                destination_frame='map')
+            except IOError as e:
+                 logger.warning('Failed to find required resource path. ' \
+                                'pr-ordata package cannot be found. ' \
+                                'Perception detector will not be loaded.')
+
         if not self.talker_simulated:
             # Initialize herbpy ROS Node
             import rospy
             if not rospy.core.is_initialized():
-                rospy.init_node('herbpy', anonymous=True)
                 logger.debug('Started ROS node with name "%s".', rospy.get_name())
 
             import talker.msg
@@ -232,35 +253,6 @@ class HERBRobot(Robot):
         self.head.SetStiffness(stiffness)
         self.left_arm.SetStiffness(stiffness)
         self.right_arm.SetStiffness(stiffness)
-
-    def DetectObjects(self, 
-                      detection_frame='head/kinect2_rgb_optical_frame',
-                      destination_frame='map'):
-        """Use the kinbody detector to detect objects and add
-        them to the environment
-        """
-        # Use the kinbody detector to detect the environment
-        import kinbody_detector.kinbody_detector as kd
-        kinbody_path = prpy.util.FindCatkinResource('pr_ordata',
-                                                        'data/objects')
-        marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
-                                                        'data/objects/tag_data.json')
-        marker_topic = '/apriltags_kinect2/marker_array'
-        try:
-            logger.info('Marker data path %s' % marker_data_path)
-            logger.info('Kinbody path %s' % kinbody_path)
-            detector = kd.KinBodyDetector(self.GetEnv(), 
-                                          marker_data_path,
-                                          kinbody_path,
-                                          marker_topic,
-                                          detection_frame, 
-                                          destination_frame)
-            logger.info('Waiting to detect objects...')
-            detector.Update()
-
-        except Exception, e:
-            logger.error('Detection failed update: %s' % str(e))
-            raise
 
     def Say(self, words, block=True):
         """Speak 'words' using talker action service or espeak locally in simulation"""
