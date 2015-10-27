@@ -77,7 +77,7 @@ def HerbGrasp(robot, obj, push_distance=None, manip=None,
     
     # Plan to the grasp
     with prpy.viz.RenderTSRList(tsrlist, robot.GetEnv(), render=render):
-        manip.PlanToTSR(tsrlist)
+        manip.PlanToTSR(tsrlist, execute=True)
 
     if push_distance is not None:
         ee_in_world = manip.GetEndEffectorTransform()

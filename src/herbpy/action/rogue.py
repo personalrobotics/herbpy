@@ -95,8 +95,8 @@ def Point(robot, coord, manip=None, render=False):
         manip = robot.right_arm
 
     if manip.GetName() != 'right':
-        raise prpy.exceptions.PrPyException('Pointing is only defined \
-                on the right arm.')
+        raise prpy.exceptions.PrPyException('Pointing is only defined'
+                ' on the right arm.')
 
     focus_trans = numpy.eye(4, dtype='float')
     focus_trans[0:3, 3] = coord
@@ -105,7 +105,7 @@ def Point(robot, coord, manip=None, render=False):
     p = openravepy.KinBody.SaveParameters
     with robot.CreateRobotStateSaver(p.ActiveManipulator | p.ActiveDOF):
         robot.SetActiveManipulator(manip)
-        robot.SetActiveDOF(manip.GetArmIndices)
+        robot.SetActiveDOFs(manip.GetArmIndices())
         with prpy.viz.RenderTSRList(point_tsr, robot.GetEnv(), render=render):
             robot.PlanToTSR(point_tsr, execute=True)
     manip.hand.MoveHand(f1=2.4, f2=0.8, f3=2.4, spread=3.14)
@@ -123,8 +123,8 @@ def Present(robot, coord, manip=None, render=True):
         manip = robot.right_arm
 
     if manip.GetName() != 'right':
-        raise prpy.exceptions.PrPyException('Presenting is only defined \
-                on the right arm.')
+        raise prpy.exceptions.PrPyException('Presenting is only defined'
+                ' on the right arm.')
 
     focus_trans = numpy.eye(4, dtype='float')
     focus_trans[0:3, 3] = coord
@@ -133,7 +133,7 @@ def Present(robot, coord, manip=None, render=True):
     p = openravepy.KinBody.SaveParameters
     with robot.CreateRobotStateSaver(p.ActiveManipulator | p.ActiveDOF):
         robot.SetActiveManipulator(manip)
-        robot.SetActiveDOF(manip.GetArmIndices)
+        robot.SetActiveDOFs(manip.GetArmIndices())
         with prpy.viz.RenderTSRList(present_tsr, robot.GetEnv(), render=render):
             robot.PlanToTSR(present_tsr, execute=True)
     manip.hand.MoveHand(f1=1, f2=1, f3=1, spread=3.14)
@@ -172,8 +172,8 @@ def Sweep(robot, start_coords, end_coords, manip=None, margin=0.3, render=True):
                                  [ 0,  0, 0, 1]], dtype='float')
   
     else:
-        raise prpy.exceptions.PrPyException('Manipulator does not have an \
-                 associated hand')
+        raise prpy.exceptions.PrPyException('Manipulator does not have an'
+                 ' associated hand')
 
     end_trans = numpy.eye(4, dtype='float')
     end_trans[0:3, 3] = end_coords
@@ -182,7 +182,7 @@ def Sweep(robot, start_coords, end_coords, manip=None, margin=0.3, render=True):
     q = openravepy.KinBody.SaveParameters
     with robot.CreateRobotStateSaver(q.ActiveManipulator | q.ActiveDOF):
         robot.SetActiveManipulator(manip)
-        robot.SetActiveDOF(manip.GetArmIndices)
+        robot.SetActiveDOFs(manip.GetArmIndices())
         manip.PlanToEndEffectorPose(hand_pose, execute=True)
 
     #TSR to sweep to end position
@@ -191,7 +191,7 @@ def Sweep(robot, start_coords, end_coords, manip=None, margin=0.3, render=True):
     p = openravepy.KinBody.SaveParameters
     with robot.CreateRobotStateSaver(p.ActiveManipulator | p.ActiveDOF):
         robot.SetActiveManipulator(manip)
-        robot.SetActiveDOF(manip)
+        robot.SetActiveDOFs(manip.GetArmIndices())
         with prpy.viz.RenderTSRList(sweep_tsr, robot.GetEnv(), render=render):
              robot.PlanToTSR(sweep_tsr, execute=True)
 
@@ -205,28 +205,28 @@ def Exhibit(robot, obj, manip=None, distance=0.1, wait=2, release=True, render=T
     @param wait The amount of time the object will be held up in seconds
     @param render Render tsr samples during planning
     """
+
     with robot.GetEnv():
         if manip is None:
             manip = robot.GetActiveManipulator()
         preconfig = manip.GetDOFValues()
-        robot.Grasp(obj)
+    robot.Grasp(obj)
 
-    #Lift the object - write more tsrs
-    lift_tsr = robot.tsrlibrary(obj, 'lift', manip, distance=distance)
-    
-    with prpy.viz.RenderTSRList(lift_tsr, robot.GetEnv(), render=render):
-        robot.PlanToTSR(lift_tsr, execute=True)
-
-    #Wait for 'time'
-    time.sleep(wait)
-
-    #'Unlift' the object, so place it back down
-    unlift_tsr = robot.tsrlibrary(obj, 'lift', manip, distance=-distance)
-    
     p = openravepy.KinBody.SaveParameters
     with robot.CreateRobotStateSaver(p.ActiveManipulator | p.ActiveDOF):
         robot.SetActiveManipulator(manip)
-        robot.SetActiveDOF(manip)
+        robot.SetActiveDOFs(manip.GetArmIndices())    
+        
+        #Lift the object
+        lift_tsr = robot.tsrlibrary(obj, 'lift', manip, distance=distance)
+        with prpy.viz.RenderTSRList(lift_tsr, robot.GetEnv(), render=render):
+            robot.PlanToTSR(lift_tsr, execute=True)
+
+        #Wait for 'time'
+        time.sleep(wait)
+
+        #'Unlift' the object, so place it back down
+        unlift_tsr = robot.tsrlibrary(obj, 'lift', manip, distance=-distance)
         with prpy.viz.RenderTSRList(unlift_tsr, robot.GetEnv(), render=render):
             robot.PlanToTSR(unlift_tsr, execute=True)
 
@@ -300,7 +300,7 @@ def HaltHand(robot, manip=None):
         robot.left_hand.MoveHand(f1=0, f2=0, f3=0, spread=3.14)
     else: 
         raise prpy.exceptions.PrPyException(
-            'Stop is only defined for the left and right arm.')
+            'HaltHand is only defined for the left and right arm.')
 
 @ActionMethod
 def MiddleFinger(robot, manip=None):
@@ -309,7 +309,7 @@ def MiddleFinger(robot, manip=None):
     @param manip The manipulator being used to give the middle finger.
                  Must be either the right or left arm.
     """
-    if manip == None:
+    if manip is None:
         manip = robot.GetActiveManipulator()
 
     if manip.GetName() == 'right':
@@ -328,8 +328,8 @@ def MiddleFinger(robot, manip=None):
         manip.PlanToConfiguration(left_dof, execute=True)
         robot.left_hand.MoveHand(f1=2, f2=2, f3=0, spread=3.14)
     else: 
-        raise prpy.exceptions.PrPyException('The middle finger is only defined \
-                                for the left and right arm.')
+        raise prpy.exceptions.PrPyException('The middle finger is only defined'
+                                ' for the left and right arm.')
 
 
 @ActionMethod
@@ -349,11 +349,9 @@ def Wave(robot):
     traj2 = load_trajectory(env, join(wave_path, 'wave2.xml'))
     traj3 = load_trajectory(env, join(wave_path, 'wave3.xml'))
 
-    p = openravepy.KinBody.SaveParameters
-    with robot.CreateRobotStateSaver(p.ActiveManipulator):
-        manip = robot.right_arm
-        robot.HaltHand(manip=manip)
-        robot.ExecuteTrajectory(traj0)
-        robot.ExecuteTrajectory(traj1)
-        robot.ExecuteTrajectory(traj2)
-        robot.ExecuteTrajectory(traj3)
+    manip = robot.right_arm
+    robot.HaltHand(manip=manip)
+    robot.ExecuteTrajectory(traj0)
+    robot.ExecuteTrajectory(traj1)
+    robot.ExecuteTrajectory(traj2)
+    robot.ExecuteTrajectory(traj3)
