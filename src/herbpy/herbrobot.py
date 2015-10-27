@@ -143,10 +143,9 @@ class HERBRobot(Robot):
         )
         
         from prpy.planning.retimer import HauserParabolicSmoother
-        self.smoother = HauserParabolicSmoother()
-        # TODO: This should not be HauserParabolicSmoother because it changes the path. This is a temporary
-        # hack because the ParabolicTrajectoryRetimer doesn't work on HERB.
-        self.retimer = HauserParabolicSmoother()
+        self.smoother = HauserParabolicSmoother(do_blend=True, do_shortcut=True)
+        self.retimer = HauserParabolicSmoother(do_blend=True, do_shortcut=False,
+            blend_iterations=5, blend_radius=0.4)
         self.simplifier = None
 
         # Base planning
