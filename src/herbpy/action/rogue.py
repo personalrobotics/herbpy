@@ -92,7 +92,7 @@ def Point(robot, coord, manip=None, render=False):
     @param render Render tsr samples during planning
     """
     if manip is None:
-        manip = robot.right_arm
+        manip = robot.GetActiveManipulator()
 
     if manip.GetName() != 'right':
         raise prpy.exceptions.PrPyException('Pointing is only defined'
@@ -120,7 +120,7 @@ def Present(robot, coord, manip=None, render=True):
     @param render Render tsr samples during planning
     """
     if manip is None:
-        manip = robot.right_arm
+        manip = robot.GetActiveManipulator()
 
     if manip.GetName() != 'right':
         raise prpy.exceptions.PrPyException('Presenting is only defined'
