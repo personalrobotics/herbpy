@@ -5,6 +5,7 @@ import numpy, unittest
 import herbpy, prpy
 
 env, robot = herbpy.initialize(sim=True)
+robot.right_arm.SetActive()
 fuze = prpy.rave.add_object(env, 'fuze_bottle', 'objects/fuze_bottle.kinbody.xml')
 
 class RogueTest(unittest.TestCase):

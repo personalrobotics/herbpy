@@ -1,6 +1,7 @@
 import numpy
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
+from prpy.util import GetManipulatorIndex
 
 @TSRFactory('herb', None, 'point')
 def point_obj(robot, transform, manip=None):
@@ -10,15 +11,8 @@ def point_obj(robot, transform, manip=None):
     @param manip The manipulator to point with. This must be the right arm. 
     """
 
-    with robot.GetEnv():
-        if manip is None:
-            manip = robot.right_arm
+    (manip, manip_idx) = GetManipulatorIndex(robot, manip)
 
-        with robot.CreateRobotStateSaver(
-                robot.SaveParameters.ActiveManipulator):
-            robot.SetActiveManipulator(manip)
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex() 
-    
     if manip.GetName() != 'right':
         raise prpy.exceptions.PrPyException('Pointing is only defined on the right arm.')
 		
@@ -59,14 +53,7 @@ def present_obj(robot, transform, manip=None):
     @param manip The manipulator to present. This must be the right arm. 
     """
 
-    with robot.GetEnv():
-        if manip is None:
-            manip = robot.right_arm
-
-        with robot.CreateRobotStateSaver(
-                robot.SaveParameters.ActiveManipulator):
-            robot.SetActiveManipulator(manip)
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+    (manip, manip_idx) = GetManipulatorIndex(robot, manip)
 
     if manip.GetName() != 'right':
         raise prpy.exceptions.PrpyException('Presenting is only defined for the right arm.')
@@ -101,14 +88,7 @@ def sweep_objs(robot, transform, manip=None):
     @param manip The manipulator to sweep.
     """
 
-    with robot.GetEnv():
-        if manip is None:
-            manip = robot.right_arm
-
-        with robot.CreateRobotStateSaver(
-                robot.SaveParameters.ActiveManipulator):
-            robot.SetActiveManipulator(manip)
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+    (manip, manip_idx) = GetManipulatorIndex(robot, manip)
 
     #TSR for the goal
     ee_offset = 0.2
