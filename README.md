@@ -1,6 +1,8 @@
 HERBPy
 ======
 
+[![Build Status](https://travis-ci.org/personalrobotics/herbpy.svg?branch=master)](https://travis-ci.org/personalrobotics/herbpy)
+
 HerbPy is a Python library for interacting with HERB through OpenRAVE. HERB is
 a bimanual mobile manipulator designed and built by the [Personal Robotics Lab]
 (https://personalrobotics.ri.cmu.edu) at [Carnegie Mellon University]
