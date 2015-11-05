@@ -12,3 +12,6 @@ install(PROGRAMS scripts/console.py
                  scripts/plot_primitives.py
     DESTINATION "${CATKIN_PACKAGE_BIN_DESTINATION}"
 )
+if (CATKIN_ENABLE_TESTING)
+    catkin_add_nosetests(tests)
+endif()
