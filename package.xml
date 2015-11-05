@@ -34,4 +34,5 @@
   <exec_depend>or_sbpl</exec_depend>
   <exec_depend>openrave</exec_depend>
   <test_depend>python-nose</test_depend>
+  <test_depend>or_pushing</test_depend> <!-- in randomized_rearrangement_planning -->
 </package>
