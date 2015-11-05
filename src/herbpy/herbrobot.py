@@ -277,7 +277,7 @@ class HERBRobot(Robot):
             logger.error('Detection failed update: %s' % str(e))
             raise
         
-    def DetectHuman(self, env, orhuman=True):
+    def DetectHuman(self, env, orhuman=1):
         """Use the kinbody detector to detect objects and add
         them to the environment
         """
@@ -285,12 +285,16 @@ class HERBRobot(Robot):
         from tf import TransformListener
 
         humans = []
-        if not orhuman: 
+        if orhuman==0: 
             import or_skeletons.load_skeletons as sk
             logger.info('Humans_tracking')
             rospy.init_node('humans_skel')
-        else:
-            import humanpy.humankinect as sk
+        elif orhuman==1:
+            import humanpy.humankinect1 as sk
+            logger.info('Humans_tracking')
+            rospy.init_node('humans_or')
+        elif orhuman==2:
+            import humanpy.humankinect2 as sk
             logger.info('Humans_tracking')
             rospy.init_node('humans_or')
             
@@ -305,7 +309,7 @@ class HERBRobot(Robot):
         except Exception, e:
             logger.error('Detection failed update: %s' % str(e))
             raise
-
+        
     def Say(self, words, block=True):
         """Speak 'words' using talker action service or espeak locally in simulation"""
         if self.talker_simulated:
