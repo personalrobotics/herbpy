@@ -79,9 +79,20 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
             traj = planner.ShortcutPath(timelimit=shortcut_time)
         with RenderTrajectory(robot, traj, color=[0, 0, 1, 1], render=render):
           if manip.simulated:
+              # Use the push planner code to simulate path execution.
+              # This simulates the pushing of the objects during
+              # execution of the trajectory.
               planner.ExecutePlannedPath()
           else:
+              # Execute the trajectory
               robot.ExecuteTrajectory(traj)
+
+              # During execution, object pushes won't be simulated. 
+              # In the OpenRAVE world, the robot will instead move through the objects
+              # and probably be in collision at the end.
+              # This call sets all the objects to their expected poses
+              # at the end of the trajectory. If execution was successful, this should resolve 
+              # collisions. 
               planner.SetFinalObjectPoses()
 
     return traj
