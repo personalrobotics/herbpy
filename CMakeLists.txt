@@ -1,19 +1,18 @@
-#
-# Personal Robotics Laboratory
-# Catkin/Rosbuild Switching Template
-#
-# This CMakeLists.txt file is designed to correctly switch two CMakeLists,
-# one for rosbuild and one for catkin.
-#
-# To use this file, create two CMakeLists:
-#   - catkin.cmake : the CMakeLists used in ROS catkin builds
-#   - rosbuild.cmake : the CMakeLists used for ROS rosbuild builds
-#
 cmake_minimum_required(VERSION 2.8.3)
 project(herbpy)
- 
-if (DEFINED CATKIN_TOPLEVEL OR (NOT ("$ENV{ROS_DISTRO}" STREQUAL "fuerte")))
-    include(${PROJECT_SOURCE_DIR}/catkin.cmake)
-else ()
-    include(${PROJECT_SOURCE_DIR}/rosbuild.cmake)
-endif ()
+
+find_package(catkin REQUIRED)
+catkin_package()
+catkin_python_setup()
+
+install(DIRECTORY config/
+  DESTINATION "${CATKIN_PACKAGE_SHARE_DESTINATION}/config"
+)
+install(PROGRAMS scripts/console.py
+                 scripts/generate_primitives_herb.py
+                 scripts/plot_primitives.py
+  DESTINATION "${CATKIN_PACKAGE_BIN_DESTINATION}"
+)
+if (CATKIN_ENABLE_TESTING)
+  catkin_add_nosetests(tests)
+endif()
