@@ -4,6 +4,8 @@ from table import *
 from plate import *
 from bowl import * 
 from block import *
+from block_bin import *
 from pitcher import *
 from tray import *
 from pop_tarts import *
+from generic import *

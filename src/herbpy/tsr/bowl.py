@@ -1,5 +1,6 @@
 import numpy
 import prpy.tsr
+from openravepy import Robot
 
 @prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_bowl', 'grasp')
 def bowl_grasp(robot, bowl, manip=None):
@@ -9,14 +10,17 @@ def bowl_grasp(robot, bowl, manip=None):
     @param manip The manipulator to perform the grasp, 
        if None the active manipulator on the robot is used
     '''
-    if manip is None:
-        manip_idx = robot.GetActiveManipulatorIndex()
-    else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+    with robot.GetEnv():
+        if manip is None:
+            manip_idx = robot.GetActiveManipulatorIndex()
+        else:
+            with robot.CreateRobotStateSaver(
+                    Robot.SaveParameters.ActiveManipulator):
+                manip.GetRobot().SetActiveManipulator(manip)
+                manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
-    T0_w = bowl.GetTransform()
+        T0_w = bowl.GetTransform()
+
     Tw_e = numpy.array([[1.,  0.,  0., 0.08],
                         [0., -1.,  0., 0.],
                         [0.,  0., -1., 0.34],
@@ -43,15 +47,17 @@ def bowl_on_table(robot, bowl, pose_tsr_chain, manip=None):
     @param manip The manipulator grasping the object, if None the active
        manipulator of the robot is used
     '''
-    if manip is None:
-        manip_idx = robot.GetActiveManipulatorIndex()
-        manip = robot.GetActiveManipulator()
-    else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+    with robot.GetEnv():
+        if manip is None:
+            manip_idx = robot.GetActiveManipulatorIndex()
+            manip = robot.GetActiveManipulator()
+        else:
+            with manip.GetRobot().CreateRobotStateSaver(
+                    Robot.SaveParameters.ActiveManipulator):
+                manip.GetRobot().SetActiveManipulator(manip)
+                manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
-    ee_in_bowl = numpy.dot(numpy.linalg.inv(bowl.GetTransform()), manip.GetEndEffectorTransform())
+        ee_in_bowl = numpy.dot(numpy.linalg.inv(bowl.GetTransform()), manip.GetEndEffectorTransform())
     Bw = numpy.zeros((6,2)) 
     Bw[2,:] = [0., 0.08]  # Allow some vertical movement
    
