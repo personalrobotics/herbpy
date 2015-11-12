@@ -19,6 +19,81 @@ def MoveObject(robot, direction = [0, 0, 1], distance = 0.1):
         return False
 
 @ActionMethod
+def GraspHandle(robot, pitcher):
+    """
+    @param robot The robot performing the handle grasp
+    @param pitcher The pitcher who's handle will be grasped  
+    """
+    try:
+        # Get the pose of the pitcher
+        pitcher_in_world = pitcher.GetTransform()
+
+        # Get the AABB of the pitcher
+        pitcher_aabb = pitcher.ComputeAABB()
+
+        # spout in pitcher
+        spout_in_pitcher = numpy.array([[-0.7956, 0.6057, 0., -0.0662],
+                                        [-0.6057, -0.7956, 0., -0.0504],
+                                        [0., 0., 1., 0.2376], 
+                                        [0., 0., 0., 1.]])
+
+        # we want a hand pose orthogonal to the direction of the spout
+        spout_direction = numpy.arctan2(spout_in_pitcher[0,1], spout_in_pitcher[0,0])
+        palm_direction = spout_direction - 0.5*numpy.pi
+
+        ee_in_pitcher = numpy.eye(4)
+        ee_in_pitcher[:3,:3] = numpy.array([[0, 0, 1],
+                                            [-1, 0, 0],
+                                            [0, -1, 0]])
+        ee_in_pitcher[:3,:3] = numpy.dot(ee_in_pitcher[:3,:3],
+                                         openravepy.rotationMatrixFromAxisAngle([0, palm_direction, 0]))
+                                         
+        
+        offset = pitcher_aabb.extents()[0] + 0.28 # pitcher radius + ee_offset
+        ee_in_pitcher[:2,3] = -offset*ee_in_pitcher[:2,2]
+        ee_in_pitcher[2,3] = 0.45*pitcher_aabb.extents()[2]
+
+        ee_in_world = numpy.dot(pitcher_in_world, ee_in_pitcher)
+        manip = robot.GetActiveManipulator()
+        
+        with prpy.viz.RenderPoses([ee_in_world], manip.GetRobot().GetEnv()):
+            manip.PlanToEndEffectorPose(ee_in_world, execute=True)
+        manip.PlanToEndEffectorOffset(direction=manip.GetEndEffectorTransform()[:3,2], distance=0.1, execute=True)
+        manip.hand.CloseHand()
+        robot.Grab(pitcher)
+
+        return True
+    except Exception, e:
+        print 'GraspHandle planning failed: ', str(e)
+        return False
+
+@ActionMethod        
+def Pour(robot, pitcher):
+    """
+    @param robot The robot performing the pouring
+    @param pitcher The pitcher to perform the pouring  
+    """
+    # Now create a goal of tilting 
+    min_tilt_amount = 95. #degrees
+    max_tilt_amount = 100. #degrees
+    success = False
+    while not success and max_tilt_amount > 70.: 
+        try:
+            print 'Planning between %d and %d' % (min_tilt_amount, max_tilt_amount)
+            manip = robot.GetActiveManipulator()
+            manip.PlanToTSR(robot.tsrlibrary(pitcher, 'pour', 
+                                             min_tilt = min_tilt_amount*numpy.pi/180., 
+                                             max_tilt = max_tilt_amount*numpy.pi/180.),
+                            smoothingitrs=100, execute=True)
+            success = True 
+        except Exception, e:
+            print 'Pour planning failed: ', str(e)
+            min_tilt_amount -= 5.
+            max_tilt_amount -= 5.
+            success = False
+    return success, min_tilt, max_tilt
+
+@ActionMethod
 def PushGraspCup(robot, cup, range):
     """
     @param robot The robot performing the push grasp 
