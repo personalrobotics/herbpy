@@ -277,32 +277,36 @@ class HERBRobot(Robot):
             logger.error('Detection failed update: %s' % str(e))
             raise
         
-    def DetectHuman(self, env, orhuman=1):
+    def DetectHuman(self, env, orhuman=1, hum_goal_predic=False):
         """Use the kinbody detector to detect objects and add
         them to the environment
         """
         import rospy
-        from tf import TransformListener
+        from tf import TransformListener, transformations
 
         humans = []
         if orhuman==0: 
             import or_skeletons.load_skeletons as sk
             logger.info('Humans_tracking')
-            rospy.init_node('humans_skel')
+            node_name = 'humans_skel' 
+            hum_goal_predic = False
         elif orhuman==1:
             import humanpy.humankinect1 as sk
             logger.info('Humans_tracking')
-            rospy.init_node('humans_or')
+            rnode_name = 'humans_or'
+            hum_goal_predic = False
         elif orhuman==2:
             import humanpy.humankinect2 as sk
             logger.info('Humans_tracking')
-            rospy.init_node('humans_or')
+            node_name = 'humans_env'
             
         try:        
+            rospy.init_node(node_name)
             tf = TransformListener()  
 
             while not rospy.is_shutdown():
-                sk.addRemoveHumans(tf, humans, env)
+
+                sk.addRemoveHumans(tf, humans, env, hum_goal_predic=hum_goal_predic)
                 for human in humans:
                     human.update(tf)       
                     logger.info('Updating...')
