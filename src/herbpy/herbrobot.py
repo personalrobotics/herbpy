@@ -41,8 +41,8 @@ class HERBRobot(Robot):
         self.manipulators = [ self.left_arm, self.right_arm, self.head ]
 
         # Dynamically switch to self-specific subclasses.
-        prpy.bind_subclass(self.left_arm, WAM, sim=left_arm_sim, owd_namespace='/left/owd')
-        prpy.bind_subclass(self.right_arm, WAM, sim=right_arm_sim, owd_namespace='/right/owd')
+        prpy.bind_subclass(self.left_arm, WAM, sim=left_arm_sim, namespace='/left')
+        prpy.bind_subclass(self.right_arm, WAM, sim=right_arm_sim, namespace='/right')
         prpy.bind_subclass(self.head, HERBPantilt, sim=head_sim, owd_namespace='/head/owd')
         prpy.bind_subclass(self.left_arm.hand, BarrettHand, sim=left_hand_sim, manipulator=self.left_arm,
                            owd_namespace='/left/owd', bhd_namespace='/left/bhd', ft_sim=right_ft_sim)
