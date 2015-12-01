@@ -67,11 +67,10 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
                        table_height]
 
     # Add in parameters for running the bias RRT if desired
-    if bias:
-        kw_args['bias'] = 2.0
+    if bias is not None:
+        kw_args['bias'] = bias
         kw_args['bias_type'] = 'DivergenceBias'
         kw_args['bias_num'] = 4
-        kw_args['use_compound_control'] = False
 
     try:
         with robot.CreateRobotStateSaver():
@@ -102,6 +101,7 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
               planner.ExecutePlannedPath()
 
           else:
+              raw_input('Turn on camera and press enter to play trajectory')
               # Execute the trajectory
               robot.ExecuteTrajectory(traj)
 
