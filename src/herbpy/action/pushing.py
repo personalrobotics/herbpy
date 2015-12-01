@@ -7,7 +7,9 @@ logger = logging.getLogger('herbpy')
 @ActionMethod
 def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius, 
                       manip=None, max_plan_duration=30.0, 
-                      shortcut_time=3., render=True, **kw_args):
+                      shortcut_time=3., render=True, bias=False,
+                      print_stats=False,
+                      **kw_args):
     """
     @param robot The robot performing the push
     @param obj The object to push
@@ -19,6 +21,8 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
     @param max_plan_duration The max time to run the planner
     @param shortcut_time The amount of time to spend shortcutting, if 0. no shortcutting is performed
     @param render If true, render the trajectory while executing
+    @param bias If true, use the bias RRT to generate more robust trajectories
+    @param print_stats If true, print statistics about the planning instance after planning completes
     """
     # Get a push planner
     try:
@@ -62,15 +66,28 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
                        goal_position[1],
                        table_height]
 
-    with robot.CreateRobotStateSaver():
-        traj = planner.PushToPose(robot, obj, goal_pose,
-                                  state_bounds = sbounds,
-                                  pushing_manifold = ee_pushing_transform.flatten().tolist(),
-                                  max_plan_duration = max_plan_duration,
-                                  goal_epsilon = goal_radius,
-                                  **kw_args)
-    if traj is None:
-        raise PlanningError('Failed to find pushing plan')
+    # Add in parameters for running the bias RRT if desired
+    if bias:
+        kw_args['bias'] = 2.0
+        kw_args['bias_type'] = 'DivergenceBias'
+        kw_args['bias_num'] = 4
+        kw_args['use_compound_control'] = False
+
+    try:
+        with robot.CreateRobotStateSaver():
+            traj = planner.PushToPose(robot, obj, goal_pose,
+                                      state_bounds = sbounds,
+                                      pushing_manifold = ee_pushing_transform.flatten().tolist(),
+                                      max_plan_duration = max_plan_duration,
+                                      goal_epsilon = goal_radius,
+                                      **kw_args)
+    finally:
+        if print_stats:
+            # Print out statistics from planning instance
+            stats = planner.GetLastPlanStats()
+            print 'Planner stats: '
+            for key in sorted(stats.keys()):
+                print '\t%s - %s' % (key, stats[key])
 
     # Execute
     from prpy.viz import RenderTrajectory
@@ -83,6 +100,7 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
               # This simulates the pushing of the objects during
               # execution of the trajectory.
               planner.ExecutePlannedPath()
+
           else:
               # Execute the trajectory
               robot.ExecuteTrajectory(traj)
