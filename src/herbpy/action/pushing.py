@@ -7,7 +7,7 @@ logger = logging.getLogger('herbpy')
 @ActionMethod
 def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius, 
                       manip=None, max_plan_duration=30.0, 
-                      shortcut_time=3., render=True, bias=False,
+                      shortcut_time=3., render=True, bias=None,
                       print_stats=False,
                       **kw_args):
     """
@@ -21,7 +21,7 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
     @param max_plan_duration The max time to run the planner
     @param shortcut_time The amount of time to spend shortcutting, if 0. no shortcutting is performed
     @param render If true, render the trajectory while executing
-    @param bias If true, use the bias RRT to generate more robust trajectories
+    @param bias The bias factor to apply during tree extension, if None no bias used
     @param print_stats If true, print statistics about the planning instance after planning completes
     """
     # Get a push planner
@@ -71,6 +71,7 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
         kw_args['bias'] = bias
         kw_args['bias_type'] = 'DivergenceBias'
         kw_args['bias_num'] = 4
+        kw_args['bias_std'] = 0.01
 
     try:
         with robot.CreateRobotStateSaver():
