@@ -7,8 +7,9 @@ logger = logging.getLogger('herbpy')
 @ActionMethod
 def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius, 
                       manip=None, max_plan_duration=30.0, 
+                      movable_objects=None,
                       shortcut_time=3., render=True, bias=None,
-                      print_stats=False,
+                      print_stats=False, savedir=None,
                       **kw_args):
     """
     @param robot The robot performing the push
@@ -23,6 +24,7 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
     @param render If true, render the trajectory while executing
     @param bias The bias factor to apply during tree extension, if None no bias used
     @param print_stats If true, print statistics about the planning instance after planning completes
+    @param savedir If provided, write planner metadata and stats to directory
     """
     # Get a push planner
     try:
@@ -74,9 +76,11 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
         kw_args['bias_std'] = 0.01
 
     try:
+        traj = None
         with robot.CreateRobotStateSaver():
             traj = planner.PushToPose(robot, obj, goal_pose,
                                       state_bounds = sbounds,
+                                      movable_objects=movable_objects,
                                       pushing_manifold = ee_pushing_transform.flatten().tolist(),
                                       max_plan_duration = max_plan_duration,
                                       goal_epsilon = goal_radius,
@@ -88,6 +92,29 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
             print 'Planner stats: '
             for key in sorted(stats.keys()):
                 print '\t%s - %s' % (key, stats[key])
+        if savedir is not None:
+            import os, yaml
+
+            # Write planning data to file
+            logger.info('Writing planning metadata to directory: %s' % savedir)
+    
+            if not os.path.exists(savedir):
+                os.makedirs(savedir)
+
+            path = planner.GetPlannedPath()
+            if path is not None:
+                pathfile = os.path.join(savedir, "path.ompl")
+                with open(pathfile, 'w') as f:
+                    f.write(yaml.dump(path))
+            if traj is not None:
+                trajfile = os.path.join(savedir, "path.traj")
+                with open(trajfile, 'w') as f:
+                    f.write(traj.serialize())
+            stats = planner.GetLastPlanStats()
+            statsfile = os.path.join(savedir, "planner.stats")
+            with open(statsfile, 'w') as f:
+                f.write(yaml.dump(stats))
+            planner.WritePlannerData(savedir)
 
     # Execute
     from prpy.viz import RenderTrajectory
@@ -113,5 +140,8 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
               # at the end of the trajectory. If execution was successful, this should resolve 
               # collisions. 
               planner.SetFinalObjectPoses()
+
+    
+
 
     return traj
