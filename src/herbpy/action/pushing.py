@@ -115,6 +115,10 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
             with open(statsfile, 'w') as f:
                 f.write(yaml.dump(stats))
             planner.WritePlannerData(savedir)
+            params = planner.GetPlannerParameters()
+            paramsfile = os.path.join(savedir, "planner.params")
+            with open(paramsfile, 'w') as f:
+                f.write(yaml.dump(params))
 
     # Execute
     from prpy.viz import RenderTrajectory
