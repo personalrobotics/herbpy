@@ -1,6 +1,6 @@
 import numpy
 import prpy.tsr
-
+"""
 @prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_plate', 'lift')
 def plate_lift(robot, plate, manip=None, distance=0.1):
     '''
@@ -55,7 +55,7 @@ def plate_lift(robot, plate, manip=None, distance=0.1):
             constrain = True, TSRs = [tsr_constraint])
 
     return [goal_tsr_chain, movement_chain]
-
+"""
 @prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_plate', 'grasp')
 def plate_grasp(robot, plate, manip=None):
     '''
