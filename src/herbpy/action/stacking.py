@@ -22,12 +22,12 @@ def StackCups(robot, cup, stack, cups_stacked):
         success = actions.MoveObject(robot, direction=[0, 0, 1], distance = stack_height)
     
     #Move cup in x-direction
-    move_cup_x, x_direc - MoveCupDistAndDirec(cup, stack, 0);
+    move_cup_x, x_direc = MoveCupDistAndDirec(cup, stack, 0);
     if success:
         success = actions.MoveObject(robot, direction=[x_direc, 0, 0], distance = move_cup_x)
     
     #Move cup in y-direction
-    move_cup_y, y_direc - MoveCupDistAndDirec(cup, stack, 1);
+    move_cup_y, y_direc = MoveCupDistAndDirec(cup, stack, 1);
     if success:
         success = actions.MoveObject(robot, direction=[0, y_direc, 0], distance = move_cup_y)
 
