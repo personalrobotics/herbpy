@@ -142,7 +142,7 @@ def sweep_objs(robot, transform, manip=None):
     return [goal_tsr_chain, movement_chain]
 
 @TSRFactory('herb', None, 'lift')
-def lift_obj(robot, transform=numpy.eye(4), manip=None, distance=0.1):
+def lift_obj(robot, transform=numpy.eye(4), manip=None, distance=0.1, epsilon=0.05):
     """
     This creates a TSR for lifting an object a specified distance. 
     It is assumed that when called, the robot is grasping the object.
@@ -168,7 +168,6 @@ def lift_obj(robot, transform=numpy.eye(4), manip=None, distance=0.1):
     end_position[2, 3] += distance
 
     Bw = numpy.zeros((6, 2))
-    epsilon = 0.05
     Bw[0,:] = [-epsilon, epsilon]
     Bw[1,:] = [-epsilon, epsilon]
     Bw[4,:] = [-epsilon, epsilon]
