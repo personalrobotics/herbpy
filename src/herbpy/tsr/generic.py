@@ -153,7 +153,6 @@ def lift_obj(robot, transform=numpy.eye(4), manip=None, distance=0.1):
     @param manip The manipulator to lift 
     @param distance The distance to lift the bottle
     """
-    print 'distance = %0.2f' % distance
 
     if manip is None:
         manip = robot.GetActiveManipulator()
