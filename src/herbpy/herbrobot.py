@@ -305,11 +305,10 @@ class HERBRobot(Robot):
             tf = TransformListener()  
 
             while not rospy.is_shutdown():
-
                 sk.addRemoveHumans(tf, humans, env, hum_goal_predic=hum_goal_predic)
                 for human in humans:
                     human.update(tf)       
-                    logger.info('Updating...')
+                    #logger.info('Updating...')
         except Exception, e:
             logger.error('Detection failed update: %s' % str(e))
             raise
