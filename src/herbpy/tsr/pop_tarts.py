@@ -1,7 +1,8 @@
 import numpy
-import prpy.tsr
+from prpy.tsr.tsrlibrary import TSRFactory
+from prpy.tsr.tsr import TSR, TSRChain
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'pop_tarts', 'grasp')
+@TSRFactory('herb', 'pop_tarts', 'grasp')
 def poptarts_grasp(robot, pop_tarts, manip=None):
     """
     @param robot The robot performing the grasp
@@ -11,7 +12,7 @@ def poptarts_grasp(robot, pop_tarts, manip=None):
     """
     return _poptarts_grasp(robot, pop_tarts, manip = manip)
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'pop_tarts', 'push_grasp')
+@TSRFactory('herb', 'pop_tarts', 'push_grasp')
 def poptarts_grasp(robot, pop_tarts, push_distance = 0.1, manip=None):
     """
     @param robot The robot performing the grasp
@@ -51,9 +52,8 @@ def _poptarts_grasp(robot, pop_tarts, push_distance = 0.0, manip = None):
     Bw[2,:] = [0.0, 0.02]  # Allow a little vertical movement
     Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
     
-    grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
+    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
+    grasp_chain = TSRChain(sample_start=False, sample_goal = True, 
             constrain=False, TSR = grasp_tsr)
 
     return [grasp_chain]
-

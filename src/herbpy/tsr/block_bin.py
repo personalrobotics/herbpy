@@ -1,7 +1,8 @@
 import numpy, prpy
-import prpy.tsr
+from prpy.tsr.tsrlibrary import TSRFactory
+from prpy.tsr.tsr import TSR, TSRChain
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'block_bin', 'point_on')
+@TSRFactory('herb', 'block_bin', 'point_on')
 def point_on(robot, block_bin, manip=None, padding=0.04):
     '''
     This creates a TSR that allows you to sample poses on the tray.
@@ -40,9 +41,7 @@ def point_on(robot, block_bin, manip=None, padding=0.04):
     Bw[5,:] = [-numpy.pi, numpy.pi] # allow any rotation around z - which is the axis normal to the tray top
 
     
-    manip_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    tsr_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = True, constrain=False, 
+    manip_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
+    tsr_chain = TSRChain(sample_start = False, sample_goal = True, constrain=False, 
                                TSR = manip_tsr)
     return [tsr_chain]
-
-

@@ -1,7 +1,8 @@
 import numpy
-import prpy.tsr
+from prpy.tsr.tsrlibrary import TSRFactory
+from prpy.tsr.tsr import TSR, TSRChain
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'grasp')
+@TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'grasp')
 def pitcher_grasp(robot, pitcher, manip=None):
     '''
     @param robot The robot performing the grasp
@@ -25,13 +26,13 @@ def pitcher_grasp(robot, pitcher, manip=None):
     Bw = numpy.zeros((6,2))
     Bw[2,:] = [-0.01, 0.01]  # Allow a little vertical movement
     
-    grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
-                                    constrain=False, TSR = grasp_tsr)
+    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
+    grasp_chain = TSRChain(sample_start=False, sample_goal = True, 
+                           constrain=False, TSR = grasp_tsr)
 
     return [grasp_chain]
         
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'pour')
+@TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'pour')
 def pitcher_pour(robot, pitcher, min_tilt = 1.4, max_tilt = 1.57, manip=None, grasp_transform = None, 
                  pitcher_pose = None):
     '''
@@ -72,14 +73,14 @@ def pitcher_pour(robot, pitcher, min_tilt = 1.4, max_tilt = 1.57, manip=None, gr
     Bw_pour[4,:] = [0, 2*numpy.pi ]
     Bw_pour[3,:] = [-10*numpy.pi/180, 10*numpy.pi/180]
         
-    tsr_0 = prpy.tsr.TSR(T0_w = pitcher_pose,
-                         Tw_e = spout_in_pitcher,
-                         Bw = numpy.zeros((6,2)),
-                         manip = manip_idx)
+    tsr_0 = TSR(T0_w = pitcher_pose,
+                Tw_e = spout_in_pitcher,
+                Bw = numpy.zeros((6,2)),
+                manip = manip_idx)
 
-    tsr_1_constraint = prpy.tsr.TSR(Tw_e = ee_in_spout,
-                                    Bw = Bw_pour,
-                                    manip = manip_idx)
+    tsr_1_constraint = TSR(Tw_e = ee_in_spout,
+                           Bw = Bw_pour,
+                           manip = manip_idx)
 
     pour_chain = prpy.tsr.TSRChain(sample_start = False,
                                    sample_goal = False,
@@ -88,12 +89,12 @@ def pitcher_pour(robot, pitcher, min_tilt = 1.4, max_tilt = 1.57, manip=None, gr
 
     Bw_goal = numpy.zeros((6,2))
     Bw_goal[4,:] = [ min_tilt, max_tilt ]
-    tsr_1_goal = prpy.tsr.TSR(Tw_e = ee_in_spout,
-                              Bw = Bw_goal,
-                              manip = manip_idx)
-    pour_goal = prpy.tsr.TSRChain(sample_start = False,
-                                  sample_goal = True,
-                                  constrain = False,
-                                  TSRs = [tsr_0, tsr_1_goal])
+    tsr_1_goal = TSR(Tw_e = ee_in_spout,
+                     Bw = Bw_goal,
+                     manip = manip_idx)
+    pour_goal = TSRChain(sample_start = False,
+                         sample_goal = True,
+                         constrain = False,
+                         TSRs = [tsr_0, tsr_1_goal])
 
     return [pour_chain, pour_goal], min_tilt, max_tilt

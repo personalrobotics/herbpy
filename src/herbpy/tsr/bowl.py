@@ -1,6 +1,6 @@
 import numpy
-import prpy.tsr
-from openravepy import Robot
+from prpy.tsr.tsrlibrary import TSRFactory
+from prpy.tsr.tsr import TSR, TSRChain
 
 @prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_bowl', 'grasp')
 def bowl_grasp(robot, bowl, manip=None):
@@ -10,17 +10,13 @@ def bowl_grasp(robot, bowl, manip=None):
     @param manip The manipulator to perform the grasp, 
        if None the active manipulator on the robot is used
     '''
-    with robot.GetEnv():
-        if manip is None:
-            manip_idx = robot.GetActiveManipulatorIndex()
-        else:
-            with robot.CreateRobotStateSaver(
-                    Robot.SaveParameters.ActiveManipulator):
-                manip.GetRobot().SetActiveManipulator(manip)
-                manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+    if manip is None:
+        manip_idx = robot.GetActiveManipulatorIndex()
+    else:
+        manip.GetRobot().SetActiveManipulator(manip)
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
-        T0_w = bowl.GetTransform()
-
+    T0_w = bowl.GetTransform()
     Tw_e = numpy.array([[1.,  0.,  0., 0.08],
                         [0., -1.,  0., 0.],
                         [0.,  0., -1., 0.34],
@@ -29,13 +25,13 @@ def bowl_grasp(robot, bowl, manip=None):
     Bw[2,:] = [-0.02, 0.02] # Allow a little verticle movement
     Bw[5,:] = [-numpy.pi, numpy.pi] # Allow any orientation
 
-    grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
-                                    constrain=False, TSR = grasp_tsr)
+    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
+    grasp_chain = TSRChain(sample_start=False, sample_goal = True, 
+                           constrain=False, TSR = grasp_tsr)
 
     return [grasp_chain]
     
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'plastic_bowl', 'place')
+@TSRFactory('herb', 'plastic_bowl', 'place')
 def bowl_on_table(robot, bowl, pose_tsr_chain, manip=None):
     '''
     Generates end-effector poses for placing the bowl on the table.
@@ -47,17 +43,15 @@ def bowl_on_table(robot, bowl, pose_tsr_chain, manip=None):
     @param manip The manipulator grasping the object, if None the active
        manipulator of the robot is used
     '''
-    with robot.GetEnv():
-        if manip is None:
-            manip_idx = robot.GetActiveManipulatorIndex()
-            manip = robot.GetActiveManipulator()
-        else:
-            with manip.GetRobot().CreateRobotStateSaver(
-                    Robot.SaveParameters.ActiveManipulator):
-                manip.GetRobot().SetActiveManipulator(manip)
-                manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+   
+    if manip is None:
+        manip_idx = robot.GetActiveManipulatorIndex()
+        manip = robot.GetActiveManipulator()
+    else:
+        manip.GetRobot().SetActiveManipulator(manip)
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
-        ee_in_bowl = numpy.dot(numpy.linalg.inv(bowl.GetTransform()), manip.GetEndEffectorTransform())
+    ee_in_bowl = numpy.dot(numpy.linalg.inv(bowl.GetTransform()), manip.GetEndEffectorTransform())
     Bw = numpy.zeros((6,2)) 
     Bw[2,:] = [0., 0.08]  # Allow some vertical movement
    
@@ -65,9 +59,9 @@ def bowl_on_table(robot, bowl, pose_tsr_chain, manip=None):
         if tsr.manipindex != manip_idx:
             raise Exception('pose_tsr_chain defined for a different manipulator.')
 
-    grasp_tsr = prpy.tsr.TSR(Tw_e = ee_in_bowl, Bw = Bw, manip = manip_idx)
+    grasp_tsr = TSR(Tw_e = ee_in_bowl, Bw = Bw, manip = manip_idx)
     all_tsrs = list(pose_tsr_chain.TSRs) + [grasp_tsr]
-    place_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = True, constrain = False,
+    place_chain = TSRChain(sample_start = False, sample_goal = True, constrain = False,
                            TSRs = all_tsrs)
 
     return  [ place_chain ]
