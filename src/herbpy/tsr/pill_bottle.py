@@ -42,9 +42,8 @@ def _pills_grasp(robot, pills, manip=None, push_distance=0.0, **kw_args):
     if manip is None:
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     T0_w = pills.GetTransform()
     
@@ -82,9 +81,8 @@ def pills_on_table(robot, pills, pose_tsr_chain, manip=None):
         manip_idx = robot.GetActiveManipulatorIndex()
         manip = robot.GetActiveManipulator()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     ee_in_glass = numpy.dot(numpy.linalg.inv(pills.GetTransform()), manip.GetEndEffectorTransform())
     ee_in_glass[2,3] += 0.04 # Let go slightly above table
@@ -122,9 +120,8 @@ def pills_transport(robot, pills, manip=None, roll_epsilon=0.2, pitch_epsilon=0.
         manip_idx = robot.GetActiveManipulatorIndex()
         manip = robot.GetActiveManipulator()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     ee_in_glass = numpy.dot(numpy.linalg.inv(pills.GetTransform()), manip.GetEndEffectorTransform())
     Bw = numpy.array([[-100., 100.], # bounds that cover full reachability of manip

@@ -18,9 +18,8 @@ def point_on(robot, table, manip=None):
     if manip is None:
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
             
     T0_w = table.GetTransform()
 

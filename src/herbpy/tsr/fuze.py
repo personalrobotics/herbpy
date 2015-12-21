@@ -34,9 +34,8 @@ def _fuze_grasp(robot, fuze, push_distance = 0.0, manip = None):
     if manip is None:
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     T0_w = fuze.GetTransform()
     ee_to_palm_distance = 0.18

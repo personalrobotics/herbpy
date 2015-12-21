@@ -22,9 +22,8 @@ def point_on(robot, tray, manip=None, padding=0.0, handle_padding=True):
     if manip is None:
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
             
     T0_w = tray.GetTransform()
 
@@ -210,9 +209,8 @@ def pull_tray(robot, tray, manip=None, max_distance=0.0, min_distance=0.0,
         manip = robot.GetActiveManipulator()
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
             
     # Create a w frame with z-axis pointing in direction of pull
     ee_in_world = manip.GetEndEffectorTransform()

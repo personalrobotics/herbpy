@@ -138,7 +138,6 @@ def sweep_objs(robot, transform, manip=None):
     movement_chain = TSRChain(sample_start = False, sample_goal = False,
             constrain = True, TSRs = [tsr_constraint])
 
-
     return [goal_tsr_chain, movement_chain]
 
 @TSRFactory('herb', None, 'lift')
@@ -158,9 +157,8 @@ def lift_obj(robot, transform=numpy.eye(4), manip=None, distance=0.1, epsilon=0.
         manip = robot.GetActiveManipulator()
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
-         with manip.GetRobot():
-             manip.SetActive()
-             manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+         manip.SetActive()
+         manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     #TSR for the goal
     start_position = manip.GetEndEffectorTransform()

@@ -13,9 +13,8 @@ def plate_grasp(robot, plate, manip=None):
     if manip is None:
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     plate_radius = plate.ComputeAABB().extents()[0]
     T0_w = plate.GetTransform()
@@ -49,9 +48,8 @@ def plate_on_table(robot, plate, pose_tsr_chain, manip=None):
         manip_idx = robot.GetActiveManipulatorIndex()
         manip = robot.GetActiveManipulator()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     ee_in_plate = numpy.dot(numpy.linalg.inv(plate.GetTransform()), manip.GetEndEffectorTransform())
     Bw = numpy.zeros((6,2))

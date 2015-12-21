@@ -14,9 +14,8 @@ def pitcher_grasp(robot, pitcher, manip=None):
     if manip is None:
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     T0_w = pitcher.GetTransform()
     Tw_e = numpy.array([[0.802, 0., -0.596, 0.199], 
@@ -49,9 +48,8 @@ def pitcher_pour(robot, pitcher, min_tilt = 1.4, max_tilt = 1.57, manip=None, gr
         manip = robot.GetActiveManipulator()
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     if pitcher_pose is None:
         pitcher_pose = pitcher.GetTransform()
@@ -82,10 +80,10 @@ def pitcher_pour(robot, pitcher, min_tilt = 1.4, max_tilt = 1.57, manip=None, gr
                            Bw = Bw_pour,
                            manip = manip_idx)
 
-    pour_chain = prpy.tsr.TSRChain(sample_start = False,
-                                   sample_goal = False,
-                                   constrain = True,
-                                   TSRs = [tsr_0, tsr_1_constraint])
+    pour_chain = TSRChain(sample_start = False,
+                          sample_goal = False,
+                          constrain = True,
+                          TSRs = [tsr_0, tsr_1_constraint])
 
     Bw_goal = numpy.zeros((6,2))
     Bw_goal[4,:] = [ min_tilt, max_tilt ]

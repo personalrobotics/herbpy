@@ -15,9 +15,8 @@ def block_grasp(robot, block, manip=None):
         manip_idx = robot.GetActiveManipulatorIndex()
         manip = robot.GetActiveManipulator()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     offset = 0.01 #vertical offset relative to block
     alpha = 0.8 # orientation of end-effector relative to block
@@ -31,10 +30,10 @@ def block_grasp(robot, block, manip=None):
     Bw = numpy.zeros((6,2))
     Bw[5,:] = [-numpy.pi, numpy.pi]
         
-    pose_tsr = prpy.tsr.TSR(T0_w = block_in_world,
-                             Tw_e = ee_in_block,
-                             Bw = Bw,
-                             manip = manip_idx)
+    pose_tsr = TSR(T0_w = block_in_world,
+                   Tw_e = ee_in_block,
+                   Bw = Bw,
+                   manip = manip_idx)
 
     pose_tsr_chain = TSRChain(sample_start=False, 
                               sample_goal = True,
@@ -57,9 +56,8 @@ def block_at_pose(robot, block, position, manip=None):
         manip_idx = robot.GetActiveManipulatorIndex()
         manip = robot.GetActiveManipulator()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     # Block on the object
     T0_w = numpy.eye(4)
@@ -100,9 +98,8 @@ def block_on_surface(robot, block, pose_tsr_chain, manip=None):
         manip_idx = robot.GetActiveManipulatorIndex()
         manip = robot.GetActiveManipulator()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     block_pose = block.GetTransform()
     block_pose[:3,:3] = numpy.eye(3) # ignore orientation
