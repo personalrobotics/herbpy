@@ -100,7 +100,9 @@ def Point(robot, coord, manip=None, render=False):
 
     focus_trans = numpy.eye(4, dtype='float')
     focus_trans[0:3, 3] = coord
-    point_tsr = robot.tsrlibrary(None, 'point', focus_trans, manip)
+
+    with robot.GetEnv():
+        point_tsr = robot.tsrlibrary(None, 'point', focus_trans, manip)
 
     p = openravepy.KinBody.SaveParameters
     with robot.CreateRobotStateSaver(p.ActiveManipulator | p.ActiveDOF):
@@ -128,7 +130,9 @@ def Present(robot, coord, manip=None, render=True):
 
     focus_trans = numpy.eye(4, dtype='float')
     focus_trans[0:3, 3] = coord
-    present_tsr = robot.tsrlibrary(None, 'present', focus_trans, manip)
+
+    with robot.GetEnv():
+        present_tsr = robot.tsrlibrary(None, 'present', focus_trans, manip)
     
     p = openravepy.KinBody.SaveParameters
     with robot.CreateRobotStateSaver(p.ActiveManipulator | p.ActiveDOF):
@@ -186,7 +190,8 @@ def Sweep(robot, start_coords, end_coords, manip=None, margin=0.3, render=True):
         manip.PlanToEndEffectorPose(hand_pose, execute=True)
 
     #TSR to sweep to end position
-    sweep_tsr = robot.tsrlibrary(None, 'sweep', end_trans, manip)
+    with robot.GetEnv():
+        sweep_tsr = robot.tsrlibrary(None, 'sweep', end_trans, manip)
 
     p = openravepy.KinBody.SaveParameters
     with robot.CreateRobotStateSaver(p.ActiveManipulator | p.ActiveDOF):
