@@ -1,7 +1,8 @@
 import numpy
-import prpy.tsr
+from prpy.tsr.tsrlibrary import TSRFactory
+from prpy.tsr.tsr import TSR, TSRChain
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'fuze_bottle', 'grasp')
+@TSRFactory('herb', 'fuze_bottle', 'grasp')
 def fuze_grasp(robot, fuze, manip=None):
     """
     @param robot The robot performing the grasp
@@ -11,7 +12,7 @@ def fuze_grasp(robot, fuze, manip=None):
     """
     return _fuze_grasp(robot, fuze, manip = manip)
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'fuze_bottle', 'push_grasp')
+@TSRFactory('herb', 'fuze_bottle', 'push_grasp')
 def fuze_grasp(robot, fuze, push_distance = 0.1, manip=None):
     """
     @param robot The robot performing the grasp
@@ -33,9 +34,8 @@ def _fuze_grasp(robot, fuze, push_distance = 0.0, manip = None):
     if manip is None:
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     T0_w = fuze.GetTransform()
     ee_to_palm_distance = 0.18
@@ -51,9 +51,9 @@ def _fuze_grasp(robot, fuze, push_distance = 0.0, manip = None):
     Bw[2,:] = [0.0, 0.02]  # Allow a little vertical movement
     Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
     
-    grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
-                                    constrain=False, TSR = grasp_tsr)
+    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
+    grasp_chain = TSRChain(sample_start=False, sample_goal = True, 
+                           constrain=False, TSR = grasp_tsr)
 
     return [grasp_chain]
 

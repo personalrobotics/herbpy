@@ -1,7 +1,8 @@
 import numpy
-import prpy.tsr
+from prpy.tsr.tsrlibrary import TSRFactory
+from prpy.tsr.tsr import TSR, TSRChain
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'pill_bottle', 'grasp')
+@TSRFactory('herb', 'pill_bottle', 'grasp')
 def pills_grasp(robot, pills, manip=None, **kw_args):
     '''
     @param robot The robot performing the grasp
@@ -11,7 +12,7 @@ def pills_grasp(robot, pills, manip=None, **kw_args):
     '''
     return _pills_grasp(robot, pills, manip=manip, **kw_args)
     
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'pill_bottle', 'push_grasp')
+@TSRFactory('herb', 'pill_bottle', 'push_grasp')
 def pills_push_grasp(robot, pills, manip=None, push_distance=0.1, **kw_args):
     '''
     This factory differes from pills_grasp in that it places the manipulator 
@@ -41,9 +42,8 @@ def _pills_grasp(robot, pills, manip=None, push_distance=0.0, **kw_args):
     if manip is None:
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     T0_w = pills.GetTransform()
     
@@ -59,13 +59,13 @@ def _pills_grasp(robot, pills, manip=None, push_distance=0.0, **kw_args):
     Bw[2,:] = [0.0, 0.02]  # Allow a little vertical movement
     Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
     
-    grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
+    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
+    grasp_chain = TSRChain(sample_start=False, sample_goal = True, 
                                     constrain=False, TSR = grasp_tsr)
 
     return [grasp_chain]
                 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'pill_bottle', 'place')
+@TSRFactory('herb', 'pill_bottle', 'place')
 def pills_on_table(robot, pills, pose_tsr_chain, manip=None):
     '''
     Generates end-effector poses for placing the pill bottle on the table.
@@ -81,9 +81,8 @@ def pills_on_table(robot, pills, pose_tsr_chain, manip=None):
         manip_idx = robot.GetActiveManipulatorIndex()
         manip = robot.GetActiveManipulator()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     ee_in_glass = numpy.dot(numpy.linalg.inv(pills.GetTransform()), manip.GetEndEffectorTransform())
     ee_in_glass[2,3] += 0.04 # Let go slightly above table
@@ -94,14 +93,14 @@ def pills_on_table(robot, pills, pose_tsr_chain, manip=None):
         if tsr.manipindex != manip_idx:
             raise Exception('pose_tsr_chain defined for a different manipulator.')
 
-    grasp_tsr = prpy.tsr.TSR(Tw_e = ee_in_glass, Bw = Bw, manip = manip_idx)
+    grasp_tsr = TSR(Tw_e = ee_in_glass, Bw = Bw, manip = manip_idx)
     all_tsrs = list(pose_tsr_chain.TSRs) + [grasp_tsr]
-    place_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = True, constrain = False,
+    place_chain = TSRChain(sample_start = False, sample_goal = True, constrain = False,
                            TSRs = all_tsrs)
 
     return  [ place_chain ]
     
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'pill_bottle', 'transport')
+@TSRFactory('herb', 'pill_bottle', 'transport')
 def pills_transport(robot, pills, manip=None, roll_epsilon=0.2, pitch_epsilon=0.2, yaw_epsilon=0.2):
     '''
     Generates a trajectory-wide constraint for transporting the object with little roll, pitch or yaw
@@ -121,9 +120,8 @@ def pills_transport(robot, pills, manip=None, roll_epsilon=0.2, pitch_epsilon=0.
         manip_idx = robot.GetActiveManipulatorIndex()
         manip = robot.GetActiveManipulator()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     ee_in_glass = numpy.dot(numpy.linalg.inv(pills.GetTransform()), manip.GetEndEffectorTransform())
     Bw = numpy.array([[-100., 100.], # bounds that cover full reachability of manip
@@ -132,12 +130,12 @@ def pills_transport(robot, pills, manip=None, roll_epsilon=0.2, pitch_epsilon=0.
                       [-roll_epsilon, roll_epsilon],
                       [-pitch_epsilon, pitch_epsilon],
                       [-yaw_epsilon, yaw_epsilon]])
-    transport_tsr = prpy.tsr.TSR(T0_w = glass.GetTransform(),
-                                 Tw_e = ee_in_glass,
-                                 Bw = Bw,
-                                 manip = manip_idx)
+    transport_tsr = TSR(T0_w = glass.GetTransform(),
+                        Tw_e = ee_in_glass,
+                        Bw = Bw,
+                        manip = manip_idx)
 
-    transport_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal=False, 
-                                        constrain=True, TSR = transport_tsr)
+    transport_chain = TSRChain(sample_start = False, sample_goal=False, 
+                               constrain=True, TSR = transport_tsr)
     
     return [ transport_chain ]
