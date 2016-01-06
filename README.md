@@ -235,11 +235,11 @@ robot.base.PlanToBasePose(robot_pose_in_world)
 
 Comprehensive example of picking up a Fuze drink bottle: 
 HERB will plan a path for the Segway base using SBPL and drive to the table, grasp the object using a simulated push-grasp and lift it off the table. 
-* [examples/graspFuzeBottle.py](examples/graspFuzeBottle.py)
+[examples/graspFuzeBottle.py](examples/graspFuzeBottle.py)
 
 Push-grasping example: 
-This depends on the `randomized_rearrangement_planning` package, which will be released soon, and requires OMPL from `ros-indigo-ompl`
-* [examples/pushAndGraspCup.py](examples/pushAndGraspCup.py)
+This depends on the `randomized_rearrangement_planning` package, which will be released soon, and requires OMPL from `ros-indigo-ompl` 
+[examples/pushAndGraspCup.py](examples/pushAndGraspCup.py)
 
 
 [herbpy.herb.initialize]: src/herbpy/herb.py#L7
