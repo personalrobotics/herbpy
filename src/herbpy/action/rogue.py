@@ -17,7 +17,6 @@ def PointAt(robot, focus, manip=None, render=False):
                  This must be the right arm
     @param render Render tsr samples during planning
     """
-    env = robot.GetEnv()
     pointing_coord = GetPointFrom(focus)
     return Point(robot, pointing_coord, manip, render)
 
@@ -31,7 +30,6 @@ def PresentAt(robot, focus, manip=None, render=True):
                  This must be the right arm.
     @param render Render tsr samples during planning
     """
-    env = robot.GetEnv()
     presenting_coord = GetPointFrom(focus)
     return Present(robot, presenting_coord, manip, render)
 
@@ -47,7 +45,6 @@ def SweepAt(robot, start, end, manip=None, margin=0.3, render=True):
                   This must be enough to clear the objects themselves.
     @param render Render tsr samples during planning
     """
-    env = robot.GetEnv()
     start_coord = GetPointFrom(start)
     end_coord = GetPointFrom(end)
     return Sweep(robot, start_coord, end_coord, manip, margin, render)
