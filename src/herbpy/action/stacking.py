@@ -39,7 +39,7 @@ def StackCups(robot, cup, stack, cups_stacked):
 
     #Release cup
     if success:
-        robot.right_arm.hand.OpenHand()
+        robot.GetActiveManipulator().hand.OpenHand()
         robot.Release(cup)
         cup.SetTransform(stack.GetTransform())
         cup.Enable(False)
