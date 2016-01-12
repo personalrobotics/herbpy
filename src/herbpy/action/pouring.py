@@ -63,7 +63,12 @@ def PourWater(robot, cup, pitcher):
         success_cup = actions.MoveObject(robot, direction=[0, -1, 0], distance=cup_aabb.extents()[1])
 
     if success_cup:
-        success_cup = actions.MoveObject(robot, direction=[0, 0, -1], distance=0.009)       
+        success_cup = actions.MoveObject(robot, direction=[0, 0, -1], distance=0.007)
+        manip_cup.hand.OpenHand()
+        robot.Release(cup)
+        success_cup = actions.MoveObject(robot, direction=[-1, 0, 0], distance = 0.01)
+        success_cup = actions.MoveObject(robot, direction=[0, -1, 0], distance = 0.2)
+        manip_cup.PlanToNamedConfiguration('home', execute=True)       
 
     manip.SetActive()
     robot.SetActiveManipulator(manip)
@@ -78,7 +83,7 @@ def PourWater(robot, cup, pitcher):
         traj = robot.PostProcessPath(traj)
         robot.ExecuteTrajectory(traj)
 
-    time.sleep(2)
+    time.sleep(1)
     
     #Slows down the speed of the arm
     robot.GetActiveManipulator().SetVelocityLimits(v, 0.3)
@@ -102,3 +107,6 @@ def PourWater(robot, cup, pitcher):
     if success:
         manip.hand.OpenHand()
         robot.Release(pitcher)
+
+    import IPython
+    IPython.embed()
