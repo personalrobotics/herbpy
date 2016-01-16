@@ -192,7 +192,8 @@ class HERBRobot(Robot):
                                             marker_data_path=marker_data_path,
                                             kinbody_path=kinbody_path,
                                             detection_frame='head/kinect2_rgb_optical_frame',
-                                            destination_frame='map')
+                                            destination_frame='herb_base')
+                                            #destination_frame='map')
         if not self.talker_simulated:
             # Initialize herbpy ROS Node
             import rospy
@@ -250,7 +251,8 @@ class HERBRobot(Robot):
 
     def DetectObjects(self, 
                       detection_frame='head/kinect2_rgb_optical_frame',
-                      destination_frame='map'):
+                      destination_frame='herb_base'):
+                      #destination_frame='map'):
         """Use the kinbody detector to detect objects and add
         them to the environment
         """
@@ -277,7 +279,10 @@ class HERBRobot(Robot):
             logger.error('Detection failed update: %s' % str(e))
             raise
         
-    def DetectHuman(self, env, orhuman=1, hum_goal_predic=False):
+        return True
+        
+    def DetectHuman(self, env, orhuman=1, hum_goal_predic=False, 
+                    segway_sim=True, action='stamp'):
         """Use the kinbody detector to detect objects and add
         them to the environment
         """
@@ -291,21 +296,29 @@ class HERBRobot(Robot):
             node_name = 'humans_skel' 
             hum_goal_predic = False
         elif orhuman==1:
-            import humanpy.humankinect1 as sk
+            import humanpy.hum_kin1 as sk
             logger.info('Humans_tracking')
             rnode_name = 'humans_or'
             hum_goal_predic = False
         elif orhuman==2:
-            import humanpy.humankinect2 as sk
+            import humanpy.hum_kin2 as sk
             logger.info('Humans_tracking')
             node_name = 'humans_env'
-            
-        try:        
-            rospy.init_node(node_name)
+           
+        try:
+            rospy.init_node(node_name, anonymous=True)
+        except rospy.exceptions.ROSException:
+            pass
+           
+        try:  
             tf = TransformListener()  
 
             while not rospy.is_shutdown():
-                sk.addRemoveHumans(tf, humans, env, hum_goal_predic=hum_goal_predic)
+              
+                sk.addRemoveHumans(tf, humans, env, node_name,
+                                   hum_goal_predic=hum_goal_predic, 
+                                   segway_sim=segway_sim,
+                                   action=action)
                 for human in humans:
                     human.update(tf)       
                     #logger.info('Updating...')
