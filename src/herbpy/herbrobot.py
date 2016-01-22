@@ -279,7 +279,7 @@ class HERBRobot(Robot):
             logger.error('Detection failed update: %s' % str(e))
             raise
         
-        return True
+        #return True
         
     def DetectHuman(self, env, orhuman=1, hum_goal_predic=False, 
                     segway_sim=True, action='stamp'):
@@ -294,12 +294,12 @@ class HERBRobot(Robot):
             import or_skeletons.load_skeletons as sk
             logger.info('Humans_tracking')
             node_name = 'humans_skel' 
-            hum_goal_predic = False
+            #hum_goal_predic = False
         elif orhuman==1:
             import humanpy.hum_kin1 as sk
             logger.info('Humans_tracking')
             rnode_name = 'humans_or'
-            hum_goal_predic = False
+            #hum_goal_predic = False
         elif orhuman==2:
             import humanpy.hum_kin2 as sk
             logger.info('Humans_tracking')
@@ -313,8 +313,7 @@ class HERBRobot(Robot):
         try:  
             tf = TransformListener()  
 
-            while not rospy.is_shutdown():
-              
+            while not rospy.is_shutdown():              
                 sk.addRemoveHumans(tf, humans, env, node_name,
                                    hum_goal_predic=hum_goal_predic, 
                                    segway_sim=segway_sim,
