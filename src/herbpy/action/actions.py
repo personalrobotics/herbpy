@@ -4,15 +4,20 @@ from prpy.tsr import tsrlibrary
 from prpy.tsr.tsr import *
 
 @ActionMethod
-def MoveObject(robot, direction = [0, 0, 1], distance = 0.1):
+def MoveObject(robot, table, direction = [0, 0, 1], distance = 0.1):
 	"""
 	@param robot The robot performing the push grasp
+    @param table The table in the environment
 	@param direction The direction to move the object
 	@param distance The distance to move the object
 	"""
+    table_in_world = table.GetTransform()
+    direction.append(1)
+    v1_in_table = numpy.dot(numpy.linalg.inv(table_in_world), direction)
+    v1_in_world = numpy.dot(table_in_world, v1_in_table)
     try:
         manip = robot.GetActiveManipulator()
-        manip.PlanToEndEffectorOffset(direction, distance, position_tolerance=0.1, execute=True)
+        manip.PlanToEndEffectorOffset(v1_in_world[:3], distance, position_tolerance=0.1, execute=True, timelimit=10)
         return True
     except Exception, e:
         print 'MoveObject planning failed: ', str(e)
