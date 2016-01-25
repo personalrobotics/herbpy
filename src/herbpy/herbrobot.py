@@ -323,6 +323,7 @@ class HERBRobot(Robot):
            
         try:  
             tf = TransformListener()  
+            humanadded = False
 
             while not rospy.is_shutdown():   
                 if load_hum==True:
@@ -333,10 +334,11 @@ class HERBRobot(Robot):
                         human.update(tf)       
                         #logger.info('Updating...')
                 if hrc==True:
-                    assistance.addHumansPred(tf, humans_hrc, env,
-                                             herb_sim=herb_sim,
-                                             segway_sim=segway_sim,
-                                             action=action)
+                    if humanadded==False:
+                        humanadded = assistance.addHumansPred(tf, humans_hrc, env,
+                                                                herb_sim=herb_sim,
+                                                                segway_sim=segway_sim,
+                                                                action=action)
                     for human in humans_hrc:
                         human.update(tf)       
                         #logger.info('Updating...')
