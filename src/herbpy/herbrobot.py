@@ -281,30 +281,41 @@ class HERBRobot(Robot):
         
         #return True
         
-    def DetectHuman(self, env, orhuman=1, hum_goal_predic=False, 
-                    segway_sim=True, action='stamp'):
+    def DetectHuman(self, env, orhuman=2, load_hum=True, hrc=False,                     
+                    segway_sim=True, herb_sim=True, action='stamp',
+                    enable_legs=True):
         """Use the kinbody detector to detect objects and add
         them to the environment
         """
         import rospy
         from tf import TransformListener, transformations
 
-        humans = []
+        node_name = 'detecthuman'  
+
         if orhuman==0: 
-            import or_skeletons.load_skeletons as sk
-            logger.info('Humans_tracking')
-            node_name = 'humans_skel' 
-            #hum_goal_predic = False
+            if load_hum==True:
+                #kin 1 - load a skeleton
+                import or_skeletons.load_skeletons as sk
+                humans = []
+                logger.info('Humans_tracking')
         elif orhuman==1:
-            import humanpy.hum_kin1 as sk
-            logger.info('Humans_tracking')
-            rnode_name = 'humans_or'
-            #hum_goal_predic = False
+            if load_hum==True:
+                #kin 1- load the human from openrave
+                import humanpy.hum_kin1 as sk
+                humans = []
+                logger.info('Humans_tracking')
         elif orhuman==2:
-            import humanpy.hum_kin2 as sk
-            logger.info('Humans_tracking')
-            node_name = 'humans_env'
-           
+            if load_hum==True:
+                #kin 2 - load the human from openrave
+                import humanpy.hum_kin2 as sk
+                humans = []
+                logger.info('Humans_tracking')
+            if hrc==True:
+                from hrc import assistance                 
+                humans_hrc = []
+                logger.info('HRC')
+               
+                
         try:
             rospy.init_node(node_name, anonymous=True)
         except rospy.exceptions.ROSException:
@@ -313,14 +324,24 @@ class HERBRobot(Robot):
         try:  
             tf = TransformListener()  
 
-            while not rospy.is_shutdown():              
-                sk.addRemoveHumans(tf, humans, env, node_name,
-                                   hum_goal_predic=hum_goal_predic, 
-                                   segway_sim=segway_sim,
-                                   action=action)
-                for human in humans:
-                    human.update(tf)       
-                    #logger.info('Updating...')
+            while not rospy.is_shutdown():   
+                if load_hum==True:
+                    sk.addRemoveHumans(tf, humans, env,
+                                       enable_legs=enable_legs,
+                                       segway_sim=segway_sim)
+                    for human in humans:
+                        human.update(tf)       
+                        #logger.info('Updating...')
+                if hrc==True:
+                    assistance.addHumansPred(tf, humans_hrc, env,
+                                             herb_sim=herb_sim,
+                                             segway_sim=segway_sim,
+                                             action=action)
+                    for human in humans_hrc:
+                        human.update(tf)       
+                        #logger.info('Updating...')
+                    
+                        
         except Exception, e:
             logger.error('Detection failed update: %s' % str(e))
             raise
