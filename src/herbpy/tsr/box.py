@@ -24,7 +24,7 @@ def box_stamp(robot, box, manip=None):
     
     ee_to_palm = 0.18
     palm_to_box_center = .045
-    adjustment = -0.1
+    adjustment = -0.09
     total_offset = ee_to_palm + palm_to_box_center + adjustment
     Tw_e = numpy.array([[ 0., 0., 1., -total_offset], 
                         [1., 0., 0., 0.], 

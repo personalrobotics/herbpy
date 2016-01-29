@@ -343,6 +343,8 @@ class HERBRobot(Robot):
                         human.update(tf)       
                         #logger.info('Updating...')
                     
+                    
+                    
                         
         except Exception, e:
             logger.error('Detection failed update: %s' % str(e))
