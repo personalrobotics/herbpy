@@ -39,7 +39,7 @@ def PushGrasp(robot, obj, push_distance=0.1, manip=None,
        (if None, the 'grasp' tsr from tsrlibrary is used)
     @param render Render tsr samples and push direction vectors during planning
     """
-    with env: 
+    with robot.GetEnv(): 
         if tsrlist is None:
             tsrlist = robot.tsrlibrary(obj, 'push_grasp', push_distance=push_distance)
 
