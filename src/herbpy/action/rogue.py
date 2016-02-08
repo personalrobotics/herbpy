@@ -2,7 +2,7 @@ import logging, openravepy, prpy
 from prpy.action import ActionMethod
 from prpy.planning.base import PlanningError
 from contextlib import contextmanager 
-from prpy.util import FindCatkinResource
+from prpy.util import FindCatkinResource, GetPointFrom
 import numpy, cPickle, time, os.path
 
 logger = logging.getLogger('herbpy')
@@ -17,8 +17,7 @@ def PointAt(robot, focus, manip=None, render=False):
                  This must be the right arm
     @param render Render tsr samples during planning
     """
-    env = robot.GetEnv()
-    pointing_coord = GetPointFrom(env, focus)
+    pointing_coord = GetPointFrom(focus)
     return Point(robot, pointing_coord, manip, render)
 
 @ActionMethod
@@ -31,8 +30,7 @@ def PresentAt(robot, focus, manip=None, render=True):
                  This must be the right arm.
     @param render Render tsr samples during planning
     """
-    env = robot.GetEnv()
-    presenting_coord = GetPointFrom(env, focus)
+    presenting_coord = GetPointFrom(focus)
     return Present(robot, presenting_coord, manip, render)
 
 @ActionMethod
@@ -47,41 +45,9 @@ def SweepAt(robot, start, end, manip=None, margin=0.3, render=True):
                   This must be enough to clear the objects themselves.
     @param render Render tsr samples during planning
     """
-    env = robot.GetEnv()
-    start_coord = GetPointFrom(env, start)
-    end_coord = GetPointFrom(env, end)
+    start_coord = GetPointFrom(start)
+    end_coord = GetPointFrom(end)
     return Sweep(robot, start_coord, end_coord, manip, margin, render)
-
-
-def GetPointFrom(env, focus):
-    """
-    @param env The environment where the item exists
-    @param focus The area to be referred to
-    """
-    #Pointing at an object
-    if isinstance(focus, (openravepy.KinBody, openravepy.KinBody.Link)):
-        with env: 
-            focus_trans = focus.GetTransform()
-        coord = list(focus_trans[0:3, 3])
-
-    #Pointing at a point in space as numpy array
-    elif (isinstance(focus, numpy.ndarray) and (focus.ndim == 1) 
-           and (len(focus) == 3)):
-        coord = list(focus)
-
-    #Pointing at point in space as 4x4 transform
-    elif isinstance(focus, numpy.ndarray) and (focus.shape == (4, 4)):
-        coord = list(focus[0:3, 3])
-
-    #Pointing at a point in space as list or tuple
-    elif (isinstance(focus, (tuple, list)) and len(focus) == 3):
-        coord = focus
-
-    else:
-        raise prpy.exceptions.PrPyException('Focus of the point is an \
-                unknown object')
-
-    return coord
 
 def Point(robot, coord, manip=None, render=False):
     """
