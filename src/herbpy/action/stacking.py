@@ -11,7 +11,6 @@ def StackCups(robot, table, cup, stack, cups_stacked):
     """
 	#Grasp cup
     env = robot.GetEnv()
-    robot.PushGrasp(cup, yaw_range=[0, numpy.pi])
 
     with env:
         aabb_cup = cup.ComputeAABB()
@@ -19,6 +18,11 @@ def StackCups(robot, table, cup, stack, cups_stacked):
         stack_height = 2*aabb_stack.extents()[2] + (len(cups_stacked)+1)*0.03
         manip = robot.GetActiveManipulator()
 
+    if manip == robot.right_arm:    
+        robot.PushGrasp(cup, yaw_range=[0, numpy.pi])
+    else:
+        robot.PushGrasp(cup, yaw_range=[-numpy.pi, 0])   
+        
     from prpy.rave import Disabled
     with Disabled(table):
         #Lift up cup
