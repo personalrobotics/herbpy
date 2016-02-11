@@ -81,7 +81,8 @@ if __name__ == '__main__':
                                        manip=push_arm,
                                        num_control_samples=1,
                                        max_plan_duration=args.timeout,
-                                       debug=args.debug)
+                                       debug=args.debug,
+                                       render=True if args.viewer is not None else False)
         # Plan the arm home
         push_arm.PlanToNamedConfiguration('home', execute=True)
         

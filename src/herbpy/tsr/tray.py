@@ -1,7 +1,8 @@
 import numpy, prpy
-import prpy.tsr
+from prpy.tsr.tsrlibrary import TSRFactory
+from prpy.tsr.tsr import TSR, TSRChain
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'wicker_tray', 'point_on')
+@TSRFactory('herb', 'wicker_tray', 'point_on')
 def point_on(robot, tray, manip=None, padding=0.0, handle_padding=True):
     '''
     This creates a TSR that allows you to sample poses on the tray.
@@ -21,9 +22,8 @@ def point_on(robot, tray, manip=None, padding=0.0, handle_padding=True):
     if manip is None:
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
             
     T0_w = tray.GetTransform()
 
@@ -44,13 +44,12 @@ def point_on(robot, tray, manip=None, padding=0.0, handle_padding=True):
     Bw[5,:] = [-numpy.pi, numpy.pi] # allow any rotation around z - which is the axis normal to the tray top
 
     
-    tray_top_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    tray_top_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = True, constrain=False, 
-                               TSR = tray_top_tsr)
+    tray_top_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
+    tray_top_chain = TSRChain(sample_start = False, sample_goal = True, constrain=False, 
+                              TSR = tray_top_tsr)
     return [tray_top_chain]
 
-
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'wicker_tray', 'handle_grasp')
+@TSRFactory('herb', 'wicker_tray', 'handle_grasp')
 def handle_grasp(robot, tray, manip=None, handle=None):
     '''
     This creates a TSR for grasping the left handle of the tray
@@ -61,18 +60,14 @@ def handle_grasp(robot, tray, manip=None, handle=None):
     @param manip The manipulator to perform the grasp, if None
       the active manipulator on the robot is used
     '''
-    with robot.GetEnv():
-        if manip is None:
-            manip_idx = robot.GetActiveManipulatorIndex()
-        else:
-            from openravepy import Robot
-            with manip.GetRobot().CreateRobotStateSaver(
-                    Robot.SaveParameters.ActiveManipulator):
-                manip.GetRobot().SetActiveManipulator(manip)
-                manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+    if manip is None:
+        manip_idx = robot.GetActiveManipulatorIndex()
+    else:
+        manip.GetRobot().SetActiveManipulator(manip)
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
             
-        tray_in_world = tray.GetTransform()
-        ee_in_world = manip.GetEndEffectorTransform()
+    tray_in_world = tray.GetTransform()
+    ee_in_world = manip.GetEndEffectorTransform()
 
     # Compute the pose of both handles in the tray
     handle_one_in_tray = numpy.eye(4)
@@ -103,14 +98,14 @@ def handle_grasp(robot, tray, manip=None, handle=None):
         dist = numpy.linalg.norm(handle_in_world[:2,3] - ee_in_world[:2,3])
         if handle == 'closest' and dist > best_dist:
             continue
-        tray_grasp_tsr = prpy.tsr.TSR(T0_w = handle_in_world, 
-                                      Tw_e = grasp_in_handle, 
-                                      Bw = Bw, 
-                                      manip=manip_idx)
-        tray_grasp_chain = prpy.tsr.TSRChain(sample_start = False, 
-                                             sample_goal = True, 
-                                             constrain=False,
-                                             TSR = tray_grasp_tsr)
+        tray_grasp_tsr = TSR(T0_w = handle_in_world, 
+                             Tw_e = grasp_in_handle, 
+                             Bw = Bw, 
+                             manip=manip_idx)
+        tray_grasp_chain = TSRChain(sample_start = False, 
+                                    sample_goal = True, 
+                                    constrain=False,
+                                    TSR = tray_grasp_tsr)
         if handle == 'closest':
             chains = []
         chains.append(tray_grasp_chain)
@@ -129,12 +124,11 @@ def lift(robot, tray, distance=0.1):
     '''
     print 'distance = %0.2f' % distance
 
-    with robot:
-        robot.left_arm.SetActive()
-        left_manip_idx = robot.GetActiveManipulatorIndex()
+    robot.left_arm.SetActive()
+    left_manip_idx = robot.GetActiveManipulatorIndex()
 
-        robot.right_arm.SetActive()
-        right_manip_idx = robot.GetActiveManipulatorIndex()
+    robot.right_arm.SetActive()
+    right_manip_idx = robot.GetActiveManipulatorIndex()
 
     # First TSR defines a goal for the left arm
     left_in_world = robot.left_arm.GetEndEffectorTransform()
@@ -147,24 +141,24 @@ def lift(robot, tray, distance=0.1):
     Bw_left[1,:] = [-epsilon, epsilon]
     Bw_left[4,:] = [-epsilon, epsilon] # a little bit of tilt around handle
 
-    tsr_left_goal = prpy.tsr.TSR(T0_w = desired_left_in_world,
-                                 Tw_e = numpy.eye(4),
-                                 Bw = Bw_left,
-                                 manip = left_manip_idx)
+    tsr_left_goal = TSR(T0_w = desired_left_in_world,
+                        Tw_e = numpy.eye(4),
+                        Bw = Bw_left,
+                        manip = left_manip_idx)
 
     # Now define a TSR that is the right hand relative to the left
     right_in_world = robot.right_arm.GetEndEffectorTransform()
     right_in_left = numpy.dot(numpy.linalg.inv(left_in_world), right_in_world)
 
     Bw_right = numpy.zeros((6,2))
-    tsr_right_goal = prpy.tsr.TSR(T0_w = numpy.eye(4), # overwritten in planner
-                                  Tw_e = right_in_left,
-                                  Bw = Bw_right,
-                                  manip = right_manip_idx)
-    goal_tsr_chain = prpy.tsr.TSRChain(sample_start = False,
-                                       sample_goal = True,
-                                       constrain = False,
-                                       TSRs = [tsr_left_goal, tsr_right_goal])
+    tsr_right_goal = TSR(T0_w = numpy.eye(4), # overwritten in planner
+                         Tw_e = right_in_left,
+                         Bw = Bw_right,
+                         manip = right_manip_idx)
+    goal_tsr_chain = TSRChain(sample_start = False,
+                              sample_goal = True,
+                              constrain = False,
+                              TSRs = [tsr_left_goal, tsr_right_goal])
     
     # Now define a TSR that constrains the movement of the arms
     Bw_constrain = numpy.zeros((6,2))
@@ -179,22 +173,22 @@ def lift(robot, tray, distance=0.1):
     Bw_constrain[4,:] = [-epsilon, epsilon]
     Bw_constrain[5,:] = [-epsilon, epsilon]
 
-    tsr_left_constraint = prpy.tsr.TSR(T0_w = left_in_world,
-                                       Tw_e = numpy.eye(4),
-                                       Bw = Bw_constrain,
-                                       manip = left_manip_idx)
+    tsr_left_constraint = TSR(T0_w = left_in_world,
+                              Tw_e = numpy.eye(4),
+                              Bw = Bw_constrain,
+                              manip = left_manip_idx)
 
-    tsr_right_constraint = prpy.tsr.TSR(T0_w = numpy.eye(4),
-                                        Tw_e = right_in_left,
-                                        Bw = numpy.zeros((6,2)),#Bw_constrain,
-                                        manip=right_manip_idx,
-                                        bodyandlink='%s %s' % (robot.GetName(), robot.left_arm.GetEndEffector().GetName()))
-    movement_chain = prpy.tsr.TSRChain(sample_start = False, sample_goal = False, constrain=True,
+    tsr_right_constraint = TSR(T0_w = numpy.eye(4),
+                               Tw_e = right_in_left,
+                               Bw = numpy.zeros((6,2)),#Bw_constrain,
+                               manip=right_manip_idx,
+                               bodyandlink='%s %s' % (robot.GetName(), robot.left_arm.GetEndEffector().GetName()))
+    movement_chain = TSRChain(sample_start = False, sample_goal = False, constrain=True,
                               TSRs = [tsr_right_constraint, tsr_left_constraint])
     
     return [goal_tsr_chain, movement_chain] 
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'wicker_tray', 'pull')
+@TSRFactory('herb', 'wicker_tray', 'pull')
 def pull_tray(robot, tray, manip=None, max_distance=0.0, min_distance=0.0, 
               direction=[1., 0., 0.], angular_tolerance=[0., 0., 0.],  position_tolerance=[0., 0., 0.]):
     """
@@ -215,9 +209,8 @@ def pull_tray(robot, tray, manip=None, max_distance=0.0, min_distance=0.0,
         manip = robot.GetActiveManipulator()
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
             
     # Create a w frame with z-axis pointing in direction of pull
     ee_in_world = manip.GetEndEffectorTransform()
@@ -245,15 +238,15 @@ def pull_tray(robot, tray, manip=None, max_distance=0.0, min_distance=0.0,
     Bw_goal[4,:] = [-angular_tolerance[1], angular_tolerance[1]]
     Bw_goal[5,:] = [-angular_tolerance[2], angular_tolerance[2]]
     
-    goal_tsr = prpy.tsr.TSR(T0_w = desired_w_in_world,
-                            Tw_e = ee_in_w,
-                            Bw = Bw_goal,
-                            manip = manip_idx)
+    goal_tsr = TSR(T0_w = desired_w_in_world,
+                   Tw_e = ee_in_w,
+                   Bw = Bw_goal,
+                   manip = manip_idx)
 
-    goal_tsr_chain = prpy.tsr.TSRChain(sample_start=False, 
-                                       sample_goal=True, 
-                                       constrain=False,
-                                       TSRs=[goal_tsr])
+    goal_tsr_chain = TSRChain(sample_start=False, 
+                              sample_goal=True, 
+                              constrain=False,
+                              TSRs=[goal_tsr])
 
     Bw_constraint = numpy.zeros((6,2))
     Bw_constraint[0,:] = [-position_tolerance[0], position_tolerance[0]]
@@ -263,13 +256,13 @@ def pull_tray(robot, tray, manip=None, max_distance=0.0, min_distance=0.0,
     Bw_constraint[4,:] = [-angular_tolerance[1], angular_tolerance[1]]
     Bw_constraint[5,:] = [-angular_tolerance[2], angular_tolerance[2]]
 
-    traj_tsr = prpy.tsr.TSR(T0_w = w_in_world,
-                            Tw_e = ee_in_w,
-                            Bw = Bw_constraint,
-                            manip = manip_idx)
-    traj_tsr_chain = prpy.tsr.TSRChain(sample_start=False,
-                                       sample_goal=False,
-                                       constrain=True,
-                                       TSRs = [traj_tsr])
+    traj_tsr = TSR(T0_w = w_in_world,
+                   Tw_e = ee_in_w,
+                   Bw = Bw_constraint,
+                   manip = manip_idx)
+    traj_tsr_chain = TSRChain(sample_start=False,
+                              sample_goal=False,
+                              constrain=True,
+                              TSRs = [traj_tsr])
     
     return [goal_tsr_chain, traj_tsr_chain]
