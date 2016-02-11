@@ -1,17 +1,10 @@
-<<<<<<< HEAD
 import numpy, openravepy
 import prpy.tsr
-
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'push_grasp')
-def pitcher_grasp(robot, pitcher, push_distance=0.1, manip=None):
-=======
-import numpy
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
-
-@TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'grasp')
-def pitcher_grasp(robot, pitcher, manip=None):
->>>>>>> origin/master
+      
+@prpy.tsr.tsrlibrary.TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'push_grasp')
+def pitcher_grasp(robot, pitcher, push_distance=0.1, manip=None):
     '''
     @param robot The robot performing the grasp
     @param pitcher The pitcher to grasp
@@ -51,15 +44,9 @@ def pitcher_grasp(robot, pitcher, manip=None):
     Bw = numpy.zeros((6,2))
     Bw[2,:] = [-0.01, 0.01]  # Allow a little vertical movement
     
-<<<<<<< HEAD
     grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = ee_in_pitcher, Bw = Bw, manip = manip_idx)
     grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
                                     constrain=False, TSR = grasp_tsr)
-=======
-    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = TSRChain(sample_start=False, sample_goal = True, 
-                           constrain=False, TSR = grasp_tsr)
->>>>>>> origin/master
 
     return [grasp_chain]
         

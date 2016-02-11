@@ -1,4 +1,4 @@
-import openravepy, time, prpy, math
+import openravepy, time, prpy, math, numpy
 from prpy.action import ActionMethod
 
 @ActionMethod
@@ -36,14 +36,14 @@ def MoveCupAndPour(robot, table, manip_pitcher, manip_pose, cup, pitcher):
 
     from prpy.rave import Disabled
     with Disabled(table):
-        manip_cup.PlanToEndEffectorOffset(direction=[-1, -1, 0], distance=move_cup, position_tolerance=0.1, execute=True)
-        manip_cup.PlanToEndEffectorOffset(direction=[1, 0, 0], distance=cup_aabb.extents()[0]/2, position_tolerance=0.1, execute=True)
-        manip_cup.PlanToEndEffectorOffset(direction=[0, -1, 0], distance=cup_aabb.extents()[1], position_tolerance=0.1, execute=True)
-        manip_cup.PlanToEndEffectorOffset(direction=[0, 0, -1], distance=0.007, position_tolerance=0.1, execute=True)
+        manip_cup.PlanToEndEffectorOffset(direction=[-1, -1, 0], distance=move_cup, position_tolerance=0.1, execute=True, timelimit=10)
+        manip_cup.PlanToEndEffectorOffset(direction=[1, 0, 0], distance=cup_aabb.extents()[0]/2, position_tolerance=0.1, execute=True, timelimit=10)
+        manip_cup.PlanToEndEffectorOffset(direction=[0, -1, 0], distance=cup_aabb.extents()[1], position_tolerance=0.1, execute=True,timelimit=10)
+        manip_cup.PlanToEndEffectorOffset(direction=[0, 0, -1], distance=0.007, position_tolerance=0.1, execute=True, timelimit=10)
         manip_cup.hand.OpenHand()
         robot.Release(cup)
-        manip_cup.PlanToEndEffectorOffset(direction=[-1, 0, 0], distance = 0.01, position_tolerance=0.1, execute=True)
-        manip_cup.PlanToEndEffectorOffset(direction=[0, -1, 0], distance = 0.2, position_tolerance=0.1, execute=True)
+        manip_cup.PlanToEndEffectorOffset(direction=[-1, 0, 0], distance = 0.01, position_tolerance=0.1, execute=True, timelimit=10)
+        manip_cup.PlanToEndEffectorOffset(direction=[0, -1, 0], distance = 0.2, position_tolerance=0.1, execute=True, timelimit=10)
         manip_cup.PlanToNamedConfiguration('home', execute=True)
 
     # Pour
