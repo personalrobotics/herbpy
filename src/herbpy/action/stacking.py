@@ -17,24 +17,34 @@ def StackCups(robot, table, cup, stack, cups_stacked):
         aabb_stack = stack.ComputeAABB()
         stack_height = 2*aabb_stack.extents()[2] + (len(cups_stacked)+1)*0.03
         manip = robot.GetActiveManipulator()
+        herb_in_world = robot.GetTransform()
+        cup_in_world = cup.GetTransform()
 
-    if manip == robot.right_arm:    
-        robot.PushGrasp(cup, yaw_range=[0, numpy.pi])
+    cup_in_herb = numpy.dot(numpy.linalg.inv(herb_in_world), cup_in_world)
+    theta = numpy.arctan2(cup_in_herb[1,0], cup_in_herb[0,0])
+
+    if manip == robot.left_arm:    
+        yaw_in_herb = numpy.array([0, numpy.pi])
     else:
-        robot.PushGrasp(cup, yaw_range=[-numpy.pi, 0])   
-        
+        yaw_in_herb = numpy.array([-numpy.pi, 0])   
+    
+    yaw_in_cup = yaw_in_herb - theta
+
+    robot.PushGrasp(cup, yaw_range=yaw_in_cup)
+
     from prpy.rave import Disabled
     with Disabled(table):
         #Lift up cup
         manip.PlanToEndEffectorOffset(direction=[0, 0, 1], distance = stack_height, position_tolerance=0.1, execute=True)
 
-    #Move cup in x-direction
-    move_cup_x, x_direc = MoveCupDistanceAndDirection(cup, stack, 0);
-    manip.PlanToEndEffectorOffset(direction=[x_direc, 0, 0], distance = move_cup_x, position_tolerance=0.1, execute=True)
-    
-    #Move cup in y-direction
-    move_cup_y, y_direc = MoveCupDistanceAndDirection(cup, stack, 1);
-    manip.PlanToEndEffectorOffset(direction=[0, y_direc, 0], distance = move_cup_y, position_tolerance=0.1, execute=True)
+    with env:
+        aabb_cup = cup.ComputeAABB()
+        aabb_stack = stack.ComputeAABB()
+    direc = numpy.array([0., 0., 0.])    
+    direc[:2] = aabb_stack.pos()[:2] - aabb_cup.pos()[:2]
+    dist = numpy.linalg.norm(direc)
+    print aabb_cup.pos(), aabb_stack.pos(), direc, dist
+    manip.PlanToEndEffectorOffset(direction=direc, distance = dist, position_tolerance=0.05, execute=True)
 
     #Move cup down
     with Disabled(stack):
