@@ -29,11 +29,11 @@ def StackCups(robot, table, cup, stack, cups_stacked):
         manip.PlanToEndEffectorOffset(direction=[0, 0, 1], distance = stack_height, position_tolerance=0.1, execute=True)
 
     #Move cup in x-direction
-    move_cup_x, x_direc = MoveCupDistAndDirec(cup, stack, 0);
+    move_cup_x, x_direc = MoveCupDistanceAndDirection(cup, stack, 0);
     manip.PlanToEndEffectorOffset(direction=[x_direc, 0, 0], distance = move_cup_x, position_tolerance=0.1, execute=True)
     
     #Move cup in y-direction
-    move_cup_y, y_direc = MoveCupDistAndDirec(cup, stack, 1);
+    move_cup_y, y_direc = MoveCupDistanceAndDirection(cup, stack, 1);
     manip.PlanToEndEffectorOffset(direction=[0, y_direc, 0], distance = move_cup_y, position_tolerance=0.1, execute=True)
 
     #Move cup down
@@ -42,16 +42,16 @@ def StackCups(robot, table, cup, stack, cups_stacked):
 
     #Release cup
     manip.hand.OpenHand()
-    robot.Release(cup)
 
     with env:
+        robot.Release(cup)
         cup.SetTransform(stack.GetTransform())
     
     #Add cup to list of cups stacked
     cups_stacked.append(cup)
     return cups_stacked
 
-def MoveCupDistAndDirec(cup, stack, direction):
+def MoveCupDistanceAndDirection(cup, stack, direction):
     """
     @param cup The cup to move
     @param stack The stack of cups the cup is going to be placed on
