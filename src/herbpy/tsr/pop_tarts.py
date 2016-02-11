@@ -3,7 +3,7 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'pop_tarts', 'grasp')
-def poptarts_grasp(robot, pop_tarts, manip=None):
+def poptarts_grasp(robot, pop_tarts, manip=None, **kw_args):
     """
     @param robot The robot performing the grasp
     @param pop_tarts The pop tarts box to grasp
@@ -13,7 +13,7 @@ def poptarts_grasp(robot, pop_tarts, manip=None):
     return _poptarts_grasp(robot, pop_tarts, manip = manip)
 
 @TSRFactory('herb', 'pop_tarts', 'push_grasp')
-def poptarts_grasp(robot, pop_tarts, push_distance = 0.1, manip=None):
+def poptarts_grasp(robot, pop_tarts, push_distance = 0.1, manip=None, **kw_args):
     """
     @param robot The robot performing the grasp
     @param pop_tarts The pop_tarts to grasp
@@ -23,7 +23,7 @@ def poptarts_grasp(robot, pop_tarts, push_distance = 0.1, manip=None):
     """
     return _poptarts_grasp(robot, pop_tarts, push_distance = push_distance, manip = manip)
 
-def _poptarts_grasp(robot, pop_tarts, push_distance = 0.0, manip = None):
+def _poptarts_grasp(robot, pop_tarts, push_distance = 0.0, manip = None, **kw_args):
     """
     @param robot The robot performing the grasp
     @param pop_tarts The pop tarts box to grasp
