@@ -281,9 +281,10 @@ class HERBRobot(Robot):
         
         #return True
         
-    def DetectHuman(self, env, orhuman=2, load_hum=True, hrc=False,                     
-                    segway_sim=True, herb_sim=True, action='stamp',
-                    enable_legs=True):
+    def DetectHuman(self, env, orhuman=2, load_hum=True, 
+                    hrc=False, continuous=True,      
+                    herb_sim=True, enable_legs=True,             
+                    segway_sim=True, action='stamp'):
         """Use the kinbody detector to detect objects and add
         them to the environment
         """
@@ -336,6 +337,7 @@ class HERBRobot(Robot):
                 if hrc==True:
                     if humanadded==False:
                         humanadded = assistance.addHumansPred(tf, humans_hrc, env,
+                                                                continuous=continuous,
                                                                 herb_sim=herb_sim,
                                                                 segway_sim=segway_sim,
                                                                 action=action)
