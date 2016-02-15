@@ -60,21 +60,4 @@ def StackCups(robot, table, cup, stack, cups_stacked):
     #Add cup to list of cups stacked
     cups_stacked.append(cup)
     return cups_stacked
-
-def MoveCupDistanceAndDirection(cup, stack, direction):
-    """
-    @param cup The cup to move
-    @param stack The stack of cups the cup is going to be placed on
-    @param direction The index for the pos coordinates of cup
-    """	
-    import math
-    with cup.GetEnv():
-        aabb_cup = cup.ComputeAABB()
-        aabb_stack = stack.ComputeAABB()
-    move_cup_dist = aabb_cup.pos()[direction] - aabb_stack.pos()[direction]
-    move_cup_direc = -1
-    if move_cup_dist < 0:
-        move_cup_direc = 1
-        move_cup_dist = math.fabs(move_cup_dist)
-
-    return move_cup_dist, move_cup_direc    
+  
