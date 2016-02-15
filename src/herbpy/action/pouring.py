@@ -2,18 +2,27 @@ import openravepy, time, prpy, math, numpy
 from prpy.action import ActionMethod
 
 @ActionMethod
-def MoveCupAndPour(robot, table, manip_pitcher, manip_pose, cup, pitcher):
+def MoveCupAndPour(robot, table, manip_pitcher, cup, pitcher):
     """
     @param robot The robot performing the pouring
+    @param table The table the objects are on
+    @param manip_pitcher The arm that is manipulating the pitcher
     @param cup The cup to pour into
     @param pitcher The pitcher to pour
     """	
+
+    manip_cup = robot.right_arm
+    if manip_pitcher == robot.right_arm:
+        manip_cup = robot.left_arm
+
     env = robot.GetEnv()
     with env:
         pitcher_start = pitcher.GetTransform()
         pitcher_aabb = pitcher.ComputeAABB()
         cup_pose = cup.GetTransform()
         cup_aabb = cup.ComputeAABB()
+        manip_cup_pose = manip_cup.GetEndEffectorTransform()
+        manip_pitcher_pose = manip_pitcher.GetEndEffectorTransform()
 
     p_tsr, min_tilt, max_tilt = robot.tsrlibrary(pitcher, 'pour')
     traj = manip_pitcher.PlanToTSR(p_tsr, execute=False)
@@ -26,24 +35,18 @@ def MoveCupAndPour(robot, table, manip_pitcher, manip_pose, cup, pitcher):
         desired_cup_in_world_y = pitcher_start[1,3] - (2*pitcher_aabb.extents()[1])
         cup_in_world_x = cup_pose[0, 3]
         cup_in_world_y = cup_pose[1, 3]
-        move_x = desired_cup_in_world_x - cup_in_world_x
-        move_y = desired_cup_in_world_y - cup_in_world_y
+        move_x = desired_cup_in_world_x - cup_in_world_x + cup_aabb.extents()[0]/2
+        move_y = desired_cup_in_world_y - cup_in_world_y - cup_aabb.extents()[1]
         move_cup = math.sqrt(math.pow(move_x, 2) + math.pow(move_y, 2))
-
-    manip_cup = robot.right_arm
-    if manip_pitcher == robot.right_arm:
-        manip_cup = robot.left_arm
 
     from prpy.rave import Disabled
     with Disabled(table):
-        manip_cup.PlanToEndEffectorOffset(direction=[-1, -1, 0], distance=move_cup, position_tolerance=0.1, execute=True, timelimit=10)
-        manip_cup.PlanToEndEffectorOffset(direction=[1, 0, 0], distance=cup_aabb.extents()[0]/2, position_tolerance=0.1, execute=True, timelimit=10)
-        manip_cup.PlanToEndEffectorOffset(direction=[0, -1, 0], distance=cup_aabb.extents()[1], position_tolerance=0.1, execute=True,timelimit=10)
+        manip_cup.PlanToEndEffectorOffset(direction=[move_x, move_y, 0], distance=move_cup, position_tolerance=0.1, execute=True, timelimit=10)
         manip_cup.PlanToEndEffectorOffset(direction=[0, 0, -1], distance=0.007, position_tolerance=0.1, execute=True, timelimit=10)
         manip_cup.hand.OpenHand()
-        robot.Release(cup)
-        manip_cup.PlanToEndEffectorOffset(direction=[-1, 0, 0], distance = 0.01, position_tolerance=0.1, execute=True, timelimit=10)
-        manip_cup.PlanToEndEffectorOffset(direction=[0, -1, 0], distance = 0.2, position_tolerance=0.1, execute=True, timelimit=10)
+        with env:
+            robot.Release(cup)
+        manip_cup.PlanToEndEffectorOffset(direction=-1*manip_cup_pose[:3,0], distance=0.1, position_tolerance=0.1, execute=True, timelimit=10)
         manip_cup.PlanToNamedConfiguration('home', execute=True)
 
     # Pour
@@ -62,4 +65,4 @@ def MoveCupAndPour(robot, table, manip_pitcher, manip_pose, cup, pitcher):
     # Tilts pitcher back to original position
     robot.ExecuteTrajectory(openravepy.planningutils.ReverseTrajectory(traj))
     
-    manip_pitcher.PlanToEndEffectorOffset(direction=-1*manip_pose[:3,0], distance=0.1, position_tolerance=0.1, execute=True)
+    manip_pitcher.PlanToEndEffectorOffset(direction=-1*manip_pitcher_pose[:3,0], distance=0.1, position_tolerance=0.1, execute=True)
