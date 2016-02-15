@@ -49,18 +49,22 @@ def MoveCupAndPour(robot, table, manip_pitcher, cup, pitcher):
         manip_cup.PlanToEndEffectorOffset(direction=-1*manip_cup_pose[:3,0], distance=0.1, position_tolerance=0.1, execute=True, timelimit=10)
         manip_cup.PlanToNamedConfiguration('home', execute=True)
 
+    v_original = manip_pitcher.GetVelocityLimits()
     # Pour
     # slow the arm down
     v = numpy.array([0.75, 0.75, 2., 2., 2.5, 2.5, 2.5])
-    manip_pitcher.SetVelocityLimits(0.5*v, 0.3)
+    try:
+        manip_pitcher.SetVelocityLimits(0.5*v, 0.3)
+        
+        #Gets position of the pitcher and pours
+        traj = robot.PostProcessPath(traj)
+        robot.ExecuteTrajectory(traj)
+        time.sleep(1) #To let the water pour from pitcher into cup
     
-    #Gets position of the pitcher and pours
-    traj = robot.PostProcessPath(traj)
-    robot.ExecuteTrajectory(traj)
-    time.sleep(1)
-    
-    #Slows down the speed of the arm
-    manip_pitcher.SetVelocityLimits(v, 0.3)
+        #Slows down the speed of the arm
+        manip_pitcher.SetVelocityLimits(v, 0.3)
+    finally:
+        manip_pitcher.SetVelocityLimits(v_original, 0.3)
 
     # Tilts pitcher back to original position
     robot.ExecuteTrajectory(openravepy.planningutils.ReverseTrajectory(traj))
