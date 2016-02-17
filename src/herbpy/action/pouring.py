@@ -11,7 +11,7 @@ def MoveCupAndPour(robot, table, manip_pitcher, cup, pitcher):
     @param pitcher The pitcher to pour
     """	
 
-    manip_cup = robot.right_arm
+    manip_cup = robot.GetActiveManipulator()
     if manip_pitcher == robot.right_arm:
         manip_cup = robot.left_arm
 
@@ -37,7 +37,7 @@ def MoveCupAndPour(robot, table, manip_pitcher, cup, pitcher):
         cup_in_world_y = cup_pose[1, 3]
         move_x = desired_cup_in_world_x - cup_in_world_x + cup_aabb.extents()[0]/2
         move_y = desired_cup_in_world_y - cup_in_world_y - cup_aabb.extents()[1]
-        move_cup = math.sqrt(math.pow(move_x, 2) + math.pow(move_y, 2))
+        move_cup = math.sqrt(move_x ** 2 + move_y ** 2)
 
     from prpy.rave import Disabled
     with Disabled(table):
