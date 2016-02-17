@@ -3,7 +3,7 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'fuze_bottle', 'grasp')
-def fuze_grasp(robot, fuze, manip=None):
+def fuze_grasp(robot, fuze, manip=None, **kw_args):
     """
     @param robot The robot performing the grasp
     @param fuze The fuze to grasp
@@ -13,7 +13,7 @@ def fuze_grasp(robot, fuze, manip=None):
     return _fuze_grasp(robot, fuze, manip = manip)
 
 @TSRFactory('herb', 'fuze_bottle', 'push_grasp')
-def fuze_grasp(robot, fuze, push_distance = 0.1, manip=None):
+def fuze_grasp(robot, fuze, push_distance = 0.1, manip=None, **kw_args):
     """
     @param robot The robot performing the grasp
     @param fuze The fuze to grasp
@@ -23,7 +23,7 @@ def fuze_grasp(robot, fuze, push_distance = 0.1, manip=None):
     """
     return _fuze_grasp(robot, fuze, push_distance = push_distance, manip = manip)
 
-def _fuze_grasp(robot, fuze, push_distance = 0.0, manip = None):
+def _fuze_grasp(robot, fuze, push_distance = 0.0, manip = None, **kw_args):
     """
     @param robot The robot performing the grasp
     @param fuze The fuze to grasp

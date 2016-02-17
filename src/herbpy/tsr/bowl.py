@@ -3,7 +3,7 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'plastic_bowl', 'grasp')
-def bowl_grasp(robot, bowl, manip=None):
+def bowl_grasp(robot, bowl, manip=None, **kw_args):
     '''
     @param robot The robot performing the grasp
     @param bowl The bowl to grasp

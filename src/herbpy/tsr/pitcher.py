@@ -3,7 +3,7 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'grasp')
-def pitcher_grasp(robot, pitcher, manip=None):
+def pitcher_grasp(robot, pitcher, manip=None, **kw_args):
     '''
     @param robot The robot performing the grasp
     @param pitcher The pitcher to grasp
