@@ -2,15 +2,10 @@ import numpy, openravepy
 import prpy.tsr
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
-<<<<<<< HEAD
       
 @TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'push_grasp')
 def pitcher_grasp(robot, pitcher, push_distance=0.1, manip=None):
-=======
 
-@TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'grasp')
-def pitcher_grasp(robot, pitcher, manip=None, **kw_args):
->>>>>>> origin/master
     '''
     @param robot The robot performing the grasp
     @param pitcher The pitcher to grasp
