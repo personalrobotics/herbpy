@@ -1,9 +1,11 @@
-import numpy
+import numpy, openravepy
+import prpy.tsr
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
+      
+@TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'push_grasp')
+def pitcher_grasp(robot, pitcher, push_distance=0.1, manip=None):
 
-@TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'grasp')
-def pitcher_grasp(robot, pitcher, manip=None, **kw_args):
     '''
     @param robot The robot performing the grasp
     @param pitcher The pitcher to grasp
@@ -18,16 +20,34 @@ def pitcher_grasp(robot, pitcher, manip=None, **kw_args):
         manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
     T0_w = pitcher.GetTransform()
-    Tw_e = numpy.array([[0.802, 0., -0.596, 0.199], 
-                        [-0.5961, 0., -0.8028, 0.2684], 
-                        [0., 1., 0., 0.1841], 
-                        [0., 0., 0., 1.]])
+    spout_in_pitcher = numpy.array([[-0.7956, 0.6057, 0., -0.0662],
+                                    [-0.6057, -0.7956, 0., -0.0504],
+                                    [0., 0., 1., 0.2376], 
+                                    [0., 0., 0., 1.]])
+
+    # we want a hand pose orthogonal to the direction of the spout
+    spout_direction = numpy.arctan2(spout_in_pitcher[0,1], spout_in_pitcher[0,0])
+    palm_direction = spout_direction - 0.5*numpy.pi
+
+    ee_in_pitcher = numpy.eye(4)
+    ee_in_pitcher[:3,:3] = numpy.array([[0., 0., 1.],
+                                        [-1., 0., 0.],
+                                        [0., -1., 0.]])
+    ee_in_pitcher[:3,:3] = numpy.dot(ee_in_pitcher[:3,:3],
+                                         openravepy.rotationMatrixFromAxisAngle([0, palm_direction, 0]))
+                                         
+    
+    pitcher_extents = [0.07877473,0.06568845,0.11882638]    
+    offset = pitcher_extents[0] + 0.18 + push_distance # pitcher radius + ee_offset
+    ee_in_pitcher[:2,3] = -offset*ee_in_pitcher[:2,2]
+    ee_in_pitcher[2,3] = 0.45*pitcher_extents[2]
+
     Bw = numpy.zeros((6,2))
     Bw[2,:] = [-0.01, 0.01]  # Allow a little vertical movement
     
-    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = TSRChain(sample_start=False, sample_goal = True, 
-                           constrain=False, TSR = grasp_tsr)
+    grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = ee_in_pitcher, Bw = Bw, manip = manip_idx)
+    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal = True, 
+                                    constrain=False, TSR = grasp_tsr)
 
     return [grasp_chain]
         
