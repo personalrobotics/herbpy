@@ -2,18 +2,15 @@ import openravepy, time, prpy, math, numpy
 from prpy.action import ActionMethod
 
 @ActionMethod
-def MoveCupAndPour(robot, table, manip_pitcher, cup, pitcher):
+def MoveCupAndPour(robot, table, manip_pitcher, manip_cup, cup, pitcher):
     """
     @param robot The robot performing the pouring
     @param table The table the objects are on
     @param manip_pitcher The arm that is manipulating the pitcher
+    @param manip_cup The arm that is manipulating the cup 
     @param cup The cup to pour into
     @param pitcher The pitcher to pour
     """	
-
-    manip_cup = robot.GetActiveManipulator()
-    if manip_pitcher == robot.right_arm:
-        manip_cup = robot.left_arm
 
     env = robot.GetEnv()
     with env:
@@ -30,7 +27,7 @@ def MoveCupAndPour(robot, table, manip_pitcher, cup, pitcher):
     wpt = traj.GetWaypoint(traj.GetNumWaypoints() - 1)
     config = cspec.ExtractJointValues(wpt, robot, manip_pitcher.GetArmIndices())
     with env:
-        with CreateRobotStateSaver( openravepy.KinBody.SaveParameters.LinkTransformation ):
+        with robot.CreateRobotStateSaver(openravepy.KinBody.SaveParameters.LinkTransformation):
             manip_pitcher.SetDOFValues(config)
             desired_cup_in_world_x = pitcher_start[0,3] + (2*pitcher_aabb.extents()[0])
             desired_cup_in_world_y = pitcher_start[1,3] - (2*pitcher_aabb.extents()[1])
@@ -53,7 +50,7 @@ def MoveCupAndPour(robot, table, manip_pitcher, cup, pitcher):
     # Pour
     # slow the arm down
     v = numpy.array([0.75, 0.75, 2., 2., 2.5, 2.5, 2.5])
-    with CreateRobotStateSaver( openravepy.KinBody.SaveParameters.JointMaxVelocityAndAcceleration ):
+    with robot.CreateRobotStateSaver(openravepy.KinBody.SaveParameters.JointMaxVelocityAndAcceleration):
         manip_pitcher.SetVelocityLimits(0.5*v, 0.3)
         
         #Gets position of the pitcher and pours
