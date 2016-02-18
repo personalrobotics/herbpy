@@ -44,7 +44,7 @@ def PushGrasp(robot, obj, push_distance=0.1, manip=None,
             tsrlist = robot.tsrlibrary(obj, 'push_grasp', push_distance=push_distance)
 
     HerbGrasp(robot, obj, manip=manip, preshape=preshape, 
-              push_distance=push_distance,
+              push_required=push_required, push_distance=push_distance,
               tsrlist=tsrlist, render=render,**kw_args)
 
 def HerbGrasp(robot, obj, push_distance=None, manip=None, 
