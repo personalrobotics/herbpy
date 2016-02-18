@@ -2,7 +2,7 @@ import numpy
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
 
-@TSRFactory('herb', 'conference_table', 'point_on')
+@TSRFactory('herb', 'table', 'point_on')
 def point_on(robot, table, manip=None):
     '''
     This creates a TSR that allows you to sample poses on the table.
@@ -37,3 +37,47 @@ def point_on(robot, table, manip=None):
     table_top_chain = TSRChain(sample_start = False, sample_goal = True, constrain=False, 
                                TSR = table_top_tsr)
     return [table_top_chain]
+
+@TSRFactory('herb', 'table', 'table_edge')
+def table_edge(robot, table, **kwargs):
+    '''
+    This creates a TSR that allows you to sample poses from either
+    long edge of the table.
+    The poses will have x pointing into the table and z aligned with world z
+    
+    @param robot The robot (unused)
+    @param table The table
+    '''
+    table_in_world = table.GetTransform()
+    
+    # Extents of the talbe
+    xdim = 0.93175 # half extent
+    ydim = 0.3675 # half extent
+    zdim = 0.3805 # half extent
+
+    # We want to create a set of two TSRs, one for each long edge of the table
+    Bw_1 = numpy.zeros((6,2))
+    Bw_1[0,:] = [-xdim, xdim]
+    Tw_e1 = numpy.array([[ 0., 1., 0., 0.],
+                         [ 0., 0., 1., 2.*ydim],
+                         [ 1., 0., 0, -zdim], 
+                         [ 0., 0., 0., 1.]])
+
+    tsr1 = TSR(T0_w = table_in_world,
+               Tw_e = Tw_e1,
+               Bw = Bw_1)
+    tsr1_chain = TSRChain(TSR = tsr1);
+
+    Bw_2 = numpy.zeros((6,2))
+    Bw_2[0,:] = [-xdim, xdim]
+    Tw_e2 = numpy.array([[ 0.,-1., 0., 0.],
+                         [ 0., 0., 1., 2.*ydim],
+                         [-1., 0., 0,  zdim],
+                         [ 0., 0., 0., 1.]])
+    
+    tsr2 = TSR(T0_w = table_in_world,
+               Tw_e = Tw_e2,
+               Bw = Bw_2)
+    tsr2_chain = TSRChain(TSR = tsr2);
+
+    return [tsr1_chain, tsr2_chain]

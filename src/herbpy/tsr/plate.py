@@ -93,3 +93,59 @@ def plate_on_table(robot, plate, pose_tsr_chain, manip=None):
                            TSRs = all_tsrs)
 
     return  [ place_chain ]
+
+@TSRFactory('herb', 'plastic_plate', 'pull_pose')
+def pull_pose(robot, plate, manip=None, pull_direction=None):
+    """
+    Generates a point TSR describing a pose over the plate
+    Here the palm points down at the plate
+
+    @param robot The robot the TSR will be applied to
+    @param plate The plate
+    @param manip The manipulator the TSR will be applied to
+      If None, the active manipulator is used
+    @param pull_direction The vector describing the direction
+      of the eventual pull
+    """
+    if manip is None:
+        with robot.GetEnv():
+            manip = robot.GetActiveManipulator()
+            manip_idx = robot.GetActiveManipulatorIndex()
+    else:
+        from openravepy import KinBody
+        with robot.CreateRobotStateSaver( KinBody.SaveParameters.ActiveManipulator ):
+            manip.SetActive()
+            with robot.GetEnv():
+                manip_idx = robot.GetActiveManipulatorIndex()
+
+    with robot.GetEnv():
+        plate_in_world = plate.GetTransform()
+
+    # We want the end-effector to be pointing down at the table
+    #  with the x-axis (direction 2 fingers when at zero spread) pointing
+    #  opposite the vector pointing to the edge
+    ee_pose_in_world = numpy.eye(3)
+    ee_pose_in_world[:3,0] = -pull_direction
+    ee_pose_in_world[:3,2] = [0., 0., -1.] 
+    ee_pose_in_world[:3,1] = numpy.cross(ee_pose_in_world[:3,2], ee_pose_in_world[:3,0]) 
+        
+    # Move to a pose over the center of the plate
+    offset_to_plate_center = 0.04
+    ee_in_world = numpy.eye(4)
+    ee_in_world[:3,:3] = ee_pose_in_world
+    ee_in_world[:3,3] = plate_in_world[:3,3]
+    ee_in_world[:2,3] -= offset_to_plate_center*(pull_direction[:2]/numpy.linalg.norm(pull_direction[:2]))
+    ee_in_world[2,3] += 0.20 + 0.18 # end-effector offset plus some clearance
+        
+    ee_in_plate = numpy.dot(numpy.linalg.inv(plate_in_world), ee_in_world)
+    
+    Bw = numpy.zeros((6,2))
+
+    pose_tsr = TSR(T0_w = plate_in_world,
+                   Tw_e = ee_in_plate,
+                   Bw = Bw,
+                   manip = manip_idx)
+    pose_tsr_chain = TSRChain(sample_start = False, sample_goal = True, constrain = False,
+                              TSR = pose_tsr)
+
+    return [ pose_tsr_chain ]
