@@ -50,7 +50,7 @@ def point_on(robot, tray, manip=None, padding=0.0, handle_padding=True):
     return [tray_top_chain]
 
 @TSRFactory('herb', 'wicker_tray', 'handle_grasp')
-def handle_grasp(robot, tray, manip=None, handle=None):
+def handle_grasp(robot, tray, manip=None, handle=None, **kwargs):
     '''
     This creates a TSR for grasping the left handle of the tray
     By default, the handle is grasped with the left hand, unless manip is specified
