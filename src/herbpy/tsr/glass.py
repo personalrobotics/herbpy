@@ -3,17 +3,18 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'plastic_glass', 'grasp')
-def glass_grasp(robot, glass, manip=None, **kw_args):
+def glass_grasp(robot, glass, manip=None, yaw_range=None, **kw_args):
     '''
     @param robot The robot performing the grasp
     @param glass The glass to grasp
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
+    @param yaw_range Allowable range of yaw around cup (default [-pi,pi])
     '''
-    return _glass_grasp(robot, glass, manip=manip, **kw_args)
+    return _glass_grasp(robot, glass, manip=manip, yaw_range=yaw_range, **kw_args)
     
 @TSRFactory('herb', 'plastic_glass', 'push_grasp')
-def glass_push_grasp(robot, glass, manip=None, push_distance=0.1, **kw_args):
+def glass_push_grasp(robot, glass, manip=None, yaw_range=None, push_distance=0.1, **kw_args):
     '''
     This factory differes from glass_grasp in that it places the manipulator 
     further away and assumes the manip will perform a push after
@@ -27,16 +28,18 @@ def glass_push_grasp(robot, glass, manip=None, push_distance=0.1, **kw_args):
     @param glass The glass to grasp
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
+    @param yaw_range Allowable range of yaw around cup (default [-pi,pi])
     @param push_distance The offset distance for pushing
     '''
-    return _glass_grasp(robot, glass, manip=manip, push_distance=push_distance, **kw_args)
+    return _glass_grasp(robot, glass, manip=manip, yaw_range=yaw_range, push_distance=push_distance, **kw_args)
 
-def _glass_grasp(robot, glass, manip=None, push_distance=0.0, **kw_args):
+def _glass_grasp(robot, glass, manip=None, yaw_range=None, push_distance=0.0, **kw_args):
     """
     @param robot The robot performing the grasp
     @param glass The glass to grasp
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
+    @param yaw_range Allowable range of yaw around cup (default [-pi,pi])
     @param push_distance The offset distance for pushing
     """
     if manip is None:
@@ -57,7 +60,10 @@ def _glass_grasp(robot, glass, manip=None, push_distance=0.0, **kw_args):
 
     Bw = numpy.zeros((6,2))
     Bw[2,:] = [0.0, 0.02]  # Allow a little vertical movement
-    Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
+    if yaw_range is None:
+        Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
+    else:
+        Bw[5,:] = yaw_range
     
     grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
     grasp_chain = TSRChain(sample_start=False, sample_goal = True, 
