@@ -3,7 +3,8 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'wicker_tray', 'point_on')
-def point_on(robot, tray, manip=None, padding=0.0, handle_padding=True):
+def point_on(robot, tray, manip=None, padding=0.0, handle_padding=True,
+             allowed_tilt=0.0, height=0.04, **kwargs):
     '''
     This creates a TSR that allows you to sample poses on the tray.
     The samples from this TSR should be used to find points for object placement.
@@ -29,7 +30,7 @@ def point_on(robot, tray, manip=None, padding=0.0, handle_padding=True):
 
     # The frame is set on the ta such that the y-axis is normal to the table surface
     Tw_e = numpy.eye(4)
-    Tw_e[2,3] = 0.04 # set the object on top of the tray
+    Tw_e[2,3] = height # set the object on top of the tray
 
     Bw = numpy.zeros((6,2))
 
@@ -41,6 +42,8 @@ def point_on(robot, tray, manip=None, padding=0.0, handle_padding=True):
     Bw[0,:] = [-xdim, xdim ] # move along x and y directions to get any point on tray
     Bw[1,:] = [-ydim, ydim]
     Bw[2,:] = [-0.02, 0.04] # verticle movement
+    Bw[3,:] = [-allowed_tilt, allowed_tilt]
+    Bw[4,:] = [-allowed_tilt, allowed_tilt]
     Bw[5,:] = [-numpy.pi, numpy.pi] # allow any rotation around z - which is the axis normal to the tray top
 
     
