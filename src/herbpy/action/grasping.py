@@ -24,7 +24,7 @@ def Grasp(robot, obj, manip=None, preshape=[0., 0., 0., 0.],
 @ActionMethod
 def PushGrasp(robot, obj, push_distance=0.1, manip=None, 
               preshape=[0., 0., 0., 0.], push_required=True, 
-              tsrlist=None, render=True, **kw_args):
+              yaw_range=None,tsrlist=None, render=True, **kw_args):
     """
     @param robot The robot performing the push grasp
     @param obj The object to push grasp
@@ -34,6 +34,7 @@ def PushGrasp(robot, obj, push_distance=0.1, manip=None,
     @param push_required If true, throw exception if a plan for the pushing 
        movement cannot be found. If false, continue with grasp even if push 
        cannot be executed.
+    @param yaw_range Allowable range of yaw around cup (default [-pi,pi])
     @param preshape The grasp preshape for the hand
     @param tsrlist A list of TSRChain objects to use for planning to grasp pose
        (if None, the 'grasp' tsr from tsrlibrary is used)
@@ -41,10 +42,11 @@ def PushGrasp(robot, obj, push_distance=0.1, manip=None,
     """
     with robot.GetEnv(): 
         if tsrlist is None:
-            tsrlist = robot.tsrlibrary(obj, 'push_grasp', push_distance=push_distance)
+            tsrlist = robot.tsrlibrary(obj, 'push_grasp', yaw_range=yaw_range,
+                                       push_distance=push_distance)
 
     HerbGrasp(robot, obj, manip=manip, preshape=preshape, 
-              push_distance=push_distance,
+              push_distance=push_distance, yaw_range=yaw_range,
               tsrlist=tsrlist, render=render,**kw_args)
 
 def HerbGrasp(robot, obj, push_distance=None, manip=None, 

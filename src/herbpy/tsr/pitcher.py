@@ -4,7 +4,7 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
       
 @TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'push_grasp')
-def pitcher_grasp(robot, pitcher, push_distance=0.1, manip=None):
+def pitcher_grasp(robot, pitcher, push_distance=0.1, manip=None, **kw_args):
 
     '''
     @param robot The robot performing the grasp
@@ -53,7 +53,7 @@ def pitcher_grasp(robot, pitcher, push_distance=0.1, manip=None):
         
 @TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'pour')
 def pitcher_pour(robot, pitcher, min_tilt = 1.4, max_tilt = 1.57, manip=None, grasp_transform = None, 
-                 pitcher_pose = None):
+                 pitcher_pose = None, **kw_args):
     '''
     @param robot The robot whose active manipulator should be used to pour
     @param pitcher The pitcher to pour

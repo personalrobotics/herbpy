@@ -24,14 +24,12 @@ def StackCups(robot, table, cup, stack, cups_stacked, manip=None):
 
     cup_in_herb = numpy.dot(numpy.linalg.inv(herb_in_world), cup_in_world)
     theta = numpy.arctan2(cup_in_herb[1,0], cup_in_herb[0,0])
-
     if manip == robot.left_arm:    
-        yaw_in_herb = numpy.array([0, numpy.pi])
+        yaw_in_herb = numpy.array([-numpy.pi, 0])
     else:
-        yaw_in_herb = numpy.array([-numpy.pi, 0])   
-    
-    yaw_in_cup = yaw_in_herb - theta
+        yaw_in_herb = numpy.array([0, numpy.pi])   
 
+    yaw_in_cup = yaw_in_herb - theta
     robot.PushGrasp(cup, yaw_range=yaw_in_cup)
 
     from prpy.rave import Disabled
