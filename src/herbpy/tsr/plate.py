@@ -3,7 +3,7 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'plastic_plate', 'grasp')
-def plate_grasp(robot, plate, manip=None):
+def plate_grasp(robot, plate, manip=None, **kw_args):
     '''
     @param robot The robot performing the grasp
     @param plate The plate to grasp

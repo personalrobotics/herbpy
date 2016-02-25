@@ -3,7 +3,7 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'block', 'grasp')
-def block_grasp(robot, block, manip=None):
+def block_grasp(robot, block, manip=None, **kw_args):
     """
     Generates end-effector poses for moving the arm near the block
     @param robot The robot grasping the block
