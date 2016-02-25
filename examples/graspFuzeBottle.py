@@ -81,7 +81,8 @@ robot.base.PlanToBasePose(base_pose)
 #robot.SetTransform(base_pose) # way faster for testing
 
 # Grasp the bottle
-robot.right_arm.PushGrasp(fuze, push_required=False)
+grasp_dofs, grasp_vals = robot.right_hand.configurations.get_configuration('glass_grasp')
+robot.right_arm.PushGrasp(fuze, push_required=False, preshape=grasp_vals)
 robot.right_arm.PlanToNamedConfiguration('home', execute=True)
 
 

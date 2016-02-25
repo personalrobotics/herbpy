@@ -73,6 +73,22 @@ class HERBRobot(Robot):
             raise ValueError('Failed laoding named configurations from "{:s}".'.format(
                 configurations_path))
 
+        # Hand configurations
+        from prpy.named_config import ConfigurationLibrary
+        for hand in [ self.left_hand, self.right_hand ]:
+            hand.configurations = ConfigurationLibrary()
+            hand.configurations.add_group('hand', hand.GetIndices())
+            
+            if isinstance(hand, BarrettHand):
+                hand_configs_path = FindCatkinResource('herbpy', 'config/barrett_preshapes.yaml')
+                try:
+                    hand.configurations.load_yaml(hand_configs_path)
+                except IOError as e:
+                    raise ValueError('Failed loading named hand configurations from "{:s}".'.format(
+                        hand_configs_path))
+            else:
+                logger.warn('Unrecognized hand class. Not loading named configurations.')
+        
         # Initialize a default planning pipeline.
         from prpy.planning import (
             FirstSupported,
