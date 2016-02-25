@@ -1,0 +1,11 @@
+configurations:
+    closed:
+        hand: [2.443, 2.443, 2.443, 0.0]
+    open:
+        hand: [0., 0., 0., 0.]
+    bowl_grasp:
+        hand: [0.977, 0.977, 0.977, 0.0]
+    glass_grasp:
+        hand: [0.488, 0.488, 0.488, 0.0]
+    tray_handle_grasp:
+        hand: [0.977, 0.977, 0.977, 0.0]
