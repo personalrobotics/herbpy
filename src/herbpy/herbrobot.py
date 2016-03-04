@@ -203,10 +203,19 @@ class HERBRobot(Robot):
             try:
                 kinbody_path = prpy.util.FindCatkinResource('pr_ordata',
                                                             'data/objects')
-                marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
-                                                                'data/objects/tag_data.json')
+                # Find all tag_data.json files in OPENRAVE_DATA
+                import os
+                or_data = os.environ.get('OPENRAVE_DATA')
+                or_paths = set(or_data.split(':'))
+                marker_data_paths = []
+                for p in or_paths:
+                    print p
+                    for root, _, files in os.walk(p):
+                        marker_data_paths += [os.path.join(root, f) for f in files 
+                                              if f.endswith('tag_data.json') ]
+
                 self.detector = ApriltagsModule(marker_topic='/apriltags_kinect2/marker_array',
-                                                marker_data_path=marker_data_path,
+                                                marker_data_paths=marker_data_paths,
                                                 kinbody_path=kinbody_path,
                                                 detection_frame='head/kinect2_rgb_optical_frame',
                                                 destination_frame='herb_base',
