@@ -123,7 +123,7 @@ class HERBRobot(Robot):
         # Trajectory optimizer.
         try:
             from or_trajopt import TrajoptPlanner
-            #self.trajopt_planner = TrajoptPlanner()  *********************************CHANGE IN THE CODE DUE TO TRAJOPT BUG
+            self.trajopt_planner = TrajoptPlanner()  
             self.trajopt_planner = None
         except ImportError:
             self.trajopt_planner = None
@@ -271,36 +271,6 @@ class HERBRobot(Robot):
         self.head.SetStiffness(stiffness)
         self.left_arm.SetStiffness(stiffness)
         self.right_arm.SetStiffness(stiffness)
-
-    def DetectObjects(self, 
-                      detection_frame='head/kinect2_rgb_optical_frame',
-                      destination_frame='herb_base'):
-                      #destination_frame='map'):
-        """Use the kinbody detector to detect objects and add
-        them to the environment
-        """
-        # Use the kinbody detector to detect the environment
-        import kinbody_detector.kinbody_detector as kd
-        kinbody_path = prpy.util.FindCatkinResource('pr_ordata',
-                                                        'data/objects')
-        marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
-                                                        'data/objects/tag_data.json')
-        marker_topic = '/apriltags_kinect2/marker_array'
-        try:
-            logger.info('Marker data path %s' % marker_data_path)
-            logger.info('Kinbody path %s' % kinbody_path)
-            detector = kd.KinBodyDetector(self.GetEnv(), 
-                                          marker_data_path,
-                                          kinbody_path,
-                                          marker_topic,
-                                          detection_frame, 
-                                          destination_frame)
-            logger.info('Waiting to detect objects...')
-            detector.Update()
-
-        except Exception, e:
-            logger.error('Detection failed update: %s' % str(e))
-            raise
         
     def DetectHuman(self, env, orhuman=2, load_hum=True, 
                     hrc=False, continuous=True,      
