@@ -73,6 +73,22 @@ class HERBRobot(Robot):
             raise ValueError('Failed laoding named configurations from "{:s}".'.format(
                 configurations_path))
 
+        # Hand configurations
+        from prpy.named_config import ConfigurationLibrary
+        for hand in [ self.left_hand, self.right_hand ]:
+            hand.configurations = ConfigurationLibrary()
+            hand.configurations.add_group('hand', hand.GetIndices())
+            
+            if isinstance(hand, BarrettHand):
+                hand_configs_path = FindCatkinResource('herbpy', 'config/barrett_preshapes.yaml')
+                try:
+                    hand.configurations.load_yaml(hand_configs_path)
+                except IOError as e:
+                    raise ValueError('Failed loading named hand configurations from "{:s}".'.format(
+                        hand_configs_path))
+            else:
+                logger.warn('Unrecognized hand class. Not loading named configurations.')
+        
         # Initialize a default planning pipeline.
         from prpy.planning import (
             FirstSupported,
@@ -143,10 +159,9 @@ class HERBRobot(Robot):
         )
         
         from prpy.planning.retimer import HauserParabolicSmoother
-        self.smoother = HauserParabolicSmoother()
-        # TODO: This should not be HauserParabolicSmoother because it changes the path. This is a temporary
-        # hack because the ParabolicTrajectoryRetimer doesn't work on HERB.
-        self.retimer = HauserParabolicSmoother()
+        self.smoother = HauserParabolicSmoother(do_blend=True, do_shortcut=True)
+        self.retimer = HauserParabolicSmoother(do_blend=True, do_shortcut=False,
+            blend_iterations=5, blend_radius=0.4)
         self.simplifier = None
 
         # Base planning
@@ -179,25 +194,33 @@ class HERBRobot(Robot):
         self.segway_sim = segway_sim
 
         # Set up perception
+        self.detector=None
         if perception_sim:
             from prpy.perception import SimulatedPerceptionModule
             self.detector = SimulatedPerceptionModule()
         else:
             from prpy.perception import ApriltagsModule
-            kinbody_path = prpy.util.FindCatkinResource('pr_ordata',
-                                                        'data/objects')
-            marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
-                                                            'data/objects/tag_data.json')
-            self.detector = ApriltagsModule(marker_topic='/apriltags_kinect2/marker_array',
-                                            marker_data_path=marker_data_path,
-                                            kinbody_path=kinbody_path,
-                                            detection_frame='head/kinect2_rgb_optical_frame',
-                                            destination_frame='herb_base')
-                                            #destination_frame='map')
+            try:
+                kinbody_path = prpy.util.FindCatkinResource('pr_ordata',
+                                                            'data/objects')
+                marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
+                                                                'data/objects/tag_data.json')
+                self.detector = ApriltagsModule(marker_topic='/apriltags_kinect2/marker_array',
+                                                marker_data_path=marker_data_path,
+                                                kinbody_path=kinbody_path,
+                                                detection_frame='head/kinect2_rgb_optical_frame',
+                                                destination_frame='herb_base',
+                                                reference_link=self.GetLink('/herb_base'))
+            except IOError as e:
+                 logger.warning('Failed to find required resource path. ' \
+                                'pr-ordata package cannot be found. ' \
+                                'Perception detector will not be loaded.')
+
         if not self.talker_simulated:
             # Initialize herbpy ROS Node
             import rospy
             if not rospy.core.is_initialized():
+                rospy.init_node('herbpy', anonymous=True)
                 logger.debug('Started ROS node with name "%s".', rospy.get_name())
 
             import talker.msg
@@ -279,8 +302,6 @@ class HERBRobot(Robot):
             logger.error('Detection failed update: %s' % str(e))
             raise
         
-        #return True
-        
     def DetectHuman(self, env, orhuman=2, load_hum=True, 
                     hrc=False, continuous=True,      
                     herb_sim=True, enable_legs=True,             
@@ -315,7 +336,6 @@ class HERBRobot(Robot):
                 from hrc import assistance                 
                 humans_hrc = []
                 logger.info('HRC')
-               
                 
         try:
             rospy.init_node(node_name, anonymous=True)
@@ -333,7 +353,6 @@ class HERBRobot(Robot):
                                        segway_sim=segway_sim)
                     for human in humans:
                         human.update(tf)       
-                        #logger.info('Updating...')
                 if hrc==True:
                     if humanadded==False:
                         humanadded = assistance.addHumansPred(tf, humans_hrc, env,
@@ -343,11 +362,7 @@ class HERBRobot(Robot):
                                                                 action=action)
                     for human in humans_hrc:
                         human.update(tf)       
-                        #logger.info('Updating...')
-                    
-                    
-                    
-                        
+                   
         except Exception, e:
             logger.error('Detection failed update: %s' % str(e))
             raise
