@@ -7,7 +7,9 @@ logger = logging.getLogger('herbpy')
 @ActionMethod
 def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius, 
                       manip=None, max_plan_duration=30.0, 
-                      shortcut_time=3., render=True, **kw_args):
+                      shortcut_time=3., sbounds=None, 
+                      use_search=True, savedir=None,
+                      render=True, **kw_args):
     """
     @param robot The robot performing the push
     @param obj The object to push
@@ -18,12 +20,22 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
     @param manip The manipulator to use for the push - if None the active manipulator is used
     @param max_plan_duration The max time to run the planner
     @param shortcut_time The amount of time to spend shortcutting, if 0. no shortcutting is performed
+    @param sbounds Bounds on the world - this represents the region the objects cannot leave
+      if None, the extents of the table are used
+    @param use_search If true, use the search based planner, otherwise use a randomized planner
+    @param savedir The directory to save results to
     @param render If true, render the trajectory while executing
+
     """
     # Get a push planner
     try:
-        from or_pushing.push_planner import PushPlanner
-        planner = PushPlanner(robot.GetEnv())
+        if use_search:        
+            from or_pushing.discrete_search_push_planner import DiscreteSearchPushPlanner
+            planner = DiscreteSearchPushPlanner(robot.GetEnv())
+        else:
+            from or_pushing.push_planner import PushPlanner
+            planner = PushPlanner(robot.GetEnv())
+
     except ImportError:
         raise ActionError("Unable to create PushPlanner. Is the randomized_rearrangement_planning"
                           "repository checked out in your workspace?")
@@ -33,24 +45,27 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
         with robot.GetEnv():
             manip = robot.GetActiveManipulator()
 
-
     with robot.GetEnv():
         from prpy.rave import Disabled
         from prpy.util import ComputeEnabledAABB
         with Disabled(table, padding_only=True):
             table_aabb = ComputeEnabledAABB(table)
-        ee_pushing_transform = manip.GetEndEffectorTransform()
-        goal_pose = obj.GetTransform()
 
-    # Make the state bounds be at the edges of the table
     table_pos = table_aabb.pos()
     table_extents = table_aabb.extents()
-    sbounds = {'high': [table_pos[0] + table_extents[0],
-                        table_pos[1] + table_extents[1],
-                        2.*numpy.pi],
-               'low': [table_pos[0] - table_extents[0],
-                       table_pos[1] - table_extents[1],
-                       0]}
+
+    if sbounds is None:
+        # Make the state bounds be at the edges of the table
+        sbounds = {'high': [table_pos[0] + table_extents[0],
+                            table_pos[1] + table_extents[1],
+                            2.*numpy.pi],
+                   'low': [table_pos[0] - table_extents[0],
+                           table_pos[1] - table_extents[1],
+                           0]}
+
+    with robot.GetEnv():
+        ee_pushing_transform = manip.GetEndEffectorTransform()
+        goal_pose = obj.GetTransform()
     
     # Assume we want to keep the current orientation and height of the manipulator
     #  throughout the push
@@ -69,14 +84,26 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
                                   max_plan_duration = max_plan_duration,
                                   goal_epsilon = goal_radius,
                                   **kw_args)
+        planner.SaveAllData(savedir)
+
     if traj is None:
         raise PlanningError('Failed to find pushing plan')
+
+    if savedir is not None:
+        import os
+        trajfile = os.path.join(savedir, 'path.traj')
+        planner.SaveTrajectory(trajfile, traj)
 
     # Execute
     from prpy.viz import RenderTrajectory
     with RenderTrajectory(robot, traj, color=[1, 0, 0, 1], render=render):
         if shortcut_time > 0:
             traj = planner.ShortcutPath(timelimit=shortcut_time)
+            if savedir is not None:
+                import os
+                shortcutfile = os.path.join(savedir, 'path.shortcut.traj')
+                planner.SaveTrajectory(shortcutfile, traj)
+
         with RenderTrajectory(robot, traj, color=[0, 0, 1, 1], render=render):
           if manip.simulated:
               # Use the push planner code to simulate path execution.
