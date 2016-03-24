@@ -36,10 +36,11 @@ def _GrabBlock(robot, blocks, table, manip=None, preshape=None,
     manip.hand.MoveHand(*preshape)
 
     block_tsr_list = []
-    for b in blocks:
-        # Get a TSR to move near the block.
-        tsr_list = robot.tsrlibrary(b, 'grasp', manip=manip)
-        block_tsr_list += tsr_list
+    with env:
+        for b in blocks:
+            # Get a TSR to move near the block.
+            tsr_list = robot.tsrlibrary(b, 'grasp', manip=manip)
+            block_tsr_list += tsr_list
     
     # Plan to a pose above the block
     with RenderTSRList(block_tsr_list, robot.GetEnv()):
@@ -152,10 +153,11 @@ def PlaceBlock(robot, block, on_obj, manip=None, **kw_args):
     env = robot.GetEnv()
 
     # Get a tsr for this position
-    object_place_list = robot.tsrlibrary(on_obj, 'point_on', manip=manip)
-    place_tsr_list = robot.tsrlibrary(block, 'place_on', 
-                                      pose_tsr_chain=object_place_list[0], 
-                                      manip=manip)
+    with env:
+        object_place_list = robot.tsrlibrary(on_obj, 'point_on', manip=manip)
+        place_tsr_list = robot.tsrlibrary(block, 'place_on', 
+                                          pose_tsr_chain=object_place_list[0], 
+                                          manip=manip)
 
     # Plan there
     with prpy.viz.RenderTSRList(object_place_list, robot.GetEnv()):
@@ -172,5 +174,3 @@ def PlaceBlock(robot, block, on_obj, manip=None, **kw_args):
         while not env.CheckCollision(block) and block_pose[2,3] > 0.0:
             block_pose[2,3] -= 0.02
             block.SetTransform(block_pose)
-    
-    

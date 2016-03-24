@@ -73,6 +73,22 @@ class HERBRobot(Robot):
             raise ValueError('Failed laoding named configurations from "{:s}".'.format(
                 configurations_path))
 
+        # Hand configurations
+        from prpy.named_config import ConfigurationLibrary
+        for hand in [ self.left_hand, self.right_hand ]:
+            hand.configurations = ConfigurationLibrary()
+            hand.configurations.add_group('hand', hand.GetIndices())
+            
+            if isinstance(hand, BarrettHand):
+                hand_configs_path = FindCatkinResource('herbpy', 'config/barrett_preshapes.yaml')
+                try:
+                    hand.configurations.load_yaml(hand_configs_path)
+                except IOError as e:
+                    raise ValueError('Failed loading named hand configurations from "{:s}".'.format(
+                        hand_configs_path))
+            else:
+                logger.warn('Unrecognized hand class. Not loading named configurations.')
+        
         # Initialize a default planning pipeline.
         from prpy.planning import (
             FirstSupported,
@@ -193,7 +209,8 @@ class HERBRobot(Robot):
                                                 marker_data_path=marker_data_path,
                                                 kinbody_path=kinbody_path,
                                                 detection_frame='head/kinect2_rgb_optical_frame',
-                                                destination_frame='map')
+                                                destination_frame='herb_base',
+                                                reference_link=self.GetLink('/herb_base'))
             except IOError as e:
                  logger.warning('Failed to find required resource path. ' \
                                 'pr-ordata package cannot be found. ' \
@@ -203,6 +220,7 @@ class HERBRobot(Robot):
             # Initialize herbpy ROS Node
             import rospy
             if not rospy.core.is_initialized():
+                rospy.init_node('herbpy', anonymous=True)
                 logger.debug('Started ROS node with name "%s".', rospy.get_name())
 
             import talker.msg

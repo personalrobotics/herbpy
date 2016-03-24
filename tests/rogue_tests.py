@@ -29,22 +29,22 @@ class RogueTest(unittest.TestCase):
         herbpy.action.Sweep(self.robot, [0.7, 0, 0.5], [0.5, 0, 0.5])
 
     def test_GetPointFrom(self):
-        kinbody_coord = herbpy.action.GetPointFrom(self.env, self.fuze)
+        kinbody_coord = prpy.util.GetPointFrom(self.fuze)
         numpy.testing.assert_almost_equal(kinbody_coord, self.fuze_pose[0:3, 3])
 
         test_array = numpy.array([0, 1, 2])
-        numpyarray_coord = herbpy.action.GetPointFrom(self.env, test_array)
+        numpyarray_coord = prpy.util.GetPointFrom(test_array)
         numpy.testing.assert_almost_equal(numpyarray_coord, test_array)
 
         test_list = [0, 1, 2]
-        list_coord = herbpy.action.GetPointFrom(self.env, test_list)
+        list_coord = prpy.util.GetPointFrom(test_list)
         numpy.testing.assert_almost_equal(list_coord, test_list)
 
         test_tuple = (0, 1, 2)
-        tuple_coord = herbpy.action.GetPointFrom(self.env, test_tuple)
+        tuple_coord = prpy.util.GetPointFrom(test_tuple)
         numpy.testing.assert_almost_equal(tuple_coord, test_tuple)
 
-        transform_coord = herbpy.action.GetPointFrom(self.env, self.fuze_pose)
+        transform_coord = prpy.util.GetPointFrom(self.fuze_pose)
         numpy.testing.assert_almost_equal(transform_coord, self.fuze_pose[0:3, 3])
 
     def test_Exhibiting(self):
