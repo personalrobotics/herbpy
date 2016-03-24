@@ -45,9 +45,9 @@ class HERBRobot(Robot):
         prpy.bind_subclass(self.right_arm, WAM, sim=right_arm_sim, namespace='/right')
         prpy.bind_subclass(self.head, HERBPantilt, sim=head_sim, owd_namespace='/head/owd')
         prpy.bind_subclass(self.left_arm.hand, BarrettHand, sim=left_hand_sim, manipulator=self.left_arm,
-                           owd_namespace='/left/owd', bhd_namespace='/left/bhd', ft_sim=right_ft_sim)
+                           bhd_namespace='/left', ft_sim=right_ft_sim)
         prpy.bind_subclass(self.right_arm.hand, BarrettHand, sim=right_hand_sim, manipulator=self.right_arm,
-                           owd_namespace='/right/owd', bhd_namespace='/right/bhd', ft_sim=right_ft_sim)
+                           bhd_namespace='/right', ft_sim=right_ft_sim)
         self.base = HerbBase(sim=segway_sim, robot=self)
 
         # Set HERB's acceleration limits. These are not specified in URDF.
