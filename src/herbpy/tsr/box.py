@@ -12,15 +12,17 @@ def box_stamp(robot, box, manip=None):
     @param box The box to stamp
     @param manip The manipulator to stamp 
     '''
+    
+    with robot.GetEnv():
+        with robot.CreateRobotStateSaver():
+            if manip is None:
+                manip_idx = robot.GetActiveManipulatorIndex()
+                manip = robot.GetActiveManipulator()
+            else:
+                manip.SetActive()
+                manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
-    if manip is None:
-        manip_idx = robot.GetActiveManipulatorIndex()
-    else:
-        with manip.GetRobot():
-            manip.SetActive()
-            manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
-
-    T0_w = box.GetTransform()
+        T0_w = box.GetTransform()
     
     ee_to_palm = 0.18
     palm_to_box_center = .045
