@@ -353,7 +353,7 @@ class HERBRobot(Robot):
                     for human in humans_hrc:
                         human.update(tf)                          
       
-        except Exception, e:  #rospy.exceptions.ROSException:
+        except Exception, e:  
             logger.error('Detection failed update: %s' % str(e))
             raise
         
