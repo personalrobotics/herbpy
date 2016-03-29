@@ -349,11 +349,9 @@ class HERBRobot(Robot):
                                                                 continuous=continuous,
                                                                 herb_sim=herb_sim,
                                                                 segway_sim=segway_sim,
-                                                                action=action,
-                                                                base_frame=base_frame,
-                                                                kin_frame=kin_frame)
+                                                                action=action)
                     for human in humans_hrc:
-                        human.update(tf, 1)                          
+                        human.update(tf)                          
       
         except Exception, e:  #rospy.exceptions.ROSException:
             logger.error('Detection failed update: %s' % str(e))
