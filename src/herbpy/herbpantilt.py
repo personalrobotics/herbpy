@@ -3,6 +3,16 @@ import prpy
 from prpy.base.wam import WAM
 
 class HERBPantilt(WAM):
+    def __getattribute__(self, name):
+        """Disable all method calls on HERB's head"""
+        attr = object.__getattribute__(self, name)
+        if hasattr(attr, '__call__'):
+            def replacement_function(*args, **kwargs):
+                raise NotImplementedError("HERB's head is currently immobilized.")
+            return replacement_function
+        else:
+            return attr
+
     def __init__(self, sim, owd_namespace):
         # FIXME: We don't build the IK database because ikfast fails with a
         # compilation error on the pantilt. This should actually be LookAt3D.
