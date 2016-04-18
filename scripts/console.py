@@ -41,6 +41,10 @@ if __name__ == "__main__":
                    'env_path':args.env_xml,
                    'segway_sim':args.segway_sim,
                    'perception_sim': args.perception_sim}
+    if not args.sim:
+        import rospy
+        rospy.init_node('herbpy')
+
     if args.sim and not args.segway_sim:
         herbpy_args['segway_sim'] = args.sim
     
