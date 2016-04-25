@@ -56,6 +56,74 @@ def _GrabBlock(robot, blocks, table, manip=None, preshape=None,
         raise NoTSRException("Failed to find the TSR PlanToTSR planned to")
     block = blocks[block_idxs[0]]
     
+    # ---------------------------------------------------------
+    # Shen Li
+    # 1. AABB - bounding box
+    #   AABB includes the information about transformation matrix (x,y of the CoM)
+    #   (bb.GetConfigurationValues() or bb.GetTransform())
+    # 2. name
+    # 3. color
+    # import IPython;
+    # IPython.embed()
+
+
+    import yaml
+    import block_sorting.convert_color as closest_color
+    block_data = {}
+    for bb in blocks:
+        block_name = bb.GetName() # string: b1, b2, ...
+        block_data[block_name] = {}
+        block_data[block_name]['name'] = str(block_name)
+
+        # Get the color of the block
+        geom = bb.GetLinks()[0].GetGeometries()[0]
+        color = geom.GetDiffuseColor()
+        # Re-scale the block's RGB color from float to 0-255
+        block_color = (color[0]*255.0, color[1]*255.0, color[2]*255.0)
+        # Get the English color name that most closely matches the RGB value
+        actual_color_name, closest_color_name = closest_color.get_colour_name(block_color)
+        block_data[block_name]['color_RGB'] = block_color
+        block_data[block_name]['color_name'] = str(closest_color_name)
+
+        bounding_box = bb.ComputeAABB()
+
+        # we need to reverse x with y because now the y is actually horizontal
+        # for example, in this example, the robot is closest to the yellow one,
+        # so we have to rotate the table to make it consistent
+        block_data[block_name]['AABB_pos'] = [bounding_box.pos()[1], bounding_box.pos()[0]]
+        block_data[block_name]['AABB_ext'] = [bounding_box.extents()[1], bounding_box.extents()[0]]
+
+    table_AABB_pos = [table.ComputeAABB().pos()[1], table.ComputeAABB().pos()[0]]
+    table_AABB_ext = [table.ComputeAABB().extents()[1], table.ComputeAABB().extents()[0]]
+    # for key, value in block_data.iteritems():
+        # print value
+    # with open('./block_scenario.yml', 'w') as outfile:
+        # outfile.write( yaml.dump(block_data, default_flow_style=False) )
+    target_block_name = block.GetName()
+    num_of_solu_needed = 1
+    print 'spatial_desc_gen starts-----------------------------'
+    desc_list = spatial_desc_gen(block_data, str(target_block_name),\
+        table_AABB_pos, table_AABB_ext, False, num_of_solu_needed)
+
+    if not desc_list:
+        desc_list = []
+        desc_list[0] = 'Sorry, I could not describe this block I am going to pick up.'
+    else:
+        print 'demo.py: Spatial description of this block:'
+        for i in xrange(len(desc_list)):
+            print 'Solution '+str(i+1)+' : '+str(desc_list[i])
+
+        best_solution = desc_list[0]
+        print 'best_solution='+ best_solution
+        print 'spatial_desc_gen ends-----------------------------'
+
+    import IPython;IPython.embed()
+    robot.Say(desc_list[0])
+    import IPython;IPython.embed()
+
+    # ---------------------------------------------------------
+
+    
     try:
         with AllDisabled(env, [table] + blocks, padding_only=True):
             # Move down until touching the table
