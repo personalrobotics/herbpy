@@ -2,6 +2,7 @@ import logging, numpy, openravepy, prpy
 from prpy.action import ActionMethod
 from prpy.planning.base import PlanningError
 from prpy.util import ComputeEnabledAABB
+from block_description_generator.spatial_description_generator import spatial_desc_gen
 
 logger = logging.getLogger('herbpy')
 
@@ -102,9 +103,9 @@ def _GrabBlock(robot, blocks, table, manip=None, preshape=None,
     target_block_name = block.GetName()
     num_of_solu_needed = 1
     print 'spatial_desc_gen starts-----------------------------'
+
     desc_list = spatial_desc_gen(block_data, str(target_block_name),\
         table_AABB_pos, table_AABB_ext, False, num_of_solu_needed)
-
     if not desc_list:
         desc_list = []
         desc_list[0] = 'Sorry, I could not describe this block I am going to pick up.'

@@ -35,6 +35,7 @@
   <exec_depend>or_sbpl</exec_depend>
   <exec_depend>openrave</exec_depend>
   <exec_depend>python-yaml</exec_depend>
+  <exec_depend>block_description_generator</exec_depend>
 
   <test_depend>actionlib</test_depend>
   <test_depend>actionlib_msgs</test_depend>
@@ -54,6 +55,7 @@
   <test_depend>or_sbpl</test_depend>
   <test_depend>openrave</test_depend>
   <test_depend>python-yaml</test_depend>
+  <test_depend>block_description_generator</test_depend>
 
   <test_depend>python-nose</test_depend>
   <test_depend>pr_ordata</test_depend>
