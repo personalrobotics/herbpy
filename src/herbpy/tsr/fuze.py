@@ -12,6 +12,8 @@ def fuze_grasp(robot, fuze, manip=None, **kw_args):
     """
     return _fuze_grasp(robot, fuze, manip = manip)
 
+    
+
 @TSRFactory('herb', 'fuze_bottle', 'push_grasp')
 def fuze_grasp(robot, fuze, push_distance = 0.1, manip=None, **kw_args):
     """
@@ -31,29 +33,46 @@ def _fuze_grasp(robot, fuze, push_distance = 0.0, manip = None, **kw_args):
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
     """
-    if manip is None:
-        manip_idx = robot.GetActiveManipulatorIndex()
-    else:
-        manip.SetActive()
-        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
-
-    T0_w = fuze.GetTransform()
+    from prpy.tsr.generic import cylinder_grasp
     ee_to_palm_distance = 0.18
-    default_offset_distance = 0.05 # This is the radius of the fuze
-                                   # plus a little bit
-    total_offset = ee_to_palm_distance + default_offset_distance + push_distance
-    Tw_e = numpy.array([[ 0., 0., 1., -total_offset], 
-                        [1., 0., 0., 0.], 
-                        [0., 1., 0., 0.108], # half of fuze bottle height
-                        [0., 0., 0., 1.]])
-
-    Bw = numpy.zeros((6,2))
-    Bw[2,:] = [0.0, 0.02]  # Allow a little vertical movement
-    Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
+    return cylinder_grasp(robot, fuze, obj_radius = 0.05,
+                          obj_height = 0.216,
+                          lateral_offset = ee_to_palm_distance + push_distance,
+                          manip = manip)
+                
+@TSRFactory('herb', 'fuze_bottle', 'place')
+def fuze_on_table(robot, fuze, pose_tsr_chain, manip=None):
+    '''
+    Generates end-effector poses for placing the fuze
+    This factory assumes the fuze is grasped at the time it is called.
     
-    grasp_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    grasp_chain = TSRChain(sample_start=False, sample_goal = True, 
-                           constrain=False, TSR = grasp_tsr)
+    @param robot The robot grasping the fuze
+    @param fuze The grasped object
+    @param pose_tsr_chain The tsr chain for sampling placement poses for the fuze
+    @param manip The manipulator grasping the object, if None the active
+       manipulator of the robot is used
+    '''
+    from prpy.tsr.generic import place_object_tsr
+    return place_object_tsr(robot, fuze, pose_tsr_chain, manip=manip)
+                            
+    
+@TSRFactory('herb', 'fuze_bottle', 'transport')
+def fuze_transport(robot, fuze, manip=None, roll_epsilon=0.2, pitch_epsilon=0.2, yaw_epsilon=0.2):
+    '''
+    Generates a trajectory-wide constraint for transporting the object with little roll, pitch or yaw
+    Assumes the object has already been grasped and is in the proper
+    configuration for transport.
 
-    return [grasp_chain]
-
+    @param robot The robot grasping the fuze
+    @param fuze The grasped object
+    @param manip the manipulator grasping the object, if None the active manipulator 
+       of the robot is used
+    @param roll_epsilon The amount to let the object roll during transport (object frame)
+    @param pitch_epsilon The amount to let the object pitch during transport (object frame)
+    @param yaw_epsilon The amount to let the object yaw during transport (object frame)
+    '''
+    from prpy.tsr.generic import transport_upright_tsr
+    return transport_upright_tsr(robot, fuze, manip=manip,
+                                 roll_epsilon=roll_epsilon,
+                                 pitch_epsilon=pitch_epsilon,
+                                 yaw_epsilon=yaw_epsilon)
