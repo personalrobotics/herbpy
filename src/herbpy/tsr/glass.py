@@ -52,9 +52,9 @@ def _glass_grasp(robot, glass, manip=None, yaw_range=None, push_distance=0.0, **
                           manip = manip, **kw_args)
                 
 @TSRFactory('herb', 'plastic_glass', 'place')
-def glass_on_table(robot, glass, pose_tsr_chain, manip=None):
+def place_grasp(robot, glass, pose_tsr_chain, manip=None):
     '''
-    Generates end-effector poses for placing the glass on the table.
+    Generates end-effector poses for placing the glass at a sampled pose
     This factory assumes the glass is grasped at the time it is called.
     
     @param robot The robot grasping the glass
@@ -63,8 +63,8 @@ def glass_on_table(robot, glass, pose_tsr_chain, manip=None):
     @param manip The manipulator grasping the object, if None the active
        manipulator of the robot is used
     '''
-    from prpy.tsr.generic import place_object_tsr
-    return place_object_tsr(robot, glass, pose_tsr_chain, manip=manip)
+    from prpy.tsr.generic import place_object
+    return place_object(robot, glass, pose_tsr_chain, manip=manip)
                             
     
 @TSRFactory('herb', 'plastic_glass', 'transport')
@@ -82,8 +82,8 @@ def glass_transport(robot, glass, manip=None, roll_epsilon=0.2, pitch_epsilon=0.
     @param pitch_epsilon The amount to let the object pitch during transport (object frame)
     @param yaw_epsilon The amount to let the object yaw during transport (object frame)
     '''
-    from prpy.tsr.generic import transport_upright_tsr
-    return transport_upright_tsr(robot, glass, manip=manip,
-                                 roll_epsilon=roll_epsilon,
-                                 pitch_epsilon=pitch_epsilon,
-                                 yaw_epsilon=yaw_epsilon)
+    from prpy.tsr.generic import transport_upright
+    return transport_upright(robot, glass, manip=manip,
+                             roll_epsilon=roll_epsilon,
+                             pitch_epsilon=pitch_epsilon,
+                             yaw_epsilon=yaw_epsilon)
