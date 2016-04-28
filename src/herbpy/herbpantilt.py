@@ -95,6 +95,7 @@ class HERBPantilt(WAM):
         @param **kw_args keyword arguments passed to \p robot.ExecuteTrajectory
         @return pantilt trajectory
         """
+        raise NotImplementedError('The head is currently disabled under ros_control.')
         # Update the controllers to get new joint values.
         robot = self.GetRobot()
         with robot.GetEnv():
