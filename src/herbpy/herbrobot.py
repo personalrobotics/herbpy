@@ -13,7 +13,7 @@ from prpy.exceptions import PrPyException, TrajectoryNotExecutable
 from prpy.planning.base import UnsupportedPlanningError
 from herbbase import HerbBase
 from herbpantilt import HERBPantilt
-from ros_control_client_py import ControllerManagerClient
+from ros_control_client_py import ControllerManagerClient, JointStateClient
 
 logger = logging.getLogger('herbpy')
 
@@ -48,15 +48,16 @@ class HERBRobot(Robot):
                                     head_sim)
         if not self.full_controller_sim:
             # any non-simulation requires ros and the ros_control stack
-            print 'CLINT: something not sim'
             import rospy
             if not rospy.core.is_initialized():
                 rospy.init_node('herbpy')
 
+            # update openrave state from /joint_states
+            self._jointstate_client = JointStateClient(
+                self, topic_name='/joint_states')
+
             self.controller_manager = ControllerManagerClient()
             self.controllers_always_on.append('joint_state_controller')
-        else:
-            print 'CLINT: all sim'
 
 
         # Convenience attributes for accessing self components.
@@ -163,7 +164,7 @@ class HERBRobot(Robot):
                     raise ValueError('Failed loading named hand configurations from "{:s}".'.format(
                         hand_configs_path))
             else:
-                logger.warn('Unrecognized hand class. Not loading named configurations.')
+                logger.warning('Unrecognized hand class. Not loading named configurations.')
 
         # Initialize a default planning pipeline.
         from prpy.planning import (
@@ -353,8 +354,7 @@ class HERBRobot(Robot):
 
         # Verify that the trajectory has non-zero duration.
         if traj.GetDuration() <= 0.0:
-            import warnings
-            warnings.warn('Executing zero-length trajectory. Please update the'
+            logger.warning('Executing zero-length trajectory. Please update the'
                           ' function that produced this trajectory to return a'
                           ' single-waypoint trajectory.', FutureWarning)
 
@@ -363,48 +363,56 @@ class HERBRobot(Robot):
         active_controllers = []
         if self.head in traj_manipulators:
             # TODO head after Schunk integration
-            import warnings
-            warnings.warn('The head is currently disabled under ros_control.')
+            if len(traj_manipulators) == 1:
+                raise NotImplementedError('The head is currently disabled under ros_control.')
+            else:
+                logger.warning('The head is currently disabled under ros_control.')
 
+        # logic to determine which controllers are needed
         if (self.right_arm in traj_manipulators and
-                self.left_arm in traj_manipulators):
-            controllers_manip.append('dual_arm_trajectory_controller')
-            joints = []
-            joints.extend(self.right_arm.GetJointNames())
-            joints.extend(self.left_arm.GetJointNames())
-            active_controllers.append(
-                RewdOrTrajectoryController(self, '',
-                                           'dual_arm_trajectory_controller',
-                                           joints))
+                not self.right_arm.IsSimulated() and
+                self.left_arm in traj_manipulators and
+                not self.left_arm.IsSimulated()):
+            controllers_manip.append('bimanual_trajectory_controller')
         else:
             if self.right_arm in traj_manipulators:
                 if not self.right_arm.IsSimulated():
                     controllers_manip.append('right_trajectory_controller')
-                    joints = []
-                    joints.extend(self.right_arm.GetJointNames())
-                    active_controllers.append(
-                        RewdOrTrajectoryController(self, '',
-                                                'right_trajectory_controller',
-                                                joints))
                 else:
                     active_controllers.append(self.right_arm.sim_controller)
 
             if self.left_arm in traj_manipulators:
                 if not self.left_arm.IsSimulated():
                     controllers_manip.append('left_trajectory_controller')
-                    joints = []
-                    joints.extend(self.left_arm.GetJointNames())
-                    active_controllers.append(
-                        RewdOrTrajectoryController(self, '',
-                                                'left_trajectory_controller',
-                                                joints))
                 else:
                     active_controllers.append(self.left_arm.sim_controller)
 
         # load and activate controllers
         if not self.full_controller_sim:
-            self.controller_manager.request(self.controllers_always_on +
-                                            controllers_manip).switch()
+            self.controller_manager.request(controllers_manip).switch()
+
+        # repeat logic and actually construct controller clients
+        # now that we've activated them on the robot
+        if 'bimanual_trajectory_controller' in controllers_manip:
+            joints = []
+            joints.extend(self.right_arm.GetJointNames())
+            joints.extend(self.left_arm.GetJointNames())
+            active_controllers.append(
+                RewdOrTrajectoryController(self, '',
+                                           'bimanual_trajectory_controller',
+                                           joints))
+        else:
+            if 'right_trajectory_controller' in controllers_manip:
+                active_controllers.append(
+                    RewdOrTrajectoryController(self, '',
+                                               'right_trajectory_controller',
+                                               self.right_arm.GetJointNames()))
+
+            if 'left_trajectory_controller' in controllers_manip:
+                active_controllers.append(
+                    RewdOrTrajectoryController(self, '',
+                                               'left_trajectory_controller',
+                                               self.left_arm.GetJointNames()))
 
         if needs_base:
             if (hasattr(self, 'base') and hasattr(self.base, 'controller') and
@@ -471,25 +479,26 @@ class HERBRobot(Robot):
         if isinstance(stiffness, numbers.Number) and not (0 <= stiffness <= 1):
             raise Exception('Stiffness must be boolean or decimal in the range [0, 1];'
                             'got {}.'.format(stiffness))
+
         # TODO head after Schunk integration
+        if manip is self.head:
+            raise NotImplementedError('Head immobilized under ros_control, SetStiffness not available.')
+
         new_manip_controllers = []
         if stiffness:
-            if not self.left_arm_sim and (manip is None or manip is self.left_arm):
-                new_manip_controllers.append(
-                    'left_position_controller')
-            if not self.right_arm_sim and (manip is None or manip is self.right_arm):
-                new_manip_controllers.append(
-                    'right_position_controller')
+            if not self.left_arm.IsSimulated() and (manip is None or manip is self.left_arm):
+                new_manip_controllers.append('left_joint_group_position_controller')
+            if not self.right_arm.IsSimulated() and (manip is None or manip is self.right_arm):
+                new_manip_controllers.append('right_joint_group_position_controller')
         else:
-            if not self.left_arm_sim and (manip is None or manip is self.left_arm):
+            if not self.left_arm.IsSimulated() and (manip is None or manip is self.left_arm):
                 new_manip_controllers.append(
                     'left_gravity_compensation_controller')
-            if not self.right_arm_sim and (manip is None or manip is self.right_arm):
+            if not self.right_arm.IsSimulated() and (manip is None or manip is self.right_arm):
                 new_manip_controllers.append(
                     'right_gravity_compensation_controller')
 
-            self.controller_manager.request(self.controllers_always_on +
-                                            new_manip_controllers).switch()
+        self.controller_manager.request(new_manip_controllers).switch()
 
     def Say(self, words, block=True):
         """Speak 'words' using talker action service or espeak locally in simulation"""
