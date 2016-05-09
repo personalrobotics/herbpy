@@ -122,3 +122,6 @@ class HERBPantilt(WAM):
         ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
         return self.ikmodel.manip.FindIKSolution(ik_params, 0)
 
+    def GetDofValues(self):
+        """Temp override to return static position while head is immobilized"""
+        return [0, -0.3]
