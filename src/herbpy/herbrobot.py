@@ -279,7 +279,7 @@ class HERBRobot(Robot):
             from prpy.perception import ApriltagsModule
             try:
                 kinbody_path = prpy.util.FindCatkinResource('pr_ordata',
-                                                            'data/objects')
+                                                            'objects')
                 marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
                                                                 'data/objects/tag_data.json')
                 self.detector = ApriltagsModule(marker_topic='/apriltags_kinect2/marker_array',
@@ -289,9 +289,10 @@ class HERBRobot(Robot):
                                                 destination_frame='herb_base',
                                                 reference_link=self.GetLink('/herb_base'))
             except IOError as e:
-                 logger.warning('Failed to find required resource path. ' \
-                                'pr-ordata package cannot be found. ' \
-                                'Perception detector will not be loaded.')
+                logger.warning('Failed to find required resource path. ' \
+                               'pr_ordata package cannot be found. ' \
+                               'Perception detector will not be loaded.' \
+                               '\n{}'.format(e))
 
         if not self.talker_simulated:
             # Initialize herbpy ROS Node
