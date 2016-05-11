@@ -2,6 +2,24 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.9.0 (2016-05-11)
+------------------
+* Add named preshapes for the hands. `#81 <https://github.com/personalrobotics/herbpy/issues/81>`_
+* Add `yaw_range` parameter to glass grasps. `#80 <https://github.com/personalrobotics/herbpy/issues/80>`_
+* Add actions for pitcher pouring YCB task. `#78 <https://github.com/personalrobotics/herbpy/issues/78>`_
+* Add actions for cup stacking YCB task. `#77 <https://github.com/personalrobotics/herbpy/issues/77>`_
+* Modify RoGuE to use `prpy.util.GetPointFrom`. `#76 <https://github.com/personalrobotics/herbpy/issues/76>`_
+* Fix locks in TSR library. `#69 <https://github.com/personalrobotics/herbpy/issues/69>`_
+* Refactor lift and pill bottle TSRs. `#68 <https://github.com/personalrobotics/herbpy/issues/68>`_
+* Removed or_pushing test and dependency. `#67 <https://github.com/personalrobotics/herbpy/issues/67>`_
+* Add `init_node` to enable talker. `#59 <https://github.com/personalrobotics/herbpy/issues/59>`_ `#60 <https://github.com/personalrobotics/herbpy/issues/60>`_
+* Add an action for invoking the push planner. `#57 <https://github.com/personalrobotics/herbpy/issues/57>`_
+* Removed rosbuild support. `#61 <https://github.com/personalrobotics/herbpy/issues/61>`_
+* Added gesture tests. `#58 <https://github.com/personalrobotics/herbpy/issues/58>`_
+* Added a gesture interface. `#54 <https://github.com/personalrobotics/herbpy/issues/54>`_
+* Switched to blending-only for constrained trajectories. `#43 <https://github.com/personalrobotics/herbpy/issues/43>`_
+* Contributors: Clint Liddick, David Butterworth, Jennifer King, Michael Koval, Rachel, Rachel Holladay, Shushman Choudhury, Vinitha Ranganeni
+
 1.8.1 (2015-10-21)
 ------------------
 * Added logic to warn, but not fail, if the perception module cannot be loaded
