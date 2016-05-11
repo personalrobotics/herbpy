@@ -5,11 +5,11 @@ import numbers
 import numpy
 import prpy
 import prpy.rave, prpy.util
-from prpy.base.barretthand import BarrettHand
 from prpy.base.robot import Robot
 from prpy.controllers import RewdOrTrajectoryController
 from prpy.exceptions import PrPyException, TrajectoryNotExecutable
 from prpy.planning.base import UnsupportedPlanningError
+from barretthand import BarrettHand
 from herbbase import HerbBase
 from herbpantilt import HERBPantilt
 from wam import WAM
