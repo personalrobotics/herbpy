@@ -196,7 +196,6 @@ class BarrettHand(EndEffector):
         else:
             # TODO: We're missing documentation here. What is the "current
             # state" of the hand? How do we interpret the return value?
-            # return hand.handstate_sensor.SendCommand('GetState')
             raise NotImplementedError("Hand.GetState() not yet implemented under ros_control.")
 
     def GetStrain(hand):
@@ -206,8 +205,7 @@ class BarrettHand(EndEffector):
         if not hand.simulated:
             # This is because we are overriding the force/torque sensor datatype
             # sensor_data = hand.handstate_sensor.GetSensorData()
-            # return sensor_data.force.copy()
-            raise NotImplementedError("Strain guage not yet implemented in Python under ros_control")
+            raise NotImplementedError("Strain gauge not yet implemented in Python under ros_control")
         else:
             return numpy.zeros(3)
 
@@ -217,9 +215,6 @@ class BarrettHand(EndEffector):
         """
         if not hand.simulated:
             # This is because we are overriding the force/torque sensor datatype.
-            # sensor_data = hand.handstate_sensor.GetSensorData()
-            # breakaway = sensor_data.torque
-            # return breakaway
             raise NotImplementedError('GetBreakaway not yet implemented under ros_control.')
         else:
             return [ False, False, False ]
