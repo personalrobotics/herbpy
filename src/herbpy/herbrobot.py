@@ -36,12 +36,10 @@ class HERBRobot(Robot):
 
 
         # Controller setup
-        # TODO load controller names from same config as ros_control?
-        self.controller_manager = None  # TODO verify never used in sim
+        self.controller_manager = None
         self.controllers_always_on = []
         controllers_manip = []
 
-        # TODO how to deal with sim on controller manager?
         self.full_controller_sim = (left_arm_sim and right_arm_sim and
                                     left_ft_sim and right_ft_sim and
                                     left_hand_sim and right_hand_sim and
@@ -50,7 +48,8 @@ class HERBRobot(Robot):
             # any non-simulation requires ros and the ros_control stack
             import rospy
             if not rospy.core.is_initialized():
-                rospy.init_node('herbpy')
+                raise RuntimeError('rospy not initialized. '
+                                   'Must call rospy.init_node()')
 
             # update openrave state from /joint_states
             self._jointstate_client = JointStateClient(
@@ -298,8 +297,8 @@ class HERBRobot(Robot):
             # Initialize herbpy ROS Node
             import rospy
             if not rospy.core.is_initialized():
-                rospy.init_node('herbpy')
-                logger.debug('Started ROS node with name "%s".', rospy.get_name())
+                raise RuntimeError('rospy not initialized. '
+                                   'Must call rospy.init_node()')
 
             import talker.msg
             from actionlib import SimpleActionClient
@@ -321,6 +320,9 @@ class HERBRobot(Robot):
 
     def _ExecuteTrajectory(self, traj, defer=False, timeout=None, period=0.01,
                            **kwargs):
+        if defer is not False:
+            raise RuntimeError('defer functionality was deprecated in '
+                               'personalrobotics/prpy#278')
         # Don't execute trajectories that don't have at least one waypoint.
         if traj.GetNumWaypoints() <= 0:
             raise ValueError('Trajectory must contain at least one waypoint.')
@@ -340,13 +342,7 @@ class HERBRobot(Robot):
 
         # If there was only one waypoint, at this point we are done!
         if traj.GetNumWaypoints() == 1:
-            if defer is True:
-                import trollius
-                future = trollius.Future()
-                future.set_result(traj)
-                return future
-            else:
-                return traj
+            return traj
 
         # Verify that the trajectory is timed by checking whether the first
         # waypoint has a valid deltatime value.
@@ -427,31 +423,8 @@ class HERBRobot(Robot):
         for controller in active_controllers:
             controller.SetPath(traj)
 
-        if defer is True:
-            import time
-            import trollius
-
-            @trollius.coroutine
-            def do_poll():
-                time_stop = time.time() + (timeout if timeout else numpy.inf)
-
-                while time.time() <= time_stop:
-                    is_done = all(controller.IsDone()
-                                  for controller in active_controllers)
-                    if is_done:
-                        raise trollius.Return(traj)
-
-                    yield trollius.From(trollius.sleep(period))
-
-                raise trollius.Return(None)
-
-            return trollius.async(do_poll())
-        elif defer is False:
-            prpy.util.WaitForControllers(active_controllers, timeout=timeout)
-            return traj
-        else:
-            raise ValueError('Received unexpected value "{:s}" for defer.'
-                             .format(str(defer)))
+        prpy.util.WaitForControllers(active_controllers, timeout=timeout)
+        return traj
 
     def ExecuteTrajectory(self, traj, *args, **kwargs):
         # from prpy.exceptions import TrajectoryAborted
@@ -475,10 +448,10 @@ class HERBRobot(Robot):
         """Set the stiffness of HERB's arms and head.
         Stiffness False/0 is gravity compensation and stiffness True/(>0) is position
         control.
-        @param stiffness boolean or decimal value 0.0 to 1.0
+        @param stiffness boolean or numeric value 0.0 to 1.0
         """
         if isinstance(stiffness, numbers.Number) and not (0 <= stiffness <= 1):
-            raise Exception('Stiffness must be boolean or decimal in the range [0, 1];'
+            raise Exception('Stiffness must be boolean or numeric in the range [0, 1];'
                             'got {}.'.format(stiffness))
 
         # TODO head after Schunk integration

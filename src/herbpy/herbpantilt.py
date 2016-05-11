@@ -2,6 +2,8 @@ import logging, numpy, openravepy, rospy
 import prpy
 from wam import WAM
 
+logger = logging.getLogger('HERBPantilt')
+
 class HERBPantilt(WAM):
     def __init__(self, sim, owd_namespace):
         # FIXME: We don't build the IK database because ikfast fails with a
@@ -124,4 +126,6 @@ class HERBPantilt(WAM):
 
     def GetDofValues(self):
         """Temp override to return static position while head is immobilized"""
+        logger.warn('The head is immobilized and GetDOFValues '
+                    'currently returns a static position.')
         return [0, -0.3]
