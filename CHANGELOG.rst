@@ -2,8 +2,8 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.9.0 (2016-05-11)
+------------------
 * Add named preshapes for the hands. `#81 <https://github.com/personalrobotics/herbpy/issues/81>`_
 * Add `yaw_range` parameter to glass grasps. `#80 <https://github.com/personalrobotics/herbpy/issues/80>`_
 * Add actions for pitcher pouring YCB task. `#78 <https://github.com/personalrobotics/herbpy/issues/78>`_
