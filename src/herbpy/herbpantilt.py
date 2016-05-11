@@ -1,6 +1,6 @@
 import logging, numpy, openravepy, rospy
 import prpy
-from prpy.base.wam import WAM
+from wam import WAM
 
 class HERBPantilt(WAM):
     def __init__(self, sim, owd_namespace):

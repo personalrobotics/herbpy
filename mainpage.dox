@@ -41,7 +41,7 @@ The robot returned by \ref herbpy.herb.initialize is an OpenRAVE robot of type
 hardware-specific functionality:
 
 <ul>
-<li>\p left_arm, \p right_arm : \ref prpy.base.wam.WAM - Barrett WAM arms</li>
+<li>\p left_arm, \p right_arm : \ref herbpy.wam.WAM - Barrett WAM arms</li>
 <li>\p left_hand, \p right_hand : \ref prpy.base.barretthand.BarrettHand - BarrettHand end-effectors</li>
 <li>\p head : \ref herbpy.herbpantilt.HERBPantilt - custom pan-tilt head</li>
 <li>\p base : \ref herbpy.herbbase.HerbBase - Segway RMP mobile base</li>

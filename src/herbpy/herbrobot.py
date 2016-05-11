@@ -6,13 +6,13 @@ import numpy
 import prpy
 import prpy.rave, prpy.util
 from prpy.base.barretthand import BarrettHand
-from prpy.base.wam import WAM
 from prpy.base.robot import Robot
 from prpy.controllers import RewdOrTrajectoryController
 from prpy.exceptions import PrPyException, TrajectoryNotExecutable
 from prpy.planning.base import UnsupportedPlanningError
 from herbbase import HerbBase
 from herbpantilt import HERBPantilt
+from wam import WAM
 from ros_control_client_py import ControllerManagerClient, JointStateClient
 
 logger = logging.getLogger('herbpy')
@@ -279,7 +279,7 @@ class HERBRobot(Robot):
             from prpy.perception import ApriltagsModule
             try:
                 kinbody_path = prpy.util.FindCatkinResource('pr_ordata',
-                                                            'objects')
+                                                            'data/objects')
                 marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
                                                                 'data/objects/tag_data.json')
                 self.detector = ApriltagsModule(marker_topic='/apriltags_kinect2/marker_array',
