@@ -204,22 +204,11 @@ class WAM(Manipulator):
         raise NotImplementedError('GetTrajectoryStatus not supported on manipulator.'
                                   ' Use returned TrajectoryFuture instead.') 
 
-        if not manipulator.simulated:
-            return manipulator.controller.SendCommand('GetStatus')
-        else:
-            if manipulator.controller.IsDone():
-                return 'done'
-            else:
-                return 'active'
-
     def ClearTrajectoryStatus(manipulator):
         """Clears the current trajectory execution status.
         This resets the output of \ref GetTrajectoryStatus.
         """
         raise NotImplementedError('ClearTrajectoryStatus not supported on manipulator.')
-
-        if not manipulator.simulated:
-            manipulator.controller.SendCommand('ClearStatus')
 
     def MoveUntilTouch(manipulator, direction, distance, max_distance=None,
                        max_force=5.0, max_torque=None, ignore_collisions=None,
@@ -242,8 +231,6 @@ class WAM(Manipulator):
         @param **kw_args planner parameters
         @return felt_force flag indicating whether we felt a force.
         """
-        raise NotImplementedError('MoveUntilTouch not yet implemented under ros_control.')
-
         from contextlib import nested
         from openravepy import CollisionReport, KinBody, Robot, RaveCreateTrajectory
         from prpy.planning.exceptions import CollisionPlanningError
@@ -297,21 +284,7 @@ class WAM(Manipulator):
         # Execute on the real robot by tagging the trajectory with options that
         # tell the controller to stop on force/torque input.
         if not manipulator.simulated:
-            manipulator.SetTrajectoryExecutionOptions(path, stop_on_ft=True,
-                force_direction=force_direction, force_magnitude=max_force,
-                torque=max_torque)
-
-            manipulator.hand.TareForceTorqueSensor()
-
-            try:
-                with robot.CreateRobotStateSaver(Robot.SaveParameters.JointMaxVelocityAndAcceleration):
-                    vl = robot.GetDOFVelocityLimits()
-                    manipulator.SetVelocityLimits(velocity_limit_scale*vl, 0.5)
-                    robot.ExecutePath(path)
-                return False
-            except exceptions.TrajectoryAborted as e:
-                logger.warn('MoveUntilTouch aborted: %s', str(e))
-                return True
+            raise NotImplementedError('MoveUntilTouch not yet implemented under ros_control.')
         # Forward-simulate the motion until it hits an object.
         else:
             traj = robot.PostProcessPath(path)
