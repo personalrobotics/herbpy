@@ -125,7 +125,6 @@ class WAM(Manipulator):
                                       'supported under ros_control.')
 
         else:
-            self.controller.Reset(0)
             self.servo_simulator.SetVelocity(velocities)
 
     def ServoTo(self, target, duration, timeStep=0.05, collisionChecking=True):

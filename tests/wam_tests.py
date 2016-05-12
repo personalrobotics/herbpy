@@ -19,8 +19,8 @@ class WamTest(unittest.TestCase):
         self._wam.SetStiffness(1.0)
 
     def test_SetStiffness_InvalidStiffnessThrows(self):
-        self.assertRaises(Exception, self._wam.SetStiffness, (-0.2,))
-        self.assertRaises(Exception, self._wam.SetStiffness, ( 1.2,))
+        self.assertRaises(Exception, self._wam.SetStiffness, (-0.2))
+        self.assertRaises(Exception, self._wam.SetStiffness, ( 1.2))
 
     def test_Servo_DoesNotThrow(self):
         self._wam.Servo(0.1 * numpy.ones(self._num_dofs))

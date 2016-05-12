@@ -109,7 +109,7 @@ class BarrettHand(EndEffector):
         order: [ finger 0, finger 1, finger 2, spread ].
         @return DOF indices of the hand
         """
-        return self.GetFingerIndices() + [ self.GetSpreadIndex() ]
+        return [ self.GetSpreadIndex() ] + self.GetFingerIndices()
 
     def MoveHand(self, f1=None, f2=None, f3=None, spread=None, timeout=None):
         """Change the hand preshape.
@@ -132,7 +132,7 @@ class BarrettHand(EndEffector):
         if f3     is not None: preshape[2] = f3
         if spread is not None: preshape[3] = spread
 
-        self.controller.SetPosition(preshape)
+        self.controller.SetDesired(preshape)
         util.WaitForControllers([ self.controller ], timeout=timeout)
 
     def OpenHand(hand, spread=None, timeout=None):

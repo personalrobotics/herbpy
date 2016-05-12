@@ -450,7 +450,8 @@ class HERBRobot(Robot):
         control.
         @param stiffness boolean or numeric value 0.0 to 1.0
         """
-        if isinstance(stiffness, numbers.Number) and not (0 <= stiffness <= 1):
+        if (isinstance(stiffness, numbers.Number) and
+                not (0 <= stiffness and stiffness <= 1)):
             raise Exception('Stiffness must be boolean or numeric in the range [0, 1];'
                             'got {}.'.format(stiffness))
 
@@ -472,7 +473,8 @@ class HERBRobot(Robot):
                 new_manip_controllers.append(
                     'right_gravity_compensation_controller')
 
-        self.controller_manager.request(new_manip_controllers).switch()
+        if not self.full_controller_sim:
+            self.controller_manager.request(new_manip_controllers).switch()
 
     def Say(self, words, block=True):
         """Speak 'words' using talker action service or espeak locally in simulation"""

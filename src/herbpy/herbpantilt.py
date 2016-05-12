@@ -129,3 +129,9 @@ class HERBPantilt(WAM):
         logger.warn('The head is immobilized and GetDOFValues '
                     'currently returns a static position.')
         return [0, -0.3]
+
+    def Servo(self, velocities):
+        raise NotImplementedError('Head is immobilized, Servoing unavailable')
+
+    def ServoTo(self, target, duration, timeStep=0.05, collisionChecking=True):
+        raise NotImplementedError('Head is immobilized, Servoing unavailable')
