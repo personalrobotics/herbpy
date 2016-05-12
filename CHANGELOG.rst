@@ -2,6 +2,15 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* `ros_control` migration. `#63 <https://github.com/personalrobotics/herbpy/issues/63>`_
+* Remove environmental variables from `.travis.yml` that are now set on Travis.
+* Make test files non-executable to please `nosetest`.
+* Move `BarrettHand`, `WAM`, and `WAMRobot` from PrPy to HerbPy.
+* Fixed the head and overrode `GetDOFValues` to return the static position.
+* Contributors: Clint Liddick, Michael Koval
+
 1.9.0 (2016-05-11)
 ------------------
 * Add named preshapes for the hands. `#81 <https://github.com/personalrobotics/herbpy/issues/81>`_
