@@ -2,8 +2,8 @@
 Changelog for package herbpy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.0 (2016-05-12)
+------------------
 * `ros_control` migration. `#63 <https://github.com/personalrobotics/herbpy/issues/63>`_
 * Remove environmental variables from `.travis.yml` that are now set on Travis.
 * Make test files non-executable to please `nosetest`.
