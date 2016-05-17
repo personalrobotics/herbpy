@@ -13,7 +13,6 @@ from barretthand import BarrettHand
 from herbbase import HerbBase
 from herbpantilt import HERBPantilt
 from wam import WAM
-from ros_control_client_py import ControllerManagerClient, JointStateClient
 
 logger = logging.getLogger('herbpy')
 
@@ -47,6 +46,8 @@ class HERBRobot(Robot):
         if not self.full_controller_sim:
             # any non-simulation requires ros and the ros_control stack
             import rospy
+            from ros_control_client_py import (ControllerManagerClient,
+                                               JointStateClient)
             if not rospy.core.is_initialized():
                 raise RuntimeError('rospy not initialized. '
                                    'Must call rospy.init_node()')
