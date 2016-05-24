@@ -12,8 +12,6 @@ def fuze_grasp(robot, fuze, manip=None, **kw_args):
     """
     return _fuze_grasp(robot, fuze, manip = manip)
 
-    
-
 @TSRFactory('herb', 'fuze_bottle', 'push_grasp')
 def fuze_grasp(robot, fuze, push_distance = 0.1, manip=None, **kw_args):
     """
