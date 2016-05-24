@@ -109,7 +109,7 @@ class BarrettHand(EndEffector):
         order: [ finger 0, finger 1, finger 2, spread ].
         @return DOF indices of the hand
         """
-        return [self.GetSpreadIndex()] + self.GetFingerIndices()
+        return self.GetFingerIndices() + [self.GetSpreadIndex()]
 
     def MoveHand(self, f1=None, f2=None, f3=None, spread=None, timeout=None):
         """Change the hand preshape.
@@ -129,23 +129,15 @@ class BarrettHand(EndEffector):
         preshape = [None]*4
         # Set control command and
         # default any None's to the current DOF values.
-        if self.simulated:
-            preshape[0] = spread if spread is not None else curr_pos[0]
-            preshape[1] = f1 if f1 is not None else curr_pos[1]
-            preshape[2] = f2 if f2 is not None else curr_pos[2]
-            preshape[3] = f3 if f3 is not None else curr_pos[3]
-        else:
-            # TODO when PositionCommandController is updated to index by
-            # joint name, this special logic can be removed
-            preshape[0] = f1 if f1 is not None else curr_pos[1]
-            preshape[1] = f2 if f2 is not None else curr_pos[2]
-            preshape[2] = f3 if f3 is not None else curr_pos[3]
-            preshape[3] = spread if spread is not None else curr_pos[0]
+        preshape[0] = f1 if f1 is not None else curr_pos[1]
+        preshape[1] = f2 if f2 is not None else curr_pos[2]
+        preshape[2] = f3 if f3 is not None else curr_pos[3]
+        preshape[3] = spread if spread is not None else curr_pos[0]
 
         self.controller.SetDesired(preshape)
         util.WaitForControllers([ self.controller ], timeout=timeout)
 
-    def OpenHand(hand, spread=0.0, timeout=None):
+    def OpenHand(hand, spread=None, timeout=None):
         """Open the hand with a fixed spread.
         This function blocks until the hand has reached the desired
         configuration or a timeout occurs. Specifying a timeout of a finishes.
