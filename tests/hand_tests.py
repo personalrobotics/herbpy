@@ -1,25 +1,24 @@
-#!/usr/bin/env python
-PKG = 'herbpy'
-import roslib; roslib.load_manifest(PKG)
-import numpy, unittest
 import herbpy
+import numpy
+import unittest
 
 env, robot = herbpy.initialize(sim=True)
+
 
 class BarrettHandTest(unittest.TestCase):
     def setUp(self):
         self._env, self._robot = env, robot
         self._wam = robot.right_arm
         self._hand = self._wam.hand
-        self._indices = numpy.array(self._wam.GetChildDOFIndices())
+        self._indices = numpy.array(sorted(self._wam.GetChildDOFIndices()))
         self._num_dofs = len(self._indices)
 
     def test_GetIndices_ReturnsIndices(self):
-        # TODO what is this actually testing? Consistency w/ OpenRAVE?
-        numpy.testing.assert_array_equal(self._hand.GetIndices(), self._indices)
+        numpy.testing.assert_array_equal(
+            sorted(self._hand.GetIndices()), self._indices)
 
     def test_GetDOFValues_SetsValues(self):
-        expected_values = numpy.array([ 0.1, 0.2, 0.3, 0.4 ])
+        expected_values = numpy.array([0.1, 0.2, 0.3, 0.4])
         self._robot.SetDOFValues(expected_values, self._indices)
         numpy.testing.assert_array_almost_equal(self._hand.GetDOFValues(), expected_values)
 
@@ -55,15 +54,9 @@ class BarrettHandTest(unittest.TestCase):
 
     def test_MoveHand_MovesAllFingers(self):
         before = numpy.zeros(self._num_dofs)
-        after = numpy.zeros(self._num_dofs)
-        for i in xrange(self._num_dofs):
-            after[i] = 0.5
+        after = numpy.arange(self._num_dofs)
 
         self._robot.SetDOFValues(before, self._indices)
         self._hand.MoveHand(*after)
         self._robot.WaitForController(0)
         numpy.testing.assert_array_almost_equal(self._robot.GetDOFValues(self._indices), after)
-
-if __name__ == '__main__':
-    import rosunit
-    rosunit.unitrun(PKG, 'test_hand', BarrettHandTest)
