@@ -109,7 +109,7 @@ class BarrettHand(EndEffector):
         order: [ finger 0, finger 1, finger 2, spread ].
         @return DOF indices of the hand
         """
-        return [ self.GetSpreadIndex() ] + self.GetFingerIndices()
+        return self.GetFingerIndices() + [self.GetSpreadIndex()]
 
     def MoveHand(self, f1=None, f2=None, f3=None, spread=None, timeout=None):
         """Change the hand preshape.
@@ -125,12 +125,14 @@ class BarrettHand(EndEffector):
         @param spread spread angle, in radians
         @param timeout blocking execution timeout, in seconds
         """
-        # Default any None's to the current DOF values.
-        preshape = self.GetDOFValues()
-        if f1     is not None: preshape[0] = f1
-        if f2     is not None: preshape[1] = f2
-        if f3     is not None: preshape[2] = f3
-        if spread is not None: preshape[3] = spread
+        curr_pos = self.GetDOFValues()
+        preshape = [None]*4
+        # Set control command and
+        # default any None's to the current DOF values.
+        preshape[0] = f1 if f1 is not None else curr_pos[1]
+        preshape[1] = f2 if f2 is not None else curr_pos[2]
+        preshape[2] = f3 if f3 is not None else curr_pos[3]
+        preshape[3] = spread if spread is not None else curr_pos[0]
 
         self.controller.SetDesired(preshape)
         util.WaitForControllers([ self.controller ], timeout=timeout)
