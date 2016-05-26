@@ -1,6 +1,8 @@
 import logging, numpy, openravepy, rospy
 import prpy
-from prpy.base.wam import WAM
+from wam import WAM
+
+logger = logging.getLogger('HERBPantilt')
 
 class HERBPantilt(WAM):
     def __init__(self, sim, owd_namespace):
@@ -95,6 +97,7 @@ class HERBPantilt(WAM):
         @param **kw_args keyword arguments passed to \p robot.ExecuteTrajectory
         @return pantilt trajectory
         """
+        raise NotImplementedError('The head is currently disabled under ros_control.')
         # Update the controllers to get new joint values.
         robot = self.GetRobot()
         with robot.GetEnv():
@@ -121,3 +124,14 @@ class HERBPantilt(WAM):
         ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
         return self.ikmodel.manip.FindIKSolution(ik_params, 0)
 
+    def GetDofValues(self):
+        """Temp override to return static position while head is immobilized"""
+        logger.warn('The head is immobilized and GetDOFValues '
+                    'currently returns a static position.')
+        return [0, -0.3]
+
+    def Servo(self, velocities):
+        raise NotImplementedError('Head is immobilized, Servoing unavailable')
+
+    def ServoTo(self, target, duration, timeStep=0.05, collisionChecking=True):
+        raise NotImplementedError('Head is immobilized, Servoing unavailable')
