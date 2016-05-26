@@ -7,7 +7,7 @@ logger = logging.getLogger('herbpy')
 @ActionMethod
 def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius, 
                       manip=None, max_plan_duration=30.0, 
-                      shortcut_time=3., render=True, **kw_args):
+                      shortcut_time=3., render=True, search=True, **kw_args):
     """
     @param robot The robot performing the push
     @param obj The object to push
@@ -22,8 +22,12 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
     """
     # Get a push planner
     try:
-        from or_pushing.push_planner import PushPlanner
-        planner = PushPlanner(robot.GetEnv())
+        if search:
+            from or_pushing.discrete_search_push_planner import DiscreteSearchPushPlanner
+            planner = DiscreteSearchPushPlanner(robot.GetEnv())
+        else:
+            from or_pushing.push_planner import PushPlanner
+            planner = PushPlanner(robot.GetEnv())
     except ImportError:
         raise ActionError("Unable to create PushPlanner. Is the randomized_rearrangement_planning"
                           "repository checked out in your workspace?")
