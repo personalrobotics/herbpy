@@ -43,7 +43,6 @@ def table_edge(robot, table, **kwargs):
     '''
     This creates a TSR that allows you to sample poses from either
     long edge of the table.
-    The poses will have x pointing into the table and z aligned with world z
     
     @param robot The robot (unused)
     @param table The table
@@ -51,16 +50,16 @@ def table_edge(robot, table, **kwargs):
     table_in_world = table.GetTransform()
     
     # Extents of the table - y-axis is normal to table surface
-    xdim = 0.93 # half extent
-    zdim = 0.38 # half extent
+    xdim = 0.93175 # half extent
+    zdim = 0.3805 # half extent
     ydim = 0.785 # full extent
 
     # We want to create a set of TSRs, one for each edge of the table
     Bw_1 = numpy.zeros((6,2))
-    Bw_1[1,:] = [-xdim, xdim]
+    Bw_1[0,:] = [-xdim, xdim]
     Tw_e1 = numpy.array([[ 1., 0., 0., 0.],
-                         [ 0., 1., 0., zdim],
-                         [ 0., 0., 1,  ydim],
+                         [ 0., 1., 0., ydim],
+                         [ 0., 0., 1,  zdim],
                          [ 0., 0., 0., 1.]])
 
     tsr1 = TSR(T0_w = table_in_world,
@@ -69,10 +68,10 @@ def table_edge(robot, table, **kwargs):
     tsr1_chain = TSRChain(TSR = tsr1);
 
     Bw_2 = numpy.zeros((6,2))
-    Bw_2[1,:] = [-xdim, xdim]
+    Bw_2[0,:] = [-xdim, xdim]
     Tw_e2 = numpy.array([[-1., 0., 0., 0.],
-                         [ 0.,-1., 0., zdim],
-                         [ 0., 0., 1,  ydim],
+                         [ 0.,-1., 0., ydim],
+                         [ 0., 0., 1,  -zdim],
                          [ 0., 0., 0., 1.]])
     
     tsr2 = TSR(T0_w = table_in_world,
