@@ -37,7 +37,6 @@ class HERBRobot(Robot):
         # Controller setup
         self.controller_manager = None
         self.controllers_always_on = []
-        controllers_manip = []
 
         self.full_controller_sim = (left_arm_sim and right_arm_sim and
                                     left_ft_sim and right_ft_sim and
@@ -107,22 +106,16 @@ class HERBRobot(Robot):
         if not right_ft_sim:
             self.controllers_always_on.append('right_tare_controller')
 
-        # Set default manipulator controllers
+        # Set default manipulator controllers in sim only
         # NOTE: head is ignored until TODO new Schunk head integrated
-        if not left_arm_sim:
-            controllers_manip.append(
-                'left_gravity_compensation_controller')
-        else:
+        if left_arm_sim:
             self.left_arm.sim_controller = self.AttachController(name=self.left_arm.GetName(),
                                                                  args='IdealController',
                                                                  dof_indices=self.left_arm.GetArmIndices(),
                                                                  affine_dofs=0,
                                                                  simulated=True)
 
-        if not right_arm_sim:
-            controllers_manip.append(
-                'right_gravity_compensation_controller')
-        else:
+        if right_arm_sim:
             self.right_arm.sim_controller = self.AttachController(name=self.right_arm.GetName(),
                                                                   args='IdealController',
                                                                   dof_indices=self.right_arm.GetArmIndices(),
@@ -131,8 +124,8 @@ class HERBRobot(Robot):
 
         # load and activate initial controllers
         if self.controller_manager is not None:
-            self.controller_manager.request(self.controllers_always_on +
-                                            controllers_manip).switch()
+            self.controller_manager.request(
+                self.controllers_always_on).switch()
 
         # Support for named configurations.
         import os.path
