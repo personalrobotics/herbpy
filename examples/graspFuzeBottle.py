@@ -65,7 +65,6 @@ env.AddKinBody(fuze)
 raw_input('press enter to begin planning')
 
 # move to a good start position
-robot.head.MoveTo([0, -math.pi/16]) # look down slightly
 robot.PlanToNamedConfiguration('relaxed_home') # move the arms to the 'relaxed_home' position
 #indices, values = robot.configurations.get_configuration('relaxed_home') # Faster for testing
 #robot.SetDOFValues(values=values, dofindices=indices)
