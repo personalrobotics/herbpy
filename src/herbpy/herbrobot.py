@@ -283,6 +283,7 @@ class HERBRobot(Robot):
             except OSError as e:
                 logger.error('Unable to speak. Make sure "espeak" is installed locally.\n%s' % str(e))
         else:
+            print "say function"
             import talker.msg
             goal = talker.msg.SayGoal(text=words)
             self._say_action_client.send_goal(goal)
