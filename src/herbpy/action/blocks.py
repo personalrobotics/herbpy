@@ -106,6 +106,7 @@ def _GrabBlock(robot, blocks, table, manip=None, preshape=None,
 
     desc_list = spatial_desc_gen(block_data, str(target_block_name),\
         table_AABB_pos, table_AABB_ext, False, num_of_solu_needed)
+
     if not desc_list:
         desc_list = []
         desc_list[0] = 'Sorry, I could not describe this block I am going to pick up.'
@@ -123,8 +124,6 @@ def _GrabBlock(robot, blocks, table, manip=None, preshape=None,
     import IPython;IPython.embed()
 
     # ---------------------------------------------------------
-
-    
     try:
         with AllDisabled(env, [table] + blocks, padding_only=True):
             # Move down until touching the table

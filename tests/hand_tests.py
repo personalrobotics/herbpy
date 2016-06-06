@@ -11,10 +11,11 @@ class BarrettHandTest(unittest.TestCase):
         self._env, self._robot = env, robot
         self._wam = robot.right_arm
         self._hand = self._wam.hand
-        self._indices = numpy.array(sorted(self._wam.GetChildDOFIndices()))
+        self._indices = numpy.array(self._wam.GetChildDOFIndices())
         self._num_dofs = len(self._indices)
 
     def test_GetIndices_ReturnsIndices(self):
+        # TODO what is this actually testing? Consistency w/ OpenRAVE?
         numpy.testing.assert_array_equal(self._hand.GetIndices(), self._indices)
 
     def test_GetDOFValues_SetsValues(self):
@@ -54,7 +55,9 @@ class BarrettHandTest(unittest.TestCase):
 
     def test_MoveHand_MovesAllFingers(self):
         before = numpy.zeros(self._num_dofs)
-        after = numpy.arange(self._num_dofs)
+        after = numpy.zeros(self._num_dofs)
+        for i in xrange(self._num_dofs):
+            after[i] = 0.5
 
         self._robot.SetDOFValues(before, self._indices)
         self._hand.MoveHand(*after)
