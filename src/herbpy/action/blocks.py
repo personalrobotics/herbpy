@@ -2,7 +2,7 @@ import logging, numpy, openravepy, prpy
 from prpy.action import ActionMethod
 from prpy.planning.base import PlanningError
 from prpy.util import ComputeEnabledAABB
-from block_description_generator.spatial_description_generator import spatial_desc_gen
+from block_description_generator_networkx.spatial_description_generator import spatial_desc_gen
 
 logger = logging.getLogger('herbpy')
 
