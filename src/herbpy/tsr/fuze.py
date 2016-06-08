@@ -40,7 +40,7 @@ def _fuze_grasp(robot, fuze, push_distance = 0.0, manip = None, **kw_args):
                 
 @TSRFactory('herb', 'fuze_bottle', 'place')
 def fuze_on_table(robot, fuze, pose_tsr_chain, manip=None):
-    '''
+    """
     Generates end-effector poses for placing the fuze
     This factory assumes the fuze is grasped at the time it is called.
     
@@ -49,14 +49,14 @@ def fuze_on_table(robot, fuze, pose_tsr_chain, manip=None):
     @param pose_tsr_chain The tsr chain for sampling placement poses for the fuze
     @param manip The manipulator grasping the object, if None the active
        manipulator of the robot is used
-    '''
-    from prpy.tsr.generic import place_object_tsr
-    return place_object_tsr(robot, fuze, pose_tsr_chain, manip=manip)
+    """
+    from prpy.tsr.generic import place_object
+    return place_object(robot, fuze, pose_tsr_chain, manip=manip)
                             
     
 @TSRFactory('herb', 'fuze_bottle', 'transport')
 def fuze_transport(robot, fuze, manip=None, roll_epsilon=0.2, pitch_epsilon=0.2, yaw_epsilon=0.2):
-    '''
+    """
     Generates a trajectory-wide constraint for transporting the object with little roll, pitch or yaw
     Assumes the object has already been grasped and is in the proper
     configuration for transport.
@@ -68,7 +68,7 @@ def fuze_transport(robot, fuze, manip=None, roll_epsilon=0.2, pitch_epsilon=0.2,
     @param roll_epsilon The amount to let the object roll during transport (object frame)
     @param pitch_epsilon The amount to let the object pitch during transport (object frame)
     @param yaw_epsilon The amount to let the object yaw during transport (object frame)
-    '''
+    """
     from prpy.tsr.generic import transport_upright_tsr
     return transport_upright_tsr(robot, fuze, manip=manip,
                                  roll_epsilon=roll_epsilon,

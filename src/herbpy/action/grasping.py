@@ -210,10 +210,10 @@ def Place(robot, obj, on_obj, manip=None, render=True, **kw_args):
         # Get a tsr to sample places to put the glass
         obj_extents = obj.ComputeAABB().extents()
         obj_radius = max(obj_extents[0], obj_extents[1])
-        tray_top_tsr = robot.tsrlibrary(on_obj, 'point_on', padding=obj_radius)
+        obj_top_tsr = robot.tsrlibrary(on_obj, 'point_on', padding=obj_radius, manip=manip)
 
         #  Now use this to get a tsr for sampling ee_poses
-        place_tsr = robot.tsrlibrary(obj, 'place', pose_tsr_chain = tray_top_tsr[0])
+        place_tsr = robot.tsrlibrary(obj, 'place', pose_tsr_chain=obj_top_tsr[0], manip=manip)
 
     # Plan to the grasp
     with prpy.viz.RenderTSRList(place_tsr, robot.GetEnv(), render=render):

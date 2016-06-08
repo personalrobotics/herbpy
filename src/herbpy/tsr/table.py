@@ -3,18 +3,24 @@ from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'table', 'point_on')
-def point_on(robot, table, manip=None):
-    '''
+def point_on(robot, table, manip=None, padding=0, **kwargs):
+    """
     This creates a TSR that allows you to sample poses on the table.
+    The sampled poses will have z-axis point up, normal to the table top. 
+    The xy-plane of the sampled of the sample poses will be parallel to the table surface.
+
     The samples from this TSR should be used to find points for object placement.
     They are directly on the table, and thus not suitable as an end-effector pose.
     Grasp specific calculations are necessary to find a suitable end-effector pose.
+
+    
 
     @param robot The robot performing the grasp
     @param pitcher The pitcher to grasp
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
-    '''
+    @param padding The min distance of the sampled point from any edge of the table
+    """
     if manip is None:
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
@@ -40,13 +46,13 @@ def point_on(robot, table, manip=None):
 
 @TSRFactory('herb', 'table', 'table_edge')
 def table_edge(robot, table, **kwargs):
-    '''
+    """
     This creates a TSR that allows you to sample poses from either
     long edge of the table.
     
     @param robot The robot (unused)
     @param table The table
-    '''
+    """
     table_in_world = table.GetTransform()
     
     # Extents of the table - y-axis is normal to table surface
