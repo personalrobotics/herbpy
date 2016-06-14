@@ -129,10 +129,10 @@ class BarrettHand(EndEffector):
         preshape = [None]*4
         # Set control command and
         # default any None's to the current DOF values.
-        preshape[0] = f1 if f1 is not None else curr_pos[1]
-        preshape[1] = f2 if f2 is not None else curr_pos[2]
-        preshape[2] = f3 if f3 is not None else curr_pos[3]
-        preshape[3] = spread if spread is not None else curr_pos[0]
+        preshape[0] = f1 if f1 is not None else curr_pos[0]
+        preshape[1] = f2 if f2 is not None else curr_pos[1]
+        preshape[2] = f3 if f3 is not None else curr_pos[2]
+        preshape[3] = spread if spread is not None else curr_pos[3]
 
         self.controller.SetDesired(preshape)
         util.WaitForControllers([ self.controller ], timeout=timeout)
