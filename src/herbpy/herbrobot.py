@@ -14,6 +14,11 @@ from herbbase import HerbBase
 from herbpantilt import HERBPantilt
 from wam import WAM
 
+import rospy
+import tf
+import humanpy.hum_kin2 as sk
+from humanpy.DecisionLogic import DecisionLogic
+
 logger = logging.getLogger('herbpy')
 
 
@@ -470,6 +475,26 @@ class HERBRobot(Robot):
         if not self.full_controller_sim:
             self.controller_manager.request(new_manip_controllers).switch()
 
+    def DetectHuman(self, env):
+        """Use the kinbody detector to detect objects and add
+        them to the environment
+        """
+        if not rospy.core.is_initialized():
+            rospy.init_node('detecthuman', anonymous=True)
+
+        listener = tf.TransformListener()
+        humans = []
+        logic = DecisionLogic()
+        while not rospy.is_shutdown():
+            try:
+                sk.addRemoveHumans(listener, humans, env)
+                skipTheRest = False
+                for human in humans:
+                    if not skipTheRest:
+                        skipTheRest = human.update(listener, logic)
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                continue
+            
     def Say(self, words, block=True):
         """Speak 'words' using talker action service or espeak locally in simulation"""
         if self.talker_simulated:
