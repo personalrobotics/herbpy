@@ -9,3 +9,7 @@ configurations:
         hand: [0.488, 0.488, 0.488, 0.0]
     tray_handle_grasp:
         hand: [0.977, 0.977, 0.977, 0.0]
+    plate_slide:
+        hand: [0.684, 0.684, 0.684, 0.0]
+    plate_grasp:
+        hand: [0.976, 0.976, 0.976, 0.0]
