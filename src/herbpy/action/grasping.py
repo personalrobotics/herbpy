@@ -189,7 +189,7 @@ def Lift(robot, obj, distance=0.05, manip=None, render=True, **kw_args):
                                           **kw_args)
 
 @ActionMethod
-def Place(robot, obj, on_obj, manip=None, render=True, **kw_args):
+def Place(robot, obj, on_obj, obj_top_tsr=None, manip=None, render=True, **kw_args):
     """
     Place an object onto another object
     This assumes the 'point_on' tsr is defined for the on_obj and
@@ -197,6 +197,8 @@ def Place(robot, obj, on_obj, manip=None, render=True, **kw_args):
     @param robot The robot performing the push grasp
     @param obj The object to place
     @param on_obj The object to place obj on
+    @param obj_top_tsr A list of TSR chains to sample to get object placement poses
+      if None, the tsrlibrary is used to find a 'point_on' tsr for on_obj
     @param manip The manipulator to perform the grasp with 
        (if None active manipulator is used)
     @param render Render tsr samples and push direction vectors during planning
@@ -206,12 +208,14 @@ def Place(robot, obj, on_obj, manip=None, render=True, **kw_args):
         with robot.GetEnv():
             manip = robot.GetActiveManipulator()
 
+    if obj_top_tsr is None:
+        with robot.GetEnv():
+            # Get a tsr to sample places to put the glass
+            obj_extents = obj.ComputeAABB().extents()
+            obj_radius = max(obj_extents[0], obj_extents[1])
+            obj_top_tsr = robot.tsrlibrary(on_obj, 'point_on', padding=obj_radius, manip=manip)
+    
     with robot.GetEnv():
-        # Get a tsr to sample places to put the glass
-        obj_extents = obj.ComputeAABB().extents()
-        obj_radius = max(obj_extents[0], obj_extents[1])
-        obj_top_tsr = robot.tsrlibrary(on_obj, 'point_on', padding=obj_radius, manip=manip)
-
         #  Now use this to get a tsr for sampling ee_poses
         place_tsr = robot.tsrlibrary(obj, 'place', pose_tsr_chain=obj_top_tsr[0], manip=manip)
 
