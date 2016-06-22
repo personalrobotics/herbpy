@@ -225,7 +225,7 @@ class HERBRobot(Robot):
                      TSRPlanner(delegate_planner=actual_planner),
                      self.cbirrt_planner),
             # Special purpose meta-planner.
-            NamedPlanner(delegate_planner=actual_planner),
+            NamedPlanner(delegate_planner=Sequence(actual_planner, self.cbirrt_planner)),
         )
 
         from prpy.planning.retimer import HauserParabolicSmoother
