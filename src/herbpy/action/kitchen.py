@@ -23,7 +23,7 @@ def fridgeFriendlyPlanner(robot):
     return planner
 
 @ActionMethod
-def MoveToFridge(robot, fridge):
+def MoveTo(robot, fridge):
     """
     @param robot The robot driving
     @param fridge The fridge to drive to
@@ -36,7 +36,7 @@ def MoveToFridge(robot, fridge):
     robot.base.PlanToBasePose(robot_pose, execute=True)
 
 @ActionMethod
-def GraspDoorHandle(robot, fridge):
+def GraspHandle(robot, fridge):
     """
     Action for grasping the door handle
     @param robot The robot to grasp
@@ -96,3 +96,42 @@ def GraspDoorHandle(robot, fridge):
     manip.hand.MoveHand(1.5, 1.5, 1.5)
     robot.Grab(fridge)
     manip.SetVelocityLimits(2.0*slow_velocity_limits, min_accel_time=0.2)
+
+@ActionMethod
+def OpenHandle(robot, fridge, manip=None, minopen=0, maxopen=None, render=True):
+    """
+    Action for opening the fridge
+    @param robot The robot to grasp
+    @param fridge The kinbody representing the fridge
+    @param manip The manipulator that will open the door
+    @param minopen The min amount to open the door
+    @param maxopen The max amount to open the door
+    @param render Whether to render the TSR
+    """
+    if manip is None:
+        manip = robot.GetActiveManipulator()
+
+    if maxopen is None:
+        maxopen = minopen
+
+    with robot.GetEnv():
+        open_tsr = robot.tsrlibrary(fridge, 'open', manip, maxopen, minopen)
+
+    planner = fridgeFriendlyPlanner(robot)
+
+    p = openravepy.KinBody.SaveParameters
+    with robot.CreateRobotStateSaver(p.ActiveManipulator | p.ActiveDOF):
+        robot.SetActiveManipulator(manip)
+        robot.SetActiveDOFs(manip.GetArmIndices())
+        with prpy.viz.RenderTSRList(open_tsr, robot.GetEnv(), render=render):
+            fridge.Enable(False)
+            path = planner.PlanToTSR(robot, open_tsr)
+            traj = robot.PostProcessPath(path)
+            fridge.Enable(True)
+    robot.ExecuteTrajectory(traj)
+
+    #FIXME doesnt actually move fridge door
+    door_controller = openravepy.RaveCreateController(robot.GetEnv(), 'IdealController')
+    fridge.SetController(door_controller)
+    fridge.GetController().SetPath(traj)
+
