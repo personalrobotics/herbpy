@@ -14,11 +14,6 @@ from herbbase import HerbBase
 from herbpantilt import HERBPantilt
 from wam import WAM
 
-import rospy
-import tf
-import humanpy.hum_kin2 as sk
-from humanpy.DecisionLogic import DecisionLogic
-
 logger = logging.getLogger('herbpy')
 
 
