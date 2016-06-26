@@ -445,56 +445,41 @@ class HERBRobot(Robot):
 
     def SetStiffness(self, stiffness, manip=None):
         """Set the stiffness of HERB's arms and head.
-        Stiffness False/0 is gravity compensation and stiffness True/(>0) is position
-        control.
-        @param stiffness boolean or numeric value 0.0 to 1.0
+        Zero is gravity compensation, one is position control. Stifness values
+        between zero and one are experimental.
+        @param stiffness value between zero and one
         """
-        if (isinstance(stiffness, numbers.Number) and
-                not (0 <= stiffness and stiffness <= 1)):
-            raise Exception('Stiffness must be boolean or numeric in the range [0, 1];'
-                            'got {}.'.format(stiffness))
+        self.head.SetStiffness(stiffness)
+        self.left_arm.SetStiffness(stiffness)
+        self.right_arm.SetStiffness(stiffness)
 
-        # TODO head after Schunk integration
-        if manip is self.head:
-            raise NotImplementedError('Head immobilized under ros_control, SetStiffness not available.')
-
-        new_manip_controllers = []
-        if stiffness:
-            if not self.left_arm.IsSimulated() and (manip is None or manip is self.left_arm):
-                new_manip_controllers.append('left_joint_group_position_controller')
-            if not self.right_arm.IsSimulated() and (manip is None or manip is self.right_arm):
-                new_manip_controllers.append('right_joint_group_position_controller')
-        else:
-            if not self.left_arm.IsSimulated() and (manip is None or manip is self.left_arm):
-                new_manip_controllers.append(
-                    'left_gravity_compensation_controller')
-            if not self.right_arm.IsSimulated() and (manip is None or manip is self.right_arm):
-                new_manip_controllers.append(
-                    'right_gravity_compensation_controller')
-
-        if not self.full_controller_sim:
-            self.controller_manager.request(new_manip_controllers).switch()
-
-    def DetectHuman(self, env):
+    def DetectHuman(self, env, segway_sim=True,
+                    kin_frame='/head/skel_depth_frame2',
+                    base_frame='/map', enable_legs=False):
         """Use the kinbody detector to detect objects and add
         them to the environment
         """
-        if not rospy.core.is_initialized():
-            rospy.init_node('detecthuman', anonymous=True)
 
-        listener = tf.TransformListener()
+        import rospy
+        import tf
+        import humanpy.humantracking_kinect2 as sk
+        from humanpy.DecisionLogic import DecisionLogic
+        transform_listener = tf.TransformListener()
         humans = []
         logic = DecisionLogic()
         while not rospy.is_shutdown():
             try:
-                sk.addRemoveHumans(listener, humans, env)
                 skipTheRest = False
+                sk.addRemoveHumans(transform_listener, humans, env,
+                                   enable_legs=enable_legs,
+                                   base_frame=base_frame,
+                                   kin_frame=kin_frame)
                 for human in humans:
                     if not skipTheRest:
-                        skipTheRest = human.update(listener, logic)
+                        skipTheRest = human.update(transform_listener, logic)
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 continue
-            
+        
     def Say(self, words, block=True):
         """Speak 'words' using talker action service or espeak locally in simulation"""
         if self.talker_simulated:

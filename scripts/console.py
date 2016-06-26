@@ -35,18 +35,14 @@ if __name__ == "__main__":
     if args.debug:
         openravepy.RaveSetDebugLevel(openravepy.DebugLevel.Debug)
 
-    herbpy_args = {'sim':args.sim,
+    herbpy_args = {'sim': True, #args.sim,
                    'attach_viewer':args.viewer,
                    'robot_xml':args.robot_xml,
                    'env_path':args.env_xml,
-                   'segway_sim':args.segway_sim,
-                   'perception_sim': args.perception_sim}
-    if not args.sim:
-        import rospy
-        rospy.init_node('herbpy')
-
-    if args.sim and not args.segway_sim:
-        herbpy_args['segway_sim'] = args.sim
+                   'segway_sim': False,
+                   'talker_sim': False}
+    # if args.sim and not args.segway_sim:
+    #     herbpy_args['segway_sim'] = args.sim
     
     env, robot = herbpy.initialize(**herbpy_args)
 

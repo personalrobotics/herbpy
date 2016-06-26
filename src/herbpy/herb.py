@@ -83,10 +83,7 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
         if key not in kw_args:
             kw_args[key] = sim
 
-    keys = [ 'left_arm_sim', 'left_hand_sim', 'left_ft_sim']
-    for key in keys:
-        kw_args[key] = True
-
+    print "KW ARGS ARE", str(kw_args)
 
     from herbrobot import HERBRobot
     prpy.bind_subclass(robot, HERBRobot, **kw_args)
