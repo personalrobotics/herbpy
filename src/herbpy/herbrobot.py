@@ -470,6 +470,33 @@ class HERBRobot(Robot):
         if not self.full_controller_sim:
             self.controller_manager.request(new_manip_controllers).switch()
 
+    def DetectHuman(self, env, segway_sim=True,
+                    kin_frame='/head/skel_depth_frame2',
+                    base_frame='/map', enable_legs=False):
+        """Use the kinbody detector to detect objects and add
+        them to the environment
+        """
+
+        import rospy
+        import tf
+        import humanpy.humantracking_kinect2 as sk
+        from humanpy.DecisionLogic import DecisionLogic
+        transform_listener = tf.TransformListener()
+        humans = []
+        logic = DecisionLogic()
+        while not rospy.is_shutdown():
+            try:
+                skipTheRest = False
+                sk.addRemoveHumans(transform_listener, humans, env,
+                                   enable_legs=enable_legs,
+                                   base_frame=base_frame,
+                                   kin_frame=kin_frame)
+                for human in humans:
+                    if not skipTheRest:
+                        skipTheRest = human.update(transform_listener, logic)
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                continue
+
     def Say(self, words, block=True):
         """Speak 'words' using talker action service or espeak locally in simulation"""
         if self.talker_simulated:
