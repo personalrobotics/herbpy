@@ -291,8 +291,9 @@ class HERBRobot(Robot):
             # Initialize herbpy ROS Node
             import rospy
             if not rospy.core.is_initialized():
-                raise RuntimeError('rospy not initialized. '
-                                   'Must call rospy.init_node()')
+                rospy.init_node('herbpy', anonymous=True)
+                # raise RuntimeError('rospy not initialized. '
+                #                    'Must call rospy.init_node()')
 
             import talker.msg
             from actionlib import SimpleActionClient
