@@ -84,6 +84,9 @@ grasp_dofs, grasp_vals = robot.right_hand.configurations.get_configuration('glas
 robot.right_arm.PushGrasp(fuze, push_required=False, preshape=grasp_vals)
 robot.right_arm.PlanToNamedConfiguration('home', execute=True)
 
+# Place the bottle
+robot.right_arm.Place(fuze, table)
+robot.right_arm.PlanToNamedConfiguration('home', execute=True)
 
 # we do this so the viewer doesn't close when the example is done
 import IPython; IPython.embed()
