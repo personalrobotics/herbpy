@@ -50,7 +50,7 @@ def fridge_open(robot, fridge, manip=None, minopen=0, maxopen=None, **kw_args):
     tsr2 = TSR(T0_w=handle_in_world, Tw_e=ee_in_handle, Bw=Bw2, manip=manip_idx)
 
     # Now glue them together into a constraint chain
-    tsrchain_constrain = TSRChain(TSRs=[tsr1, tsr2], constrain=True, sample_start=False, sample_goal=False)
+    tsrchain_constrain = TSRChain(TSRs=[tsr1, tsr2], constrain=True, sample_start=False, sample_goal=False, mimicbodyname='refrigerator', mimicbodyjoints=numpy.mat(0))
 
     # Modify the Bw matrix for the hinge for the min and max parameters
     Bw3 = numpy.zeros((6, 2))
@@ -58,8 +58,8 @@ def fridge_open(robot, fridge, manip=None, minopen=0, maxopen=None, **kw_args):
 
     tsr1_goal = TSR(T0_w=hinge_in_world, Tw_e=handle_in_hinge, Bw=Bw3, manip=manip_idx)
     tsrchain_goal = TSRChain(TSRs=[tsr1_goal, tsr2], constrain=False, 
-                             sample_start=False, sample_goal=True, 
-                             mimicbodyname='refrigerator', mimicbodyjoints=numpy.mat(0))
+                             sample_start=False, sample_goal=True) #, 
+                             #mimicbodyname='refrigerator', mimicbodyjoints=numpy.mat(0))
 
-    return [tsrchain_constrain, tsrchain_goal]
+    return [tsrchain_goal, tsrchain_constrain]
 

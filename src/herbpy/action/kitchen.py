@@ -120,7 +120,7 @@ def OpenHandle(robot, fridge, manip=None, minopen=0, maxopen=None, render=True):
     goal_tsr = open_tsr[1]
     robot_goal = robot.right_arm.FindIKSolution(goal_tsr.sample(), openravepy.IkFilterOptions.CheckEnvCollisions)
     fridge_goal = [0.1]
-    numpy.append(robot_goal, fridge_goal)
+    robot_goal = numpy.append(robot_goal, fridge_goal)
 
     planner = fridgeFriendlyPlanner(robot)
 
@@ -134,7 +134,7 @@ def OpenHandle(robot, fridge, manip=None, minopen=0, maxopen=None, render=True):
             robot.Release(fridge)
             # Force to use cbirrt to get fridge plan as well
             # FIXME doesn't work because of unknown cbirrt error
-            path = robot.cbirrt_planner.PlanToTSR(robot, open_tsr, jointgoals=[robot_goal])
+            path = robot.cbirrt_planner.PlanToTSR(robot, open_tsr) #, jointgoals=[robot_goal])
             #joint goals
             traj = robot.PostProcessPath(path)
             fridge.Enable(True)
@@ -146,3 +146,4 @@ def OpenHandle(robot, fridge, manip=None, minopen=0, maxopen=None, render=True):
     fridge.GetController().SetPath(traj)
 
     robot.Grab(fridge)
+    return (path, traj)
