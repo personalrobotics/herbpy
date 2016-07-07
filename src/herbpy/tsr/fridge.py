@@ -58,8 +58,7 @@ def fridge_open(robot, fridge, manip=None, minopen=0, maxopen=None, **kw_args):
 
     tsr1_goal = TSR(T0_w=hinge_in_world, Tw_e=handle_in_hinge, Bw=Bw3, manip=manip_idx)
     tsrchain_goal = TSRChain(TSRs=[tsr1_goal, tsr2], constrain=False, 
-                             sample_start=False, sample_goal=True) #, 
-                             #mimicbodyname='refrigerator', mimicbodyjoints=numpy.mat(0))
+                             sample_start=False, sample_goal=True)
 
     return [tsrchain_goal, tsrchain_constrain]
 
