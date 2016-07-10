@@ -4,7 +4,7 @@ import numpy
 
 logger = logging.getLogger('herbpy')
 
-def fridgeFriendlyPlanner(robot):
+def kitchenFriendlyPlanner(robot):
     """
     Our normal planning stack includes TrajOpt. However, TrajOpt
     cannot deal with multiple robots in the environment. Since the
@@ -23,26 +23,36 @@ def fridgeFriendlyPlanner(robot):
     return planner
 
 @ActionMethod
-def MoveTo(robot, fridge):
+def DriveTo(robot, appliance, planning=True):
     """
     @param robot The robot driving
-    @param fridge The fridge to drive to
+    @param appliance The appliance to drive to
+    @param planning True if plan, False to teleport
     """
-    fridge_pose = fridge.GetTransform() 
+    appliance_pose = appliance.GetTransform() 
     robot_pose = numpy.eye(4)
-    offset = numpy.array([1.4, -0.7, 0.0]) # jeking magic
-    robot_pose[0:3, 3] = fridge_pose[0:3, 3] - offset
 
-    robot.base.PlanToBasePose(robot_pose, execute=True)
+    if appliance.GetName() == 'refrigerator':
+        offset = numpy.array([1.4, -0.7, 0.0]) # jeking magic
+    elif appliance.GetName() == 'dishwasher':
+        offset = numpy.array([1.3, -0.5, 0.0])
+    else:
+        raise NameError("Appliance Name not recognized.")
+
+    robot_pose[0:3, 3] = appliance_pose[0:3, 3] - offset
+    if planning:
+        robot.base.PlanToBasePose(robot_pose, execute=True)
+    else:
+        robot.SetTransform(robot_pose)
 
 @ActionMethod
-def GraspHandle(robot, fridge):
+def GraspFridge(robot, fridge):
     """
     Action for grasping the door handle
     @param robot The robot to grasp
     @param fridge The kinbody representing the fridge
     """
-    planner = fridgeFriendlyPlanner(robot)
+    planner = kitchenFriendlyPlanner(robot)
     manip = robot.GetActiveManipulator()
 
     home_path = planner.PlanToNamedConfiguration(robot, 'home')
@@ -147,3 +157,71 @@ def OpenHandle(robot, fridge, manip=None, minopen=0, maxopen=None, render=True):
 
     robot.Grab(fridge)
     return (path, traj)
+
+@ActionMethod
+def GraspDishwasher(robot, dishwasher):
+    """
+    Action for grasping the door handle
+    @param robot The robot to grasp
+    @param dishwasher The kinbody representing the dishwasher
+    """
+    planner = kitchenFriendlyPlanner(robot)
+    manip = robot.GetActiveManipulator()
+
+    home_path = planner.PlanToNamedConfiguration(robot, 'home')
+    robot.ExecutePath(home_path)
+
+    # Create the grasp pose
+    dishwasher_pose = dishwasher.GetTransform()
+
+    # Get the handle pose
+    handle = dishwasher.GetLink('dish_handle')
+    handlePose = handle.GetTransform()
+
+    # Now we need to find a grasp pose.
+    # Translate the grasp pose to the left of the handle
+    graspPose = handlePose
+    translationOffset = [-0.2, -0.2, 0.02]
+    graspPose[0:3, 3] += translationOffset
+
+    rot = openravepy.matrixFromAxisAngle([0, 1, 0], -numpy.pi*0.5)
+    graspPose = graspPose.dot(rot)
+
+    '''
+    # Rotate the pose so that it aligns with the correct hand pose
+    rot = openravepy.matrixFromAxisAngle([1, 0, 0], numpy.pi * 0.5)
+    rot = rot.dot(openravepy.matrixFromAxisAngle([0, 1, 0], -numpy.pi * 0.5))
+    graspPose = graspPose.dot(rot)
+    last_rot = openravepy.matrixFromAxisAngle([0, 0, 1], numpy.pi)
+    graspPose = graspPose.dot(last_rot)
+    '''
+    slow_velocity_limits = numpy.array([0.17, 0.17, 0.475, 0.475, 0.625, 0.625, 0.625])
+    manip.SetVelocityLimits(2.0*slow_velocity_limits, min_accel_time=0.2)
+    manip.hand.MoveHand(0.65, 0.65, 0.65, 0)
+    return (graspPose, planner)
+
+    pose_path = planner.PlanToEndEffectorPose(robot, graspPose)
+    robot.ExecutePath(pose_path)
+
+    """
+    manip.SetVelocityLimits(slow_velocity_limits, min_accel_time=0.2)
+    # Move forward to touch the fridge
+    manip.MoveUntilTouch([1, 0, 0], 0.1, ignore_collisions=[fridge])
+
+    with prpy.rave.Disabled(fridge):
+        # Move back
+        manip.PlanToEndEffectorOffset([-1, 0, 0], 0.01, execute=True)
+
+    # Move right
+    manip.MoveUntilTouch([0, -1, 0], 0.05, ignore_collisions=[fridge])
+
+    with prpy.rave.Disabled(fridge):
+        # Center around the fridge
+        manip.PlanToEndEffectorOffset([0, 1, 0], 0.01, execute=True)
+        # Move back again
+        manip.PlanToEndEffectorOffset([1, 0, 0], 0.045, execute=True)
+
+    manip.hand.MoveHand(1.5, 1.5, 1.5)
+    robot.Grab(fridge)
+    manip.SetVelocityLimits(2.0*slow_velocity_limits, min_accel_time=0.2)
+    """

@@ -3,4 +3,4 @@ from rogue import PointAt, PresentAt, SweepAt, Point, Present, Sweep, Exhibit, N
 from blocks import GrabBlock
 from pouring import MoveCupAndPour
 from stacking import StackCups
-from kitchen import MoveTo, GraspHandle, OpenHandle 
+from kitchen import DriveTo, GraspFridge, OpenHandle, GraspDishwasher
