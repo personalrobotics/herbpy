@@ -35,7 +35,7 @@ def DriveTo(robot, appliance, planning=True):
     if appliance.GetName() == 'refrigerator':
         offset = numpy.array([1.4, -0.7, 0.0]) # jeking magic
     elif appliance.GetName() == 'dishwasher':
-        offset = numpy.array([1.3, -0.5, 0.0])
+        offset = numpy.array([1.3, -0.7, 0.0])
     else:
         raise NameError("Appliance Name not recognized.")
 
@@ -69,7 +69,7 @@ def GraspFridge(robot, fridge):
     # Translate the grasp pose to the left of the handle
     aabb = lowerHandle.ComputeAABB()
     graspPose = lowerHandlePose
-    translationOffset = [-0.30, 0.1, 0]
+    translationOffset = [-0.40, 0.1, 0]
     graspPose[0:3, 3] += translationOffset + (aabb.pos() - fridge_pose[0:3, 3])
 
     # Rotate the pose so that it aligns with the correct hand pose
@@ -184,26 +184,22 @@ def GraspDishwasher(robot, dishwasher):
     translationOffset = [-0.2, -0.2, 0.02]
     graspPose[0:3, 3] += translationOffset
 
-    rot = openravepy.matrixFromAxisAngle([0, 1, 0], -numpy.pi*0.5)
-    graspPose = graspPose.dot(rot)
+    rot1 = openravepy.matrixFromAxisAngle([0, 1, 0], -numpy.pi*0.5)
+    graspPose = graspPose.dot(rot1)
+    rot2 = openravepy.matrixFromAxisAngle([0, 0, 1], numpy.pi)
+    graspPose = graspPose.dot(rot2)
 
-    '''
-    # Rotate the pose so that it aligns with the correct hand pose
-    rot = openravepy.matrixFromAxisAngle([1, 0, 0], numpy.pi * 0.5)
-    rot = rot.dot(openravepy.matrixFromAxisAngle([0, 1, 0], -numpy.pi * 0.5))
-    graspPose = graspPose.dot(rot)
-    last_rot = openravepy.matrixFromAxisAngle([0, 0, 1], numpy.pi)
-    graspPose = graspPose.dot(last_rot)
-    '''
     slow_velocity_limits = numpy.array([0.17, 0.17, 0.475, 0.475, 0.625, 0.625, 0.625])
     manip.SetVelocityLimits(2.0*slow_velocity_limits, min_accel_time=0.2)
     manip.hand.MoveHand(0.65, 0.65, 0.65, 0)
-    return (graspPose, planner)
+    #return (graspPose, planner)
 
+    # FIXME can never find goal IK ?
     pose_path = planner.PlanToEndEffectorPose(robot, graspPose)
     robot.ExecutePath(pose_path)
 
     """
+    Untested, probably have to change directions
     manip.SetVelocityLimits(slow_velocity_limits, min_accel_time=0.2)
     # Move forward to touch the fridge
     manip.MoveUntilTouch([1, 0, 0], 0.1, ignore_collisions=[fridge])
