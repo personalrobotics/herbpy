@@ -27,27 +27,6 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
             raise Exception('Unable to load environment frompath %s' % env_path)
 
     if prpy.dependency_manager.is_catkin():
-        # Find the HERB URDF and SRDF files.
-        from catkin.find_in_workspaces import find_in_workspaces
-        share_directories = find_in_workspaces(search_dirs=['share'],
-                                               project='herb_description')
-        if not share_directories:
-            logger.error('Unable to find the HERB model. Do you have the'
-                         ' package herb_description installed?')
-            raise ValueError('Unable to find HERB model.')
-
-        found_models = False
-        for share_directory in share_directories:
-            urdf_path = os.path.join(share_directories[0], 'robots', 'herb.urdf')
-            srdf_path = os.path.join(share_directories[0], 'robots', 'herb.srdf')
-            if os.path.exists(urdf_path) and os.path.exists(srdf_path):
-                found_models = True
-                break
-
-        if not found_models:
-            logger.error('Missing URDF file and/or SRDF file for HERB.'
-                         ' Is the herb_description package properly installed?')
-            raise ValueError('Unable to find HERB URDF and SRDF files.')
 
         # Load the URDF file into OpenRAVE.
         urdf_module = openravepy.RaveCreateModule(env, 'urdf')
@@ -56,7 +35,9 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
                          ' built and installed in one of your Catkin workspaces?')
             raise ValueError('Unable to load or_urdf plugin.')
 
-        args = 'Load {:s} {:s}'.format(urdf_path, srdf_path)
+        urdf_uri = 'package://herb_description/robots/herb.urdf'
+        srdf_uri = 'package://herb_description/robots/herb.srdf'
+        args = 'Load {:s} {:s}'.format(urdf_uri, srdf_uri)
         herb_name = urdf_module.SendCommand(args)
         if herb_name is None:
             raise ValueError('Failed loading HERB model using or_urdf.')
