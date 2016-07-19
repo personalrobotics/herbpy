@@ -65,7 +65,6 @@ env.AddKinBody(fuze)
 raw_input('press enter to begin planning')
 
 # move to a good start position
-robot.head.MoveTo([0, -math.pi/16]) # look down slightly
 robot.PlanToNamedConfiguration('relaxed_home') # move the arms to the 'relaxed_home' position
 #indices, values = robot.configurations.get_configuration('relaxed_home') # Faster for testing
 #robot.SetDOFValues(values=values, dofindices=indices)
@@ -85,6 +84,9 @@ grasp_dofs, grasp_vals = robot.right_hand.configurations.get_configuration('glas
 robot.right_arm.PushGrasp(fuze, push_required=False, preshape=grasp_vals)
 robot.right_arm.PlanToNamedConfiguration('home', execute=True)
 
+# Place the bottle
+robot.right_arm.Place(fuze, table)
+robot.right_arm.PlanToNamedConfiguration('home', execute=True)
 
 # we do this so the viewer doesn't close when the example is done
 import IPython; IPython.embed()
