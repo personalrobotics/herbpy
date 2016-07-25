@@ -12,17 +12,16 @@ def box_stamp(robot, box, manip=None):
     @param box The box to stamp
     @param manip The manipulator to stamp 
     '''
-    
-    with robot.GetEnv():
-        with robot.CreateRobotStateSaver():
-            if manip is None:
-                manip_idx = robot.GetActiveManipulatorIndex()
-                manip = robot.GetActiveManipulator()
-            else:
-                manip.SetActive()
-                manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
+  
+    with robot.CreateRobotStateSaver(robot.GetActiveManipulatorIndex() | robot.ActiveDOF()):
+      if manip is None:
+        manip_idx = robot.GetActiveManipulatorIndex()
+        manip = robot.GetActiveManipulator()
+      else:
+        manip.SetActive()
+        manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
-        T0_w = box.GetTransform()
+    T0_w = box.GetTransform()
     
     ee_to_palm = 0.18
     palm_to_box_center = .045
@@ -34,7 +33,6 @@ def box_stamp(robot, box, manip=None):
                         [0., 0., 0., 1.]])
 
     Bw = numpy.zeros((6,2))
-    #Bw[2,:] = [0.0, 0.00]  # Allow a little vertical movement
     Bw[5,:] = [-numpy.pi, numpy.pi]  # Allow any orientation
     
     grasp_tsr = prpy.tsr.TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)

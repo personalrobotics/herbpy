@@ -297,45 +297,44 @@ class HERBRobot(Robot):
         @param continuous equal to True, if human precition on goal is continuous.
                           equal to False, if human prediction stops when a certain 
                           threshold is reached.
-        @param action if hrc=True, the kind of action the herb is going to perform 
+        @param action if hrc=True, the kind of action herb is going to perform 
                       between stamping ('stamp') and grasping ('grasp')
         """
-        
-        
+
         import rospy
         from tf import TransformListener, transformations
 
-        if orhuman=='kin1_skel': 
-            if load_hum==True:
-                #kin 1 - load a skeleton
-                import or_skeletons.load_skeletons as sk
-                humans = []
-                logger.info('Humans_tracking')
-        elif orhuman=='kin1_or':
-            if load_hum==True:
-                #kin 1- load the human from openrave
-                import humanpy.humantracking_kinect1 as sk
-                humans = []
-                logger.info('Humans_tracking')
-        elif orhuman=='kin2_or':
-            if load_hum==True:
-                #kin 2 - load the human from openrave
-                import humanpy.humantracking_kinect2 as sk
-                humans = []
-                logger.info('Humans_tracking')
-            if hrc==True:
-                from hrc import assistance                 
-                humans_hrc = []
-                logger.info('HRC')
-        else:
+        if load_hum:
+          if orhuman=='kin1_skel': 
+            #kin 1 - load a skeleton
+            import or_skeletons.load_skeletons as sk
+            humans = []
+            logger.info('Humans_tracking')
+          elif orhuman=='kin1_or':
+            #kin 1- load the human from openrave
+            import humanpy.humantracking_kinect1 as sk
+            humans = []
+            logger.info('Humans_tracking')
+          elif orhuman=='kin2_or':
+            #kin 2 - load the human from openrave
+            import humanpy.humantracking_kinect2 as sk
+            humans = []
+            logger.info('Humans_tracking')
+          else:
             raise Exception('orhuman param is not correct')
+           
+        if orhuman=='kin2_or' and hrc:
+          #kin 2 - load the human from openrave
+          from hrc import assistance                 
+          humans_hrc = []
+          logger.info('HRC')
            
         try:  
             tf = TransformListener()  
             humanadded = False
-
+            
             while not rospy.is_shutdown():   
-                if load_hum==True:
+                if load_hum:
                     sk.addRemoveHumans(tf, humans, env,
                                        enable_legs=enable_legs,
                                        segway_sim=segway_sim,
@@ -343,8 +342,8 @@ class HERBRobot(Robot):
                                        kin_frame=kin_frame)
                     for human in humans:
                         human.update(tf, 1)       
-                if hrc==True:
-                    if humanadded==False:
+                if hrc:
+                    if not humanadded:
                         humanadded = assistance.addHumansPred(tf, humans_hrc, env,
                                                                 continuous=continuous,
                                                                 herb_sim=herb_sim,
