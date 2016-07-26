@@ -134,7 +134,7 @@ def OpenHandle(robot, fridge, manip=None, minopen=0, maxopen=None, render=True):
     fridge_goal = [0.1]
     robot_goal = numpy.append(robot_goal, fridge_goal)
 
-    planner = fridgeFriendlyPlanner(robot)
+    planner = kitchenFriendlyPlanner(robot)
 
     p = openravepy.KinBody.SaveParameters
     with robot.CreateRobotStateSaver(p.ActiveManipulator | p.ActiveDOF):
@@ -153,10 +153,10 @@ def OpenHandle(robot, fridge, manip=None, minopen=0, maxopen=None, render=True):
     #FIXME doesnt actually move fridge door
     door_controller = openravepy.RaveCreateController(robot.GetEnv(), 'IdealController')
     fridge.SetController(door_controller)
-    fridge.GetController().SetPath(traj)
+    door_traj = robot.cbirrt_planner.GetLastMimicTraj()
+    fridge.GetController().SetPath(door_traj)
 
     robot.Grab(fridge)
-    return (path, traj)
 
 @ActionMethod
 def GraspDishwasher(robot, dishwasher):

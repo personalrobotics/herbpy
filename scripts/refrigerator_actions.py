@@ -51,7 +51,7 @@ def PushDoorOpen(robot, fridge):
     # Rotate the pose so that it aligns with the correct hand pose
     # rotate with homogeneous transforms
     graspPose = graspPose.dot(openravepy.matrixFromAxisAngle([1, 0, 0], numpy.pi * 0.5))
-    graspPose = graspPose.dot(openravepy.matrixFromAxisAngle([0, 1, 0], -numpy.pi * 0.5)))
+    graspPose = graspPose.dot(openravepy.matrixFromAxisAngle([0, 1, 0], -numpy.pi * 0.5))
     graspPose = graspPose.dot(openravepy.matrixFromAxisAngle([0, 0, 1], numpy.pi * 1.5))
 
     slow_velocity_limits = numpy.array([0.17, 0.17, 0.475, 0.475, 0.625, 0.625, 0.625])
@@ -99,16 +99,9 @@ if __name__ == '__main__':
     env.Remove(lowercabinets) 
     env.Remove(uppercabinets)
     env.Remove(microwave)
-    """ 
-    fridge_location(robot, fridge)
-    grab_fridge = numpy.array([ 1.48478175, -0.16421794,  0.03013736,  1.52468228,  0.00207302,
-       -1.35831863,  0.05682227])
-    robot.right_arm.SetDOFValues(grab_fridge)
-    robot.right_hand.CloseHand() 
-    """
-
-    #robot.DriveTo(dishwasher, planning=False)
-    planner = getFridgePlanner(robot)
-    #home_path = planner.PlanToNamedConfiguration(robot, 'home')
-    #robot.ExecutePath(home_path)
+    env.Remove(dishwasher)
+     
+    robot.DriveTo(fridge, planning=False)
+    robot.GraspFridge(fridge)
     IPython.embed()
+    # Then I run: robot.OpenHandle(fridge)
