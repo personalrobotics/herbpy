@@ -44,7 +44,7 @@ def MoveCupAndPour(robot, table, manip_pitcher, manip_cup, cup, pitcher):
         manip_cup.hand.OpenHand()
         with env:
             robot.Release(cup)
-        manip_cup.PlanToEndEffectorOffset(direction=-1*manip_cup_pose[:3,0], distance=0.1, position_tolerance=0.1, execute=True, timelimit=10)
+        manip_cup.PlanToEndEffectorOffset(direction=-1*manip_cup_pose[:3,2], distance=0.1, position_tolerance=0.1, execute=True, timelimit=10)
         manip_cup.PlanToNamedConfiguration('home', execute=True)
 
     # Pour
