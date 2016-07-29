@@ -193,8 +193,7 @@ class HERBRobot(Robot):
         # Trajectory optimizer.
         try:
             from or_trajopt import TrajoptPlanner
-
-            self.trajopt_planner = TrajoptPlanner()
+            self.trajopt_planner = TrajoptPlanner()  
         except ImportError:
             self.trajopt_planner = None
             logger.warning('Failed creating TrajoptPlanner. Is the or_trajopt'
