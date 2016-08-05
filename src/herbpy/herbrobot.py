@@ -229,7 +229,7 @@ class HERBRobot(Robot):
 
         from prpy.planning.retimer import HauserParabolicSmoother
         self.smoother = HauserParabolicSmoother(do_blend=True, do_shortcut=True,
-            blend_iterations=1, blend_radius=0.4, time_limit=0.6)
+            blend_iterations=1, blend_radius=0.4, timelimit=0.6)
         self.retimer = HauserParabolicSmoother(do_blend=True, do_shortcut=False,
             blend_iterations=1, blend_radius=0.4)
         self.simplifier = None
