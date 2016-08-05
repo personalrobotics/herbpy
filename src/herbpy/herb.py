@@ -1,4 +1,3 @@
-PACKAGE = 'herbpy'
 import logging, prpy, prpy.dependency_manager, os
 from openravepy import (
     Environment,
@@ -19,10 +18,7 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
     os.environ.setdefault('TRAJOPT_LOG_THRESH', 'WARN')
 
     # Load plugins.
-    if prpy.dependency_manager.is_catkin():
-        prpy.dependency_manager.export()
-    else:
-        prpy.dependency_manager.export(PACKAGE)
+    prpy.dependency_manager.export()
     RaveInitialize(True)
 
     # Create the environment.
