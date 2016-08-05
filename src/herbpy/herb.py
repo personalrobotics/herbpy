@@ -1,6 +1,11 @@
 PACKAGE = 'herbpy'
-import logging, prpy, openravepy, prpy.dependency_manager, os
-from herbbase import HerbBase
+import logging, prpy, prpy.dependency_manager, os
+from openravepy import (
+    Environment,
+    RaveCreateModule,
+    RaveInitialize,
+)
+from .herbbase import HerbBase
 
 logger = logging.getLogger('herbpy')
 
@@ -18,10 +23,10 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
         prpy.dependency_manager.export()
     else:
         prpy.dependency_manager.export(PACKAGE)
-    openravepy.RaveInitialize(True)
+    RaveInitialize(True)
 
     # Create the environment.
-    env = openravepy.Environment()
+    env = Environment()
     if env_path is not None:
         if not env.Load(env_path):
             raise Exception('Unable to load environment frompath %s' % env_path)
@@ -29,7 +34,7 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
     if prpy.dependency_manager.is_catkin():
 
         # Load the URDF file into OpenRAVE.
-        urdf_module = openravepy.RaveCreateModule(env, 'urdf')
+        urdf_module = RaveCreateModule(env, 'urdf')
         if urdf_module is None:
             logger.error('Unable to load or_urdf module. Do you have or_urdf'
                          ' built and installed in one of your Catkin workspaces?')
