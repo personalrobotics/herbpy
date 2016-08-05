@@ -28,7 +28,8 @@ def try_and_warn(fn, exception_type, message, default_value=None):
 class HERBRobot(Robot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
-                       head_sim, talker_sim, segway_sim, perception_sim):
+                       head_sim, talker_sim, segway_sim, perception_sim,
+                       robot_collision_checker):
         from prpy.util import FindCatkinResource
 
         Robot.__init__(self, robot_name='herb')
@@ -183,24 +184,30 @@ class HERBRobot(Robot):
         self.ik_planner = IKPlanner()
 
         # Special-purpose planners.
-        self.snap_planner = SnapPlanner()
-        self.vectorfield_planner = VectorFieldPlanner()
+        self.snap_planner = SnapPlanner(
+            robot_collision_checker=robot_collision_checker)
+        self.vectorfield_planner = VectorFieldPlanner(
+            robot_collision_checker=robot_collision_checker)
+        # TODO: GreedyIKPlanner doesn't support robot_collision_checker.
         self.greedyik_planner = GreedyIKPlanner()
 
         # General-purpose planners.
-        self.cbirrt_planner = CBiRRTPlanner()
+        self.cbirrt_planner = CBiRRTPlanner(
+            robot_collision_checker=robot_collision_checker)
 
         # Trajectory optimizer.
         try:
             from or_trajopt import TrajoptPlanner
-            self.trajopt_planner = TrajoptPlanner()  
+            self.trajopt_planner = TrajoptPlanner(
+                robot_collision_checker=robot_collision_checker)
         except ImportError:
             self.trajopt_planner = None
             logger.warning('Failed creating TrajoptPlanner. Is the or_trajopt'
                            ' package in your workspace and built?')
 
         try:
-            self.chomp_planner = CHOMPPlanner()
+            self.chomp_planner = CHOMPPlanner(
+                robot_collision_checker=robot_collision_checker)
         except UnsupportedPlanningError:
             self.chomp_planner = None
             logger.warning('Failed loading the CHOMP module. Is the or_cdchomp'
@@ -219,11 +226,11 @@ class HERBRobot(Robot):
             # Next, try a trajectory optimizer.
             self.trajopt_planner or self.chomp_planner
         )
+        tsr_planner = TSRPlanner(
+            delegate_planner=actual_planner,
+            robot_collision_checker=robot_collision_checker)
         self.planner = FirstSupported(
-            Sequence(actual_planner,
-                     TSRPlanner(delegate_planner=actual_planner),
-                     self.cbirrt_planner),
-            # Special purpose meta-planner.
+            Sequence(actual_planner, tsr_planner, self.cbirrt_planner),
             NamedPlanner(delegate_planner=actual_planner),
         )
 
