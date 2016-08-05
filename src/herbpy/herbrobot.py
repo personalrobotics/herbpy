@@ -33,7 +33,7 @@ class HERBRobot(Robot):
         from prpy.util import FindCatkinResource
 
         Robot.__init__(self, robot_name='herb')
-
+        self.robot_collision_checker = robot_collision_checker
 
         # Controller setup
         self.controller_manager = None
