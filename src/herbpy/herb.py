@@ -5,12 +5,11 @@ import prpy.dependency_manager
 from openravepy import (
     Environment,
     RaveCreateModule,
+    RaveCreateCollisionChecker,
     RaveInitialize,
 )
-from .herbbase import (
-    HerbBase,
-    HERBRobot,
-)
+from .herbbase import HerbBase
+from .herbrobot import HERBRobot
 
 logger = logging.getLogger('herbpy')
 
@@ -82,6 +81,13 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
         if env.GetViewer() is None:
             raise Exception('Failed creating viewer of type "{0:s}".'.format(
                             attach_viewer))
+
+    # Default to FCL.
+    collision_checker = RaveCreateCollisionChecker(env, 'fcl')
+    if collision_checker is not None:
+        env.SetCollisionChecker(collision_checker)
+    else:
+        logger.warning('Failed creating "fcl". Did you install or_fcl?')
 
     # Remove the ROS logging handler again. It might have been added when we
     # loaded or_rviz.
