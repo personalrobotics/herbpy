@@ -2,6 +2,10 @@ import logging
 import os
 import prpy
 import prpy.dependency_manager
+from prpy.collision import (
+    BakedRobotCollisionChecker,
+    SimpleRobotCollisionChecker,
+)
 from openravepy import (
     Environment,
     RaveCreateModule,
@@ -86,7 +90,9 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
     collision_checker = RaveCreateCollisionChecker(env, 'fcl')
     if collision_checker is not None:
         env.SetCollisionChecker(collision_checker)
+        robot_collision_checker = BakedRobotCollisionChecker()
     else:
+        robot_collision_checker = SimpleRobotCollisionChecker()
         logger.warning('Failed creating "fcl". Did you install or_fcl?')
 
     # Remove the ROS logging handler again. It might have been added when we
