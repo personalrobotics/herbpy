@@ -46,7 +46,6 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
         herb_name = urdf_module.SendCommand(args)
     else:
         import rospy
-        rospy.init_node('herbpy_testing')  # TODO rm
         if not rospy.core.is_initialized():
             raise RuntimeError('rospy not initialized. '
                                'Must call rospy.init_node()')
