@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import prpy
@@ -30,6 +31,7 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
         if not env.Load(env_path):
             raise Exception('Unable to load environment frompath %s' % env_path)
 
+    herb_name = None
     # Load the URDF file into OpenRAVE.
     urdf_module = RaveCreateModule(env, 'urdf')
     if urdf_module is None:
@@ -37,10 +39,31 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
                      ' built and installed in one of your Catkin workspaces?')
         raise ValueError('Unable to load or_urdf plugin.')
 
-    urdf_uri = 'package://herb_description/robots/herb.urdf'
-    srdf_uri = 'package://herb_description/robots/herb.srdf'
-    args = 'Load {:s} {:s}'.format(urdf_uri, srdf_uri)
-    herb_name = urdf_module.SendCommand(args)
+    if sim:
+        urdf_uri = 'package://herb_description/robots/herb.urdf'
+        srdf_uri = 'package://herb_description/robots/herb.srdf'
+        args = 'Load {:s} {:s}'.format(urdf_uri, srdf_uri)
+        herb_name = urdf_module.SendCommand(args)
+    else:
+        import rospy
+        rospy.init_node('herbpy_testing')  # TODO rm
+        if not rospy.core.is_initialized():
+            raise RuntimeError('rospy not initialized. '
+                               'Must call rospy.init_node()')
+        urdf_string = rospy.get_param('/robot_description', None)
+        if urdf_string is None:
+            raise RuntimeError('rosparam "/robot_description" is not set.'
+                               ' Unable to load correct HERB model.')
+        srdf_string = rospy.get_param('/semantic_robot_description', None)
+        if srdf_string is None:
+            raise RuntimeError('rosparam "/semantic_robot_description" is not'
+                               ' set. Unable to load correct HERB model.')
+        urdf_json_wrapper = json.dumps(
+            {'urdf': urdf_string.replace('\n', ' ').replace('\r', ' '),
+             'srdf': srdf_string.replace('\n', ' ').replace('\r', ' ')})
+        args = 'LoadJsonString {}'.format(urdf_json_wrapper)
+        herb_name = urdf_module.SendCommand(args)
+
     if herb_name is None:
         raise ValueError('Failed loading HERB model using or_urdf.')
 

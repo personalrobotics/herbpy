@@ -9,7 +9,7 @@ from prpy.base.robot import Robot
 from prpy.controllers import RewdOrTrajectoryController
 from prpy.exceptions import PrPyException, TrajectoryNotExecutable
 from prpy.planning.base import UnsupportedPlanningError
-from barretthand import BarrettHand
+from barretthand import BarrettHand, EndEffectorIsBarrettHand
 from herbbase import HerbBase
 from herbpantilt import HERBPantilt
 from wam import WAM
@@ -73,10 +73,14 @@ class HERBRobot(Robot):
         prpy.bind_subclass(self.left_arm, WAM, sim=left_arm_sim, namespace='/left')
         prpy.bind_subclass(self.right_arm, WAM, sim=right_arm_sim, namespace='/right')
         prpy.bind_subclass(self.head, HERBPantilt, sim=head_sim, owd_namespace='/head/owd')
-        prpy.bind_subclass(self.left_arm.hand, BarrettHand, sim=left_hand_sim, manipulator=self.left_arm,
-                           bhd_namespace='/left', ft_sim=left_ft_sim)
-        prpy.bind_subclass(self.right_arm.hand, BarrettHand, sim=right_hand_sim, manipulator=self.right_arm,
-                           bhd_namespace='/right', ft_sim=right_ft_sim)
+        if EndEffectorIsBarrettHand(self.left_arm):
+            prpy.bind_subclass(self.left_arm.hand, BarrettHand,
+                               sim=left_hand_sim, manipulator=self.left_arm,
+                               bhd_namespace='/left', ft_sim=left_ft_sim)
+        if EndEffectorIsBarrettHand(self.right_arm):
+            prpy.bind_subclass(self.right_arm.hand, BarrettHand,
+                               sim=right_hand_sim, manipulator=self.right_arm,
+                               bhd_namespace='/right', ft_sim=right_ft_sim)
         self.base = HerbBase(sim=segway_sim, robot=self)
 
         # Set HERB's acceleration limits. These are not specified in URDF.
@@ -90,10 +94,10 @@ class HERBRobot(Robot):
         # Determine always-on controllers
 
         # hand controllers
-        if not left_hand_sim:
+        if not left_hand_sim and isinstance(self.left_hand, BarrettHand):
             self.controllers_always_on.append('left_hand_controller')
 
-        if not right_hand_sim:
+        if not right_hand_sim and isinstance(self.right_hand, BarrettHand):
             self.controllers_always_on.append('right_hand_controller')
 
         # force/torque controllers
@@ -132,8 +136,10 @@ class HERBRobot(Robot):
         self.configurations.add_group('left_arm', self.left_arm.GetArmIndices())
         self.configurations.add_group('right_arm', self.right_arm.GetArmIndices())
         self.configurations.add_group('head', self.head.GetArmIndices())
-        self.configurations.add_group('left_hand', self.left_hand.GetIndices())
-        self.configurations.add_group('right_hand', self.right_hand.GetIndices())
+        if isinstance(self.left_hand, BarrettHand):
+            self.configurations.add_group('left_hand', self.left_hand.GetIndices())
+        if isinstance(self.right_hand, BarrettHand):
+            self.configurations.add_group('right_hand', self.right_hand.GetIndices())
 
         configurations_path = FindCatkinResource('herbpy', 'config/configurations.yaml')
 
@@ -146,6 +152,8 @@ class HERBRobot(Robot):
         # Hand configurations
         from prpy.named_config import ConfigurationLibrary
         for hand in [ self.left_hand, self.right_hand ]:
+            if not isinstance(hand, BarrettHand):
+                continue
             hand.configurations = ConfigurationLibrary()
             hand.configurations.add_group('hand', hand.GetIndices())
 

@@ -251,3 +251,13 @@ class BarrettHand(EndEffector):
         robot = self.manipulator.GetRobot()
         full_name = '/{:s}/{:s}'.format(self.manipulator.GetName(), name)
         return robot.GetJoint(full_name)
+
+
+def EndEffectorIsBarrettHand(manipulator):
+    """Dynamically determine if loaded endeffector is a BarrettHand"""
+    robot = manipulator.GetRobot()
+    test_joints = ['j00', 'j01', 'j11', 'j21']
+    has_joint = [robot.GetJoint('/{:s}/{:s}'.format(
+        manipulator.GetName(), jnt)) is not None for jnt in test_joints]
+    has_all_joints = all(has_joint)
+    return has_all_joints
