@@ -1,18 +1,42 @@
 PACKAGE = 'herbpy'
 import logging
-import openravepy
 import numbers
 import numpy
+import openravepy
 import prpy
-import prpy.rave, prpy.util
+import prpy.rave
+import prpy.util
+import yaml
+import subprocess
+from .barretthand import BarrettHand
+from .herbbase import HerbBase
+from .herbpantilt import HERBPantilt
+from .wam import WAM
+from prpy import Cloned
+from prpy.action import ActionLibrary
 from prpy.base.robot import Robot
 from prpy.controllers import RewdOrTrajectoryController
 from prpy.exceptions import PrPyException, TrajectoryNotExecutable
+from prpy.named_config import ConfigurationLibrary
+from prpy.planning import (
+    CBiRRTPlanner,
+    CHOMPPlanner,
+    FirstSupported,
+    GreedyIKPlanner,
+    IKPlanner,
+    MethodMask,
+    NamedPlanner,
+    Ranked,
+    SBPLPlanner,
+    Sequence,
+    SnapPlanner,
+    TSRPlanner,
+    VectorFieldPlanner,
+)
 from prpy.planning.base import UnsupportedPlanningError
-from barretthand import BarrettHand
-from herbbase import HerbBase
-from herbpantilt import HERBPantilt
-from wam import WAM
+from prpy.planning.retimer import HauserParabolicSmoother
+from prpy.util import FindCatkinResource
+
 
 logger = logging.getLogger('herbpy')
 
@@ -28,11 +52,10 @@ def try_and_warn(fn, exception_type, message, default_value=None):
 class HERBRobot(Robot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
-                       head_sim, talker_sim, segway_sim, perception_sim):
-        from prpy.util import FindCatkinResource
-
+                       head_sim, talker_sim, segway_sim, perception_sim,
+                       robot_checker_factory):
         Robot.__init__(self, robot_name='herb')
-
+        self.robot_checker_factory = robot_checker_factory
 
         # Controller setup
         self.controller_manager = None
@@ -45,8 +68,11 @@ class HERBRobot(Robot):
         if not self.full_controller_sim:
             # any non-simulation requires ros and the ros_control stack
             import rospy
-            from ros_control_client_py import (ControllerManagerClient,
-                                               JointStateClient)
+            from ros_control_client_py import (
+                ControllerManagerClient,
+                JointStateClient,
+            )
+
             if not rospy.core.is_initialized():
                 raise RuntimeError('rospy not initialized. '
                                    'Must call rospy.init_node()')
@@ -57,7 +83,6 @@ class HERBRobot(Robot):
 
             self.controller_manager = ControllerManagerClient()
             self.controllers_always_on.append('joint_state_controller')
-
 
         # Convenience attributes for accessing self components.
         self.left_arm = self.GetManipulator('left')
@@ -144,7 +169,6 @@ class HERBRobot(Robot):
                 configurations_path))
 
         # Hand configurations
-        from prpy.named_config import ConfigurationLibrary
         for hand in [ self.left_hand, self.right_hand ]:
             hand.configurations = ConfigurationLibrary()
             hand.configurations.add_group('hand', hand.GetIndices())
@@ -159,48 +183,35 @@ class HERBRobot(Robot):
             else:
                 logger.warning('Unrecognized hand class. Not loading named configurations.')
 
-        # Initialize a default planning pipeline.
-        from prpy.planning import (
-            FirstSupported,
-            MethodMask,
-            Ranked,
-            Sequence,
-        )
-        from prpy.planning import (
-            CBiRRTPlanner,
-            CHOMPPlanner,
-            GreedyIKPlanner,
-            IKPlanner,
-            NamedPlanner,
-            SBPLPlanner,
-            SnapPlanner,
-            TSRPlanner,
-            VectorFieldPlanner
-        )
-
         # TODO: These should be meta-planners.
         self.named_planner = NamedPlanner()
         self.ik_planner = IKPlanner()
 
         # Special-purpose planners.
-        self.snap_planner = SnapPlanner()
-        self.vectorfield_planner = VectorFieldPlanner()
+        self.snap_planner = SnapPlanner(
+            robot_checker_factory=robot_checker_factory)
+        self.vectorfield_planner = VectorFieldPlanner(
+            robot_checker_factory=robot_checker_factory)
+        # TODO: GreedyIKPlanner doesn't support robot_checker_factory.
         self.greedyik_planner = GreedyIKPlanner()
 
         # General-purpose planners.
-        self.cbirrt_planner = CBiRRTPlanner()
+        self.cbirrt_planner = CBiRRTPlanner(
+            robot_checker_factory=robot_checker_factory)
 
         # Trajectory optimizer.
         try:
             from or_trajopt import TrajoptPlanner
-            self.trajopt_planner = TrajoptPlanner()  
+            self.trajopt_planner = TrajoptPlanner(
+                robot_checker_factory=robot_checker_factory)
         except ImportError:
             self.trajopt_planner = None
             logger.warning('Failed creating TrajoptPlanner. Is the or_trajopt'
                            ' package in your workspace and built?')
 
         try:
-            self.chomp_planner = CHOMPPlanner()
+            self.chomp_planner = CHOMPPlanner(
+                robot_checker_factory=robot_checker_factory)
         except UnsupportedPlanningError:
             self.chomp_planner = None
             logger.warning('Failed loading the CHOMP module. Is the or_cdchomp'
@@ -219,28 +230,25 @@ class HERBRobot(Robot):
             # Next, try a trajectory optimizer.
             self.trajopt_planner or self.chomp_planner
         )
+        tsr_planner = TSRPlanner(
+            delegate_planner=actual_planner,
+            robot_checker_factory=robot_checker_factory)
         self.planner = FirstSupported(
-            Sequence(actual_planner,
-                     TSRPlanner(delegate_planner=actual_planner),
-                     self.cbirrt_planner),
-            # Special purpose meta-planner.
+            Sequence(actual_planner, tsr_planner, self.cbirrt_planner),
             NamedPlanner(delegate_planner=actual_planner),
         )
 
-        from prpy.planning.retimer import HauserParabolicSmoother
         self.smoother = HauserParabolicSmoother(do_blend=True, do_shortcut=True)
         self.retimer = HauserParabolicSmoother(do_blend=True, do_shortcut=False,
             blend_iterations=5, blend_radius=0.4)
         self.simplifier = None
 
         # Base planning
-        from prpy.util import FindCatkinResource
         planner_parameters_path = FindCatkinResource('herbpy', 'config/base_planner_parameters.yaml')
 
         self.sbpl_planner = SBPLPlanner()
         try:
             with open(planner_parameters_path, 'rb') as config_file:
-                import yaml
                 params_yaml = yaml.load(config_file)
             self.sbpl_planner.SetPlannerParameters(params_yaml)
         except IOError as e:
@@ -250,7 +258,6 @@ class HERBRobot(Robot):
         self.base_planner = self.sbpl_planner
 
         # Create action library
-        from prpy.action import ActionLibrary
         self.actions = ActionLibrary()
 
         # Register default actions and TSRs
@@ -270,9 +277,9 @@ class HERBRobot(Robot):
         else:
             from prpy.perception import ApriltagsModule
             try:
-                kinbody_path = prpy.util.FindCatkinResource('pr_ordata',
+                kinbody_path = FindCatkinResource('pr_ordata',
                                                             'data/objects')
-                marker_data_path = prpy.util.FindCatkinResource('pr_ordata',
+                marker_data_path = FindCatkinResource('pr_ordata',
                                                                 'data/objects/tag_data.json')
                 self.detector = ApriltagsModule(marker_topic='/apriltags_kinect2/marker_array',
                                                 marker_data_path=marker_data_path,
@@ -298,7 +305,6 @@ class HERBRobot(Robot):
             self._say_action_client = SimpleActionClient('say', talker.msg.SayAction)
 
     def CloneBindings(self, parent):
-        from prpy import Cloned
         super(HERBRobot, self).CloneBindings(parent)
         self.left_arm = Cloned(parent.left_arm)
         self.right_arm = Cloned(parent.right_arm)
@@ -472,7 +478,6 @@ class HERBRobot(Robot):
     def Say(self, words, block=True):
         """Speak 'words' using talker action service or espeak locally in simulation"""
         if self.talker_simulated:
-            import subprocess
             try:
                 proc = subprocess.Popen(['espeak', '-s', '160', '"{0}"'.format(words)])
                 if block:

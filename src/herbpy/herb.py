@@ -2,11 +2,16 @@ import logging
 import os
 import prpy
 import prpy.dependency_manager
+from prpy.collision import (
+    BakedRobotCollisionCheckerFactory,
+    SimpleRobotCollisionCheckerFactory,
+)
 from openravepy import (
     Environment,
     RaveCreateModule,
     RaveCreateCollisionChecker,
     RaveInitialize,
+    openrave_exception,
 )
 from .herbbase import HerbBase
 from .herbrobot import HERBRobot
@@ -28,7 +33,8 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
     env = Environment()
     if env_path is not None:
         if not env.Load(env_path):
-            raise Exception('Unable to load environment frompath %s' % env_path)
+            raise ValueError(
+                'Unable to load environment from path {:s}'.format(env_path))
 
     # Load the URDF file into OpenRAVE.
     urdf_module = RaveCreateModule(env, 'urdf')
@@ -49,6 +55,31 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
         raise ValueError('Unable to find robot with name "{:s}".'.format(
                          herb_name))
 
+    # Default to FCL.
+    collision_checker = RaveCreateCollisionChecker(env, 'fcl')
+    if collision_checker is not None:
+        env.SetCollisionChecker(collision_checker)
+    else:
+        collision_checker = env.GetCollisionChecker()
+        logger.warning(
+            'Failed creating "fcl", defaulting to the default OpenRAVE'
+            ' collision checker. Did you install or_fcl?')
+
+    # Enable baking if it is supported.
+    try:
+        result = collision_checker.SendCommand('BakeGetType')
+        is_baking_suported = (result is not None)
+    except openrave_exception:
+        is_baking_suported = False
+
+    if is_baking_suported:
+        robot_checker_factory = BakedRobotCollisionCheckerFactory()
+    else:
+        robot_checker_factory = SimpleRobotCollisionCheckerFactory()
+        logger.warning(
+            'Collision checker does not support baking. Defaulting to'
+            ' the slower SimpleRobotCollisionCheckerFactory.')
+
     # Default arguments.
     keys = [ 'left_arm_sim', 'left_hand_sim', 'left_ft_sim',
              'right_arm_sim', 'right_hand_sim', 'right_ft_sim',
@@ -57,7 +88,8 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
         if key not in kw_args:
             kw_args[key] = sim
 
-    prpy.bind_subclass(robot, HERBRobot, **kw_args)
+    prpy.bind_subclass(robot, HERBRobot,
+        robot_checker_factory=robot_checker_factory, **kw_args)
 
     if sim:
         dof_indices, dof_values \
@@ -81,13 +113,6 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
         if env.GetViewer() is None:
             raise Exception('Failed creating viewer of type "{0:s}".'.format(
                             attach_viewer))
-
-    # Default to FCL.
-    collision_checker = RaveCreateCollisionChecker(env, 'fcl')
-    if collision_checker is not None:
-        env.SetCollisionChecker(collision_checker)
-    else:
-        logger.warning('Failed creating "fcl". Did you install or_fcl?')
 
     # Remove the ROS logging handler again. It might have been added when we
     # loaded or_rviz.
