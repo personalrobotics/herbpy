@@ -11,6 +11,7 @@ from openravepy import (
     RaveCreateModule,
     RaveCreateCollisionChecker,
     RaveInitialize,
+    openrave_exception,
 )
 from .herbbase import HerbBase
 from .herbrobot import HERBRobot
@@ -58,12 +59,26 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
     collision_checker = RaveCreateCollisionChecker(env, 'fcl')
     if collision_checker is not None:
         env.SetCollisionChecker(collision_checker)
+    else:
+        collision_checker = env.GetCollisionChecker()
+        logger.warning(
+            'Failed creating "fcl", defaulting to the default OpenRAVE'
+            ' collision checker. Did you install or_fcl?')
+
+    # Enable baking if it is supported.
+    try:
+        result = collision_checker.SendCommand('BakeGetType')
+        is_baking_suported = (result is not None)
+    except openrave_exception:
+        is_baking_suported = False
+
+    if is_baking_suported:
         robot_checker_factory = BakedRobotCollisionCheckerFactory()
     else:
         robot_checker_factory = SimpleRobotCollisionCheckerFactory()
         logger.warning(
-            'Failed creating "fcl", defaulting to the default OpenRAVE'
-            ' collision checker. Did you install or_fcl?')
+            'Collision checker does not support baking. Defaulting to'
+            ' the slower SimpleRobotCollisionCheckerFactory.')
 
     # Default arguments.
     keys = [ 'left_arm_sim', 'left_hand_sim', 'left_ft_sim',
