@@ -3,8 +3,8 @@ import os
 import prpy
 import prpy.dependency_manager
 from prpy.collision import (
-    BakedRobotCollisionChecker,
-    SimpleRobotCollisionChecker,
+    BakedRobotCollisionCheckerFactory,
+    SimpleRobotCollisionCheckerFactory,
 )
 from openravepy import (
     Environment,
@@ -58,10 +58,12 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
     collision_checker = RaveCreateCollisionChecker(env, 'fcl')
     if collision_checker is not None:
         env.SetCollisionChecker(collision_checker)
-        robot_collision_checker = BakedRobotCollisionChecker()
+        robot_checker_factory = BakedRobotCollisionCheckerFactory()
     else:
-        robot_collision_checker = SimpleRobotCollisionChecker()
-        logger.warning('Failed creating "fcl". Did you install or_fcl?')
+        robot_checker_factory = SimpleRobotCollisionCheckerFactory()
+        logger.warning(
+            'Failed creating "fcl", defaulting to the default OpenRAVE'
+            ' collision checker. Did you install or_fcl?')
 
     # Default arguments.
     keys = [ 'left_arm_sim', 'left_hand_sim', 'left_ft_sim',
@@ -72,7 +74,7 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
             kw_args[key] = sim
 
     prpy.bind_subclass(robot, HERBRobot,
-        robot_collision_checker=robot_collision_checker, **kw_args)
+        robot_checker_factory=robot_checker_factory, **kw_args)
 
     if sim:
         dof_indices, dof_values \

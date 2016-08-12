@@ -53,9 +53,9 @@ class HERBRobot(Robot):
     def __init__(self, left_arm_sim, right_arm_sim, right_ft_sim,
                        left_hand_sim, right_hand_sim, left_ft_sim,
                        head_sim, talker_sim, segway_sim, perception_sim,
-                       robot_collision_checker):
+                       robot_checker_factory):
         Robot.__init__(self, robot_name='herb')
-        self.robot_collision_checker = robot_collision_checker
+        self.robot_checker_factory = robot_checker_factory
 
         # Controller setup
         self.controller_manager = None
@@ -83,7 +83,6 @@ class HERBRobot(Robot):
 
             self.controller_manager = ControllerManagerClient()
             self.controllers_always_on.append('joint_state_controller')
-
 
         # Convenience attributes for accessing self components.
         self.left_arm = self.GetManipulator('left')
@@ -190,21 +189,21 @@ class HERBRobot(Robot):
 
         # Special-purpose planners.
         self.snap_planner = SnapPlanner(
-            robot_collision_checker=robot_collision_checker)
+            robot_checker_factory=robot_checker_factory)
         self.vectorfield_planner = VectorFieldPlanner(
-            robot_collision_checker=robot_collision_checker)
-        # TODO: GreedyIKPlanner doesn't support robot_collision_checker.
+            robot_checker_factory=robot_checker_factory)
+        # TODO: GreedyIKPlanner doesn't support robot_checker_factory.
         self.greedyik_planner = GreedyIKPlanner()
 
         # General-purpose planners.
         self.cbirrt_planner = CBiRRTPlanner(
-            robot_collision_checker=robot_collision_checker)
+            robot_checker_factory=robot_checker_factory)
 
         # Trajectory optimizer.
         try:
             from or_trajopt import TrajoptPlanner
             self.trajopt_planner = TrajoptPlanner(
-                robot_collision_checker=robot_collision_checker)
+                robot_checker_factory=robot_checker_factory)
         except ImportError:
             self.trajopt_planner = None
             logger.warning('Failed creating TrajoptPlanner. Is the or_trajopt'
@@ -212,7 +211,7 @@ class HERBRobot(Robot):
 
         try:
             self.chomp_planner = CHOMPPlanner(
-                robot_collision_checker=robot_collision_checker)
+                robot_checker_factory=robot_checker_factory)
         except UnsupportedPlanningError:
             self.chomp_planner = None
             logger.warning('Failed loading the CHOMP module. Is the or_cdchomp'
@@ -233,7 +232,7 @@ class HERBRobot(Robot):
         )
         tsr_planner = TSRPlanner(
             delegate_planner=actual_planner,
-            robot_collision_checker=robot_collision_checker)
+            robot_checker_factory=robot_checker_factory)
         self.planner = FirstSupported(
             Sequence(actual_planner, tsr_planner, self.cbirrt_planner),
             NamedPlanner(delegate_planner=actual_planner),
