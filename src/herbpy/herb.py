@@ -42,7 +42,7 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
     if sim:
         urdf_uri = 'package://herb_description/robots/herb.urdf'
         srdf_uri = 'package://herb_description/robots/herb.srdf'
-        args = 'Load {:s} {:s}'.format(urdf_uri, srdf_uri)
+        args = 'LoadURI {:s} {:s}'.format(urdf_uri, srdf_uri)
         herb_name = urdf_module.SendCommand(args)
     else:
         import rospy
@@ -60,7 +60,7 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
         urdf_json_wrapper = json.dumps(
             {'urdf': urdf_string.replace('\n', ' ').replace('\r', ' '),
              'srdf': srdf_string.replace('\n', ' ').replace('\r', ' ')})
-        args = 'LoadJsonString {}'.format(urdf_json_wrapper)
+        args = 'LoadString {}'.format(urdf_json_wrapper)
         herb_name = urdf_module.SendCommand(args)
 
     if herb_name is None:
