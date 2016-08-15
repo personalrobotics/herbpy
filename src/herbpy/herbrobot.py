@@ -238,9 +238,12 @@ class HERBRobot(Robot):
             NamedPlanner(delegate_planner=actual_planner),
         )
 
-        self.smoother = HauserParabolicSmoother(do_blend=True, do_shortcut=True)
-        self.retimer = HauserParabolicSmoother(do_blend=True, do_shortcut=False,
-            blend_iterations=5, blend_radius=0.4)
+        self.smoother = HauserParabolicSmoother(
+            do_blend=True, blend_iterations=1, blend_radius=0.4,
+            do_shortcut=True, timelimit=0.6)
+        self.retimer = HauserParabolicSmoother(
+            do_blend=True, blend_iterations=1, blend_radius=0.4,
+            do_shortcut=False)
         self.simplifier = None
 
         # Base planning
