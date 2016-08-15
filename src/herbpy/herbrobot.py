@@ -190,7 +190,7 @@ class HERBRobot(Robot):
         rrt_planner = OMPLPlanner('RRTConnect',
             robot_checker_factory=self.robot_checker_factory)
         cbirrt_planner = CBiRRTPlanner(
-            # TODO: Pass timelimit=1. once CBiRRT supports constructor args.
+            timelimit=1.,
             robot_checker_factory=self.robot_checker_factory)
 
         actual_planner = Sequence(
