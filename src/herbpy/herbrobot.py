@@ -20,19 +20,16 @@ from prpy.exceptions import PrPyException, TrajectoryNotExecutable
 from prpy.named_config import ConfigurationLibrary
 from prpy.planning import (
     CBiRRTPlanner,
-    CHOMPPlanner,
     FirstSupported,
-    GreedyIKPlanner,
-    IKPlanner,
-    MethodMask,
     NamedPlanner,
-    Ranked,
     SBPLPlanner,
     Sequence,
     SnapPlanner,
     TSRPlanner,
+    OMPLPlanner,
     VectorFieldPlanner,
 )
+from or_trajopt import TrajoptPlanner
 from prpy.planning.base import UnsupportedPlanningError
 from prpy.planning.retimer import HauserParabolicSmoother
 from prpy.util import FindCatkinResource
@@ -183,61 +180,37 @@ class HERBRobot(Robot):
             else:
                 logger.warning('Unrecognized hand class. Not loading named configurations.')
 
-        # TODO: These should be meta-planners.
-        self.named_planner = NamedPlanner()
-        self.ik_planner = IKPlanner()
-
-        # Special-purpose planners.
-        self.snap_planner = SnapPlanner(
-            robot_checker_factory=robot_checker_factory)
-        self.vectorfield_planner = VectorFieldPlanner(
-            robot_checker_factory=robot_checker_factory)
-        # TODO: GreedyIKPlanner doesn't support robot_checker_factory.
-        self.greedyik_planner = GreedyIKPlanner()
-
-        # General-purpose planners.
-        self.cbirrt_planner = CBiRRTPlanner(
-            robot_checker_factory=robot_checker_factory)
-
-        # Trajectory optimizer.
-        try:
-            from or_trajopt import TrajoptPlanner
-            self.trajopt_planner = TrajoptPlanner(
-                robot_checker_factory=robot_checker_factory)
-        except ImportError:
-            self.trajopt_planner = None
-            logger.warning('Failed creating TrajoptPlanner. Is the or_trajopt'
-                           ' package in your workspace and built?')
-
-        try:
-            self.chomp_planner = CHOMPPlanner(
-                robot_checker_factory=robot_checker_factory)
-        except UnsupportedPlanningError:
-            self.chomp_planner = None
-            logger.warning('Failed loading the CHOMP module. Is the or_cdchomp'
-                           ' package in your workspace and built?')
-
-        if not (self.trajopt_planner or self.chomp_planner):
-            raise PrPyException('Unable to load both CHOMP and TrajOpt. At'
-                                ' least one of these packages is required.')
+        # Planner.
+        snap_planner = SnapPlanner(
+            robot_checker_factory=self.robot_checker_factory)
+        vectorfield_planner = VectorFieldPlanner(
+            robot_checker_factory=self.robot_checker_factory)
+        trajopt_planner = TrajoptPlanner(
+            robot_checker_factory=self.robot_checker_factory)
+        rrt_planner = OMPLPlanner('RRTConnect',
+            robot_checker_factory=self.robot_checker_factory)
+        cbirrt_planner = CBiRRTPlanner(
+            timelimit=1.,
+            robot_checker_factory=self.robot_checker_factory)
 
         actual_planner = Sequence(
-            # First, try the straight-line trajectory.
-            self.snap_planner,
-            # Then, try a few simple (and fast!) heuristics.
-            self.vectorfield_planner,
-            #self.greedyik_planner,
-            # Next, try a trajectory optimizer.
-            self.trajopt_planner or self.chomp_planner
+            snap_planner,
+            vectorfield_planner,
+            trajopt_planner,
+            TSRPlanner(
+                delegate_planner=Sequence(snap_planner, trajopt_planner),
+                robot_checker_factory=self.robot_checker_factory),
+            FirstSupported(
+                rrt_planner,
+                cbirrt_planner),
         )
-        tsr_planner = TSRPlanner(
-            delegate_planner=actual_planner,
-            robot_checker_factory=robot_checker_factory)
+
         self.planner = FirstSupported(
-            Sequence(actual_planner, tsr_planner, self.cbirrt_planner),
+            actual_planner,
             NamedPlanner(delegate_planner=actual_planner),
         )
 
+        # Post-processor.
         self.smoother = HauserParabolicSmoother(
             do_blend=True, blend_iterations=1, blend_radius=0.4,
             do_shortcut=True, timelimit=0.6)
