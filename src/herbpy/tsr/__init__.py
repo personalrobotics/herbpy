@@ -8,3 +8,4 @@ from pop_tarts import *
 from generic import *
 from pill_bottle import *
 from fridge import *
+from box import *

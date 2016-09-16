@@ -122,7 +122,7 @@ def HerbGrasp(robot, obj, push_distance=None, manip=None,
                 with prpy.rave.Disabled(obj):
                     manip.PlanToEndEffectorOffset(direction = push_direction,
                                                   distance = push_distance,
-                                                  execute=True,
+                                                  execute = True,
                                                   **kw_args)
             except PlanningError, e:
                 if push_required:
