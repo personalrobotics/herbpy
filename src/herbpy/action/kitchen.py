@@ -13,12 +13,20 @@ def kitchenFriendlyPlanner(robot):
     @param robot The robot for planning
     """
     from prpy.planning import Sequence, FirstSupported
-    from prpy.planning import NamedPlanner, TSRPlanner
+    from prpy.planning import CBiRRTPlanner, NamedPlanner, SnapPlanner
+    from prpy.planning import TSRPlanner, VectorFieldPlanner
 
-    actual_planner = Sequence(robot.snap_planner, robot.vectorfield_planner)
+    snap_planner = SnapPlanner(
+            robot_checker_factory=robot.robot_checker_factory)
+    vf_planner = VectorFieldPlanner(
+        robot_checker_factory=robot.robot_checker_factory)
+    cbirrt_planner = CBiRRTPlanner(
+        timelimit=1., robot_checker_factory=robot.robot_checker_factory)
+
+    actual_planner = Sequence(snap_planner, vf_planner)
     planner = FirstSupported(Sequence(actual_planner,
                             TSRPlanner(delegate_planner=actual_planner),
-                            robot.cbirrt_planner),
+                            cbirrt_planner),
                             NamedPlanner(delegate_planner=actual_planner))
     return planner
 
@@ -83,12 +91,16 @@ def GraspFridge(robot, fridge):
     manip.SetVelocityLimits(2.0*slow_velocity_limits, min_accel_time=0.2)
     manip.hand.MoveHand(0.65, 0.65, 0.65, 0)
 
-    pose_path = planner.PlanToEndEffectorPose(robot, graspPose)
+    print 'PLANNING TO POSE'
+    #pose_path = planner.PlanToEndEffectorPose(robot, graspPose)
+    pose_path = robot.PlanToEndEffectorPose(graspPose)
     robot.ExecutePath(pose_path)
+
+    #import IPython; IPython.embed()
 
     manip.SetVelocityLimits(slow_velocity_limits, min_accel_time=0.2)
     # Move forward to touch the fridge
-    manip.MoveUntilTouch([1, 0, 0], 0.1, ignore_collisions=[fridge])
+    manip.MoveUntilTouch([1, 0, 0], 0.1, max_distance=1.0, ignore_collisions=[fridge])
 
     with prpy.rave.Disabled(fridge):
         # Move back
@@ -125,36 +137,41 @@ def OpenHandle(robot, fridge, manip=None, minopen=0, maxopen=None, render=True):
         maxopen = minopen
 
     with robot.GetEnv():
-        open_tsr = robot.tsrlibrary(fridge, 'open', manip, maxopen, minopen)
+        open_tsr = robot.tsrlibrary(fridge, 'open', manip, minopen, maxopen)
 
     goal_tsr = open_tsr[0]
     robot_goal = robot.right_arm.FindIKSolution(goal_tsr.sample(), openravepy.IkFilterOptions.CheckEnvCollisions)
 
     #FIXME need to extract proper fridge goal from sample
-    fridge_goal = [0.1]
+    fridge_goal = [0.5]
     robot_goal = numpy.append(robot_goal, fridge_goal)
 
     planner = kitchenFriendlyPlanner(robot)
 
-    p = openravepy.KinBody.SaveParameters
-    with robot.CreateRobotStateSaver(p.ActiveManipulator | p.ActiveDOF):
-        robot.SetActiveManipulator(manip)
-        robot.SetActiveDOFs(manip.GetArmIndices())
-        with prpy.viz.RenderTSRList(open_tsr, robot.GetEnv(), render=render):
-            # Release the fridge only for planning
-            fridge.Enable(False)
-            robot.Release(fridge)
-            # Force to use cbirrt to get fridge plan as well
-            path = robot.cbirrt_planner.PlanToTSR(robot, [open_tsr[1]], jointgoals=[robot_goal])
-            traj = robot.PostProcessPath(path)
-            fridge.Enable(True)
-    robot.ExecuteTrajectory(traj)
+    from prpy.planning import CBiRRTPlanner
+    cbirrt_planner = CBiRRTPlanner(
+        timelimit=1., robot_checker_factory=robot.robot_checker_factory)
 
-    #FIXME doesnt actually move fridge door
-    door_controller = openravepy.RaveCreateController(robot.GetEnv(), 'IdealController')
-    fridge.SetController(door_controller)
-    door_traj = robot.cbirrt_planner.GetLastMimicTraj()
-    fridge.GetController().SetPath(door_traj)
+    p = openravepy.KinBody.SaveParameters
+    with fridge.CreateRobotStateSaver(p.ActiveDOF):
+        fridge.SetActiveDOFs([0])
+        with robot.CreateRobotStateSaver(p.ActiveManipulator | p.ActiveDOF):
+            robot.SetActiveManipulator(manip)
+            robot.SetActiveDOFs(manip.GetArmIndices())
+            with prpy.viz.RenderTSRList(open_tsr, robot.GetEnv(), render=render):
+                # Release the fridge only for planning
+                fridge.Enable(False)
+                robot.Release(fridge)
+                # Force to use cbirrt to get fridge plan as well
+                path = cbirrt_planner.PlanToTSR(robot, [open_tsr[1]],
+                                                jointgoals=[robot_goal], save_mimic_trajectories=True)
+                traj = robot.PostProcessPath(path)
+                fridge.Enable(True)
+        robot.ExecuteTrajectory(traj)
+
+        fpath = cbirrt_planner.GetMimicPath(fridge.GetName(), fridge.GetEnv())
+        if fpath is not None:
+            fridge.SetActiveDOFValues(fpath.GetWaypoint(fpath.GetNumWaypoints()-1))
 
     robot.Grab(fridge)
 

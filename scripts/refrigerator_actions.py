@@ -103,5 +103,10 @@ if __name__ == '__main__':
      
     robot.DriveTo(fridge, planning=False)
     robot.GraspFridge(fridge)
+    #right_config = [ 3.56542649, -0.54266226, -0.64859131,  1.43396008, -0.38364328,
+    #   -1.03981586, -1.20178858]
+    #robot.right_arm.SetDOFValues(right_config)
+    
+    robot.OpenHandle(fridge, maxopen=numpy.pi/4)
     IPython.embed()
     # Then I run: robot.OpenHandle(fridge)
