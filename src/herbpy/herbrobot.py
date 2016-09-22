@@ -341,21 +341,29 @@ class HERBRobot(Robot):
                 logger.warning('The head is currently disabled under ros_control.')
 
         # logic to determine which controllers are needed
+        move_until_touch = False
+        if 'move_until_touch' in kwargs:
+            move_until_touch = kwargs['move_until_touch']
+
         if (self.right_arm in traj_manipulators and
                 not self.right_arm.IsSimulated() and
                 self.left_arm in traj_manipulators and
                 not self.left_arm.IsSimulated()):
+            if move_until_touch:
+                raise RuntimeError('MoveUntilTouch can only be run on single-arm trajectories.')
             controllers_manip.append('bimanual_trajectory_controller')
         else:
             if self.right_arm in traj_manipulators:
                 if not self.right_arm.IsSimulated():
-                    controllers_manip.append('right_trajectory_controller')
+                    if not move_until_touch:
+                        controllers_manip.append('right_trajectory_controller')
                 else:
                     active_controllers.append(self.right_arm.sim_controller)
 
             if self.left_arm in traj_manipulators:
                 if not self.left_arm.IsSimulated():
-                    controllers_manip.append('left_trajectory_controller')
+                    if not move_until_touch:
+                        controllers_manip.append('left_trajectory_controller')
                 else:
                     active_controllers.append(self.left_arm.sim_controller)
 
@@ -380,11 +388,25 @@ class HERBRobot(Robot):
                                                'right_trajectory_controller',
                                                self.right_arm.GetJointNames()))
 
+            if 'right_move_until_touch_controller' in controllers_manip:
+                active_controllers.append(
+                    RewdOrTrajectoryController(
+                        self, '',
+                        'right_move_until_touch_controller',
+                        self.right_arm.GetJointNames()))
+
             if 'left_trajectory_controller' in controllers_manip:
                 active_controllers.append(
                     RewdOrTrajectoryController(self, '',
                                                'left_trajectory_controller',
                                                self.left_arm.GetJointNames()))
+
+            if 'left_move_until_touch_controller' in controllers_manip:
+                active_controllers.append(
+                    RewdOrTrajectoryController(
+                        self, '',
+                        'left_move_until_touch_controller',
+                        self.left_arm.GetJointNames()))
 
         if needs_base:
             if (hasattr(self, 'base') and hasattr(self.base, 'controller') and

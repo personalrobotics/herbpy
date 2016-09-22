@@ -6,7 +6,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # - Redistributions of source code must retain the above copyright notice, this
 #   list of conditions and the following disclaimer.
 # - Redistributions in binary form must reproduce the above copyright notice,
@@ -15,7 +15,7 @@
 # - Neither the name of Carnegie Mellon University nor the names of its
 #   contributors may be used to endorse or promote products derived from this
 #   software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -144,7 +144,7 @@ class WAM(Manipulator):
         original_dofs = self.GetRobot().GetDOFValues(self.GetArmIndices())
         velocity = numpy.array(target - self.GetRobot().GetDOFValues(self.GetArmIndices()))
         velocities = [v/steps for v in velocity]
-        inCollision = False 
+        inCollision = False
         if collisionChecking:
             inCollision = self.CollisionCheck(target)
 
@@ -175,7 +175,7 @@ class WAM(Manipulator):
                 DeprecationWarning)
 
         return Manipulator.GetVelocityLimits(self)
-        
+
     def SetVelocityLimits(self, velocity_limits, min_accel_time,
                           openrave=True, owd=None):
         """Change the OpenRAVE and OWD joint velocity limits.
@@ -201,7 +201,7 @@ class WAM(Manipulator):
         @return status of the current (or previous) trajectory executed
         """
         raise NotImplementedError('GetTrajectoryStatus not supported on manipulator.'
-                                  ' Use returned TrajectoryFuture instead.') 
+                                  ' Use returned TrajectoryFuture instead.')
 
     def ClearTrajectoryStatus(manipulator):
         """Clears the current trajectory execution status.
@@ -209,9 +209,15 @@ class WAM(Manipulator):
         """
         raise NotImplementedError('ClearTrajectoryStatus not supported on manipulator.')
 
-    def MoveUntilTouch(manipulator, direction, distance, max_distance=None,
-                       max_force=5.0, max_torque=None, ignore_collisions=None,
-                       velocity_limit_scale=0.25, **kw_args):
+    def MoveUntilTouch(self,
+                       direction,
+                       distance,
+                       max_distance=1.0,
+                       max_force=5.0,
+                       max_torque=2.75,
+                       ignore_collisions=None,
+                       velocity_limit_scale=0.25,
+                       **kw_args):
         """Execute a straight move-until-touch action.
         This action stops when a sufficient force is is felt or the manipulator
         moves the maximum distance. The motion is considered successful if the
@@ -223,10 +229,10 @@ class WAM(Manipulator):
         @param max_distance maximum distance in meters
         @param max_force maximum force in Newtons
         @param max_torque maximum torque in Newton-Meters
-        @param ignore_collisions collisions with these objects are ignored when 
+        @param ignore_collisions collisions with these objects are ignored when
         planning the path, e.g. the object you think you will touch
-        @param velocity_limit_scale A multiplier to use to scale velocity limits 
-        when executing MoveUntilTouch ( < 1 in most cases).           
+        @param velocity_limit_scale A multiplier to use to scale velocity limits
+        when executing MoveUntilTouch ( < 1 in most cases).
         @param **kw_args planner parameters
         @return felt_force flag indicating whether we felt a force.
         """
@@ -236,54 +242,77 @@ class WAM(Manipulator):
 
         delta_t = 0.01
 
-        robot = manipulator.GetRobot()
+        robot = self.GetRobot()
         env = robot.GetEnv()
-        dof_indices = manipulator.GetArmIndices()
+        dof_indices = self.GetArmIndices()
 
         direction = numpy.array(direction, dtype='float')
-
-        # Default argument values.
-        if max_distance is None:
-            max_distance = 1.
-            warnings.warn(
-                'MoveUntilTouch now requires the "max_distance" argument.'
-                ' This will be an error in the future.',
-                DeprecationWarning)
-
-        if max_torque is None:
-            max_torque = numpy.array([100.0, 100.0, 100.0])
 
         if ignore_collisions is None:
             ignore_collisions = []
 
         with env:
-            # Compute the expected force direction in the hand frame.
-            hand_pose = manipulator.GetEndEffectorTransform()
-            force_direction = numpy.dot(hand_pose[0:3, 0:3].T, -direction)
-
             # Disable the KinBodies listed in ignore_collisions. We backup the
             # "enabled" state of all KinBodies so we can restore them later.
             body_savers = [
                 body.CreateKinBodyStateSaver() for body in ignore_collisions]
             robot_saver = robot.CreateRobotStateSaver(
-                  Robot.SaveParameters.ActiveDOF
-                | Robot.SaveParameters.ActiveManipulator
-                | Robot.SaveParameters.LinkTransformation)
+                Robot.SaveParameters.ActiveDOF |
+                Robot.SaveParameters.ActiveManipulator |
+                Robot.SaveParameters.LinkTransformation)
 
-            with robot_saver, nested(*body_savers) as f:
-                manipulator.SetActive()
+            with robot_saver, nested(*body_savers):
+                self.SetActive()
                 robot_cspec = robot.GetActiveConfigurationSpecification()
 
                 for body in ignore_collisions:
                     body.Enable(False)
 
                 path = robot.PlanToEndEffectorOffset(direction=direction,
-                    distance=distance, max_distance=max_distance, **kw_args)
+                                                     distance=distance,
+                                                     max_distance=max_distance,
+                                                     **kw_args)
 
-        # Execute on the real robot by tagging the trajectory with options that
-        # tell the controller to stop on force/torque input.
-        if not manipulator.simulated:
-            raise NotImplementedError('MoveUntilTouch not yet implemented under ros_control.')
+        # Execute on the real robot by loading the right controller and
+        # setting the appropriate force/torque limits
+        if not self.simulated:
+            from actionlib import SimpleActionClient
+            from pr_control_msgs.msg import (
+                SetForceTorqueThresholdAction as FTThresholdAction,
+                SetForceTorqueThresholdActionGoal as FTThresholdGoal)
+            from rospy import Duration
+
+            # determine controller name from manipulator
+            ns = str.translate(self.namespace, '/')
+            if ns is '':
+                controller_name = 'move_until_touch_controller'
+            else:
+                controller_name = ns + '_move_until_touch_controller'
+
+            # load controller before setting threshold
+            self.controller_manager.request([controller_name]).switch()
+
+            # connect to action server
+            server_name = '/' + controller_name + '/set_forcetorque_threshold',
+            client = SimpleActionClient(server_name, FTThresholdAction)
+            one_second = Duration(1.0)
+            if not client.wait_for_server(one_second):  # TODO timeout?
+                raise RuntimeError('Could not connect to action server \'{}\''
+                                   .format(server_name))
+            # set force/torque threshold
+            goal = FTThresholdGoal()
+            goal.force_threshold = max_force
+            goal.torque_threshold = max_torque
+            client.send_goal(goal)
+            client.wait_for_result(one_second)
+            result = client.get_result()
+            if not result.success:
+                raise RuntimeError('Failed to set force/torque threshold: {}'
+                                   .format(result.message))
+
+            # execute movement
+            robot.ExecutePath(path, move_until_touch=True, **kw_args)
+
         # Forward-simulate the motion until it hits an object.
         else:
             traj = robot.PostProcessPath(path)
@@ -295,14 +324,14 @@ class WAM(Manipulator):
 
             robot_saver = robot.CreateRobotStateSaver(
                 Robot.SaveParameters.LinkTransformation)
-            
+
             with env, robot_saver:
                 for t in numpy.arange(0, traj.GetDuration(), delta_t):
                     waypoint = traj.Sample(t)
 
                     dof_values = robot_cspec.ExtractJointValues(
                         waypoint, robot, dof_indices, 0)
-                    manipulator.SetDOFValues(dof_values)
+                    self.SetDOFValues(dof_values)
 
                     # Terminate if we detect collision with the environment.
                     report = CollisionReport()
@@ -322,7 +351,7 @@ class WAM(Manipulator):
                         traj_cspec.InsertDeltaTime(waypoint, 0.)
                     else:
                         traj_cspec.InsertDeltaTime(waypoint, delta_t)
-                    
+
                     new_traj.Insert(new_traj.GetNumWaypoints(), waypoint)
 
             if new_traj.GetNumWaypoints() > 0:
