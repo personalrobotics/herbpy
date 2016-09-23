@@ -45,7 +45,7 @@ def initialize(robot_xml=None, env_path=None, attach_viewer=False,
 
     urdf_uri = 'package://herb_description/robots/herb.urdf'
     srdf_uri = 'package://herb_description/robots/herb.srdf'
-    args = 'Load {:s} {:s}'.format(urdf_uri, srdf_uri)
+    args = 'LoadURI {:s} {:s}'.format(urdf_uri, srdf_uri)
     herb_name = urdf_module.SendCommand(args)
     if herb_name is None:
         raise ValueError('Failed loading HERB model using or_urdf.')

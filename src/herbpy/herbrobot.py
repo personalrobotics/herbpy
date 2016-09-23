@@ -355,14 +355,28 @@ class HERBRobot(Robot):
         else:
             if self.right_arm in traj_manipulators:
                 if not self.right_arm.IsSimulated():
-                    if not move_until_touch:
+                    if move_until_touch:
+                        # controller alread started, just connect directly
+                        active_controllers.append(
+                            RewdOrTrajectoryController(
+                                self, '',
+                                'right_move_until_touch_controller',
+                                self.right_arm.GetJointNames()))
+                    else:
                         controllers_manip.append('right_trajectory_controller')
                 else:
                     active_controllers.append(self.right_arm.sim_controller)
 
             if self.left_arm in traj_manipulators:
                 if not self.left_arm.IsSimulated():
-                    if not move_until_touch:
+                    if move_until_touch:
+                        # controller alread started, just connect directly
+                        active_controllers.append(
+                            RewdOrTrajectoryController(
+                                self, '',
+                                'left_move_until_touch_controller',
+                                self.left_arm.GetJointNames()))
+                    else:
                         controllers_manip.append('left_trajectory_controller')
                 else:
                     active_controllers.append(self.left_arm.sim_controller)
@@ -388,25 +402,11 @@ class HERBRobot(Robot):
                                                'right_trajectory_controller',
                                                self.right_arm.GetJointNames()))
 
-            if 'right_move_until_touch_controller' in controllers_manip:
-                active_controllers.append(
-                    RewdOrTrajectoryController(
-                        self, '',
-                        'right_move_until_touch_controller',
-                        self.right_arm.GetJointNames()))
-
             if 'left_trajectory_controller' in controllers_manip:
                 active_controllers.append(
                     RewdOrTrajectoryController(self, '',
                                                'left_trajectory_controller',
                                                self.left_arm.GetJointNames()))
-
-            if 'left_move_until_touch_controller' in controllers_manip:
-                active_controllers.append(
-                    RewdOrTrajectoryController(
-                        self, '',
-                        'left_move_until_touch_controller',
-                        self.left_arm.GetJointNames()))
 
         if needs_base:
             if (hasattr(self, 'base') and hasattr(self.base, 'controller') and
@@ -424,8 +424,6 @@ class HERBRobot(Robot):
         return traj
 
     def ExecuteTrajectory(self, traj, *args, **kwargs):
-        # from prpy.exceptions import TrajectoryAborted
-
         value = self._ExecuteTrajectory(traj, *args, **kwargs)
 
         # TODO meaningful to do this check here?

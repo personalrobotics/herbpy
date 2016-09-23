@@ -213,10 +213,11 @@ class WAM(Manipulator):
                        direction,
                        distance,
                        max_distance=1.0,
-                       max_force=5.0,
-                       max_torque=2.75,
+                       max_force=10.0,
+                       max_torque=0.6,
                        ignore_collisions=None,
                        velocity_limit_scale=0.25,
+                       execute=False,
                        **kw_args):
         """Execute a straight move-until-touch action.
         This action stops when a sufficient force is is felt or the manipulator
@@ -276,42 +277,46 @@ class WAM(Manipulator):
         # Execute on the real robot by loading the right controller and
         # setting the appropriate force/torque limits
         if not self.simulated:
-            from actionlib import SimpleActionClient
+            from actionlib import SimpleActionClient, GoalStatus
             from pr_control_msgs.msg import (
                 SetForceTorqueThresholdAction as FTThresholdAction,
-                SetForceTorqueThresholdActionGoal as FTThresholdGoal)
+                SetForceTorqueThresholdGoal as FTThresholdGoal)
             from rospy import Duration
 
             # determine controller name from manipulator
-            ns = str.translate(self.namespace, '/')
+            ns = self.namespace.replace('/', '')
             if ns is '':
                 controller_name = 'move_until_touch_controller'
             else:
                 controller_name = ns + '_move_until_touch_controller'
 
             # load controller before setting threshold
-            self.controller_manager.request([controller_name]).switch()
+            robot.controller_manager.request([controller_name]).switch()
 
             # connect to action server
-            server_name = '/' + controller_name + '/set_forcetorque_threshold',
+            server_name = '/' + controller_name + '/set_forcetorque_threshold'
             client = SimpleActionClient(server_name, FTThresholdAction)
-            one_second = Duration(1.0)
-            if not client.wait_for_server(one_second):  # TODO timeout?
+            if not client.wait_for_server(Duration(1.0)):
                 raise RuntimeError('Could not connect to action server \'{}\''
                                    .format(server_name))
             # set force/torque threshold
             goal = FTThresholdGoal()
             goal.force_threshold = max_force
             goal.torque_threshold = max_torque
-            client.send_goal(goal)
-            client.wait_for_result(one_second)
+            goal_status = client.send_goal_and_wait(goal, Duration(2.0))
+            if goal_status is not GoalStatus.SUCCEEDED:
+                raise RuntimeError('Failed to set force/torque threshold: {}'
+                                   .format(GoalStatus.to_string(goal_status)))
             result = client.get_result()
             if not result.success:
                 raise RuntimeError('Failed to set force/torque threshold: {}'
                                    .format(result.message))
 
             # execute movement
-            robot.ExecutePath(path, move_until_touch=True, **kw_args)
+            kw_args['move_until_touch'] = True
+            traj = robot.ExecutePath(path, execute=execute, **kw_args)
+            self.SetStiffness(True)
+            return traj
 
         # Forward-simulate the motion until it hits an object.
         else:
