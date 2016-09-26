@@ -314,7 +314,11 @@ class WAM(Manipulator):
 
             # execute movement
             kw_args['move_until_touch'] = True
-            traj = robot.ExecutePath(path, execute=execute, **kw_args)
+            with robot.CreateRobotStateSaver(
+                    Robot.SaveParameters.JointMaxVelocityAndAcceleration):
+                vl = robot.GetDOFVelocityLimits()
+                self.SetVelocityLimits(velocity_limit_scale*vl, 0.5)
+                traj = robot.ExecutePath(path, execute=execute, **kw_args)
             self.SetStiffness(True)
             return traj
 
