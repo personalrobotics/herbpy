@@ -19,3 +19,11 @@ script:
 - travis_wait 40 ./scripts/internal-test.sh ${PACKAGE_NAMES}
 after_script:
 - ./scripts/view-all-results.sh test_results
+notifications:
+  email:
+    on_success: never
+    on_failure: change
+  slack:
+    on_success: always
+    on_failure: always
+    secure: HnNh1qnRXclSFxb+Sa5oeC3JL0ro2r4YQDcBfbcVi/vC7eNP/gBurwFl3bfH7FsBWLsgZbjqARD9hLidcIdq8MwrrL1S9DMnkXzLh3pkKhWGdNWBt2Lh3exs3NIcKbNCdEGk9ckkWKRFOb1rLmaogKvU4ecqiB6UER+eSb2K4a3spIdtpBgYqmTVBhCDph3hwZbobcSX3X5XMFNZOCvjw1+QepJ6rBGOJ+sHGs8MSsZdAGK6PPAJhraAE5jIC1W1qus1AX420T5qjdySR33rvR6IxKKSaVbF0al3OUNC2+4nCtrQ96F8x0oweSd16UB3k48KeuvHdzs6zBbf9CEiFC3Lug9xsCjAtE05N+x5KMLM0/k/X+7R0yUX96ROm7xivC5/JuD6BWJtcQ7sdLiNbzj/gy8WGd84Szh2JPZegm5uqmFnQcRfoFDyFWZMkB1t93e28OvMvSjp2wCLlqOJO5Yj48kXrtGsvFf0ZhUe7sjieyPDNGI+DsIWUZrPmzp0w7w05wxkM5Bd1OuPD9irHVgmG2Tg8P/7rZ2Z0VeM9T36eNDUDhjto9aACH/pNc8IyE0aQqV2gftndUg9RzZD1G+IxiekezfmmBSL24mwoPS8jH1F/lWCFj2YhVOrO/wY67k/mLGRUWWCiKnJSFWGorWEsxuHNclRIERXt/j9mEA=
