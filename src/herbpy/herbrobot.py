@@ -311,9 +311,9 @@ class HERBRobot(Robot):
 
         # Check that the current configuration of the robot matches the
         # initial configuration specified by the trajectory.
-        if not prpy.util.IsAtTrajectoryStart(self, traj):
-            raise TrajectoryNotExecutable(
-                'Trajectory started from different configuration than robot.')
+        # if not prpy.util.IsAtTrajectoryStart(self, traj):
+        #     raise TrajectoryNotExecutable(
+        #         'Trajectory started from different configuration than robot.')
 
         # If there was only one waypoint, at this point we are done!
         if traj.GetNumWaypoints() == 1:
