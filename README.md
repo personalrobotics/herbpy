@@ -51,14 +51,14 @@ The robot returned by [herbpy.herb.initialize][herbpy.herb.initialize] is an Ope
 [herbpy.herbrobot.HERBRobot][herbpy.herbrobot.HERBRobot]. This object provides access to all of HERB's
 hardware-specific functionality:
 
-* ``left_arm``, ``right_arm`` : [prpy.base.wam.WAM]() - Barrett WAM arms
-* ``left_hand``, ``right_hand`` : [prpy.base.barretthand.BarrettHand]() - BarrettHand end-effectors
-* ``head`` : [herbpy.herbpantilt.HERBPantilt]() - custom pan-tilt head
-* ``base`` : [herbpy.herbbase.HerbBase]() - Segway RMP mobile base
+* ``robot.left_arm``, ``robot.right_arm`` : [prpy.base.wam.WAM]() - Barrett WAM arms
+* ``robot.left_hand``, ``robot.right_hand`` : [prpy.base.barretthand.BarrettHand]() - BarrettHand end-effectors
+* ``robot.head`` : [herbpy.herbpantilt.HERBPantilt]() - custom pan-tilt head
+* ``robot.base`` : [herbpy.herbbase.HerbBase]() - Segway RMP mobile base
 
 ### Basic Arm Usage ###
 
-We'll default to the right arm (``robot.left_arm``) in these examples, keep in mind you can do the same things for the right arm too (with ``robot.right_arm``).
+We'll default to the right arm (``robot.right_arm.SetActive()``) in these examples, keep in mind you can do the same things for the left arm too (with ``robot.left_arm.SetActive()``).
 
 The arms can be in two modes, stiff and not stiff. When the arms are not stiff, they are in gravity compensation mode and can be moved around. When the arms are stiff, they cannot be moved, but now planning can be performed.
 
@@ -82,7 +82,7 @@ robot.right_arm.GetDOFValues()
 To plan between two configurations of the arm, you can run
 
 ```
-robot.right_arm.PlanToConfiguration(config)
+robot.right_arm.PlanToConfiguration(config, execute=True)
 ```
 
 This will compute a plan and then immediately execute it.
@@ -90,11 +90,11 @@ This will compute a plan and then immediately execute it.
 There are also named configurations corresponding to common arm configurations. The two most used are 'relaxed_home' and 'home'. You can plan to one of these by running
 
 ```
-robot.PlanToNamedConfiguration('relaxed_home')
+robot.PlanToNamedConfiguration('relaxed_home', execute=True)
 ```
 or for a single arm
 ```
-robot.right_arm.PlanToNamedConfiguration('relaxed_home')
+robot.right_arm.PlanToNamedConfiguration('relaxed_home', execute=True)
 ```
 
 If you do not want to immediately execute a trajectory, you can instead do
@@ -104,7 +104,7 @@ traj = robot.right_arm.PlanToConfiguration(config, execute=False)
 robot.ExecuteTrajectory(traj)
 ```
 
-You can also add a timeout parameter (in seconds), like so
+If you do not pass the execute flag, the planner will default to ``execute=False``. You can also add a timeout parameter (in seconds), like so
 
 ```
 robot.right_arm.PlanToConfiguration(config, timeout=30)
@@ -128,19 +128,19 @@ The most common thing you'll want to do with the arms is move them such that the
 pose_in_world = ... # must be a 4x4 homogeneous transformation matrix
 filter_options = openravepy.IkFilterOptions.CheckEnvCollisions #or 0 for no collision checks
 config = robot.right_arm.FindIKSolution(pose_in_world, filter_options) # will return None if no config can be found
-robot.right_arm.PlanToConfiguration(config)
+robot.right_arm.PlanToConfiguration(config, execute=True)
 ```
 
 A shortcut for this is 
 ```
-robot.right_arm.PlanToEndEffectorPose(pose_in_world)
+robot.right_arm.PlanToEndEffectorPose(pose_in_world, execute=True)
 ```
 
 You can also move the end effector in an offset from its current position. The following will move .1 meters in the z+ direction (up).
 ```
 distance = .1
 direction = [0,0,1]
-robot.right_arm.PlanToEndEffectorOffset(direction, distance)
+robot.right_arm.PlanToEndEffectorOffset(direction, distance, execute=True)
 ```
 
 Another method moves the end effector in a direction until a force is felt on the arm.
