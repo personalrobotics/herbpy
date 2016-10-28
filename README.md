@@ -242,6 +242,6 @@ This depends on the `randomized_rearrangement_planning` package, which will be r
 [examples/pushAndGraspCup.py](examples/pushAndGraspCup.py)
 
 
-[herbpy.herb.initialize]: src/herbpy/herb.py#L7
+[herbpy.herb.initialize]: src/herbpy/herb.py#L21
 [console.py]: scripts/console.py
-[herbpy.herbrobot.HERBRobot]: src/herbpy/herbrobot.py#L25
+[herbpy.herbrobot.HERBRobot]: src/herbpy/herbrobot.py#L49
