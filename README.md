@@ -126,7 +126,7 @@ The most common thing you'll want to do with the arms is move them such that the
 
 ```
 pose_in_world = ... # must be a 4x4 homogeneous transformation matrix
-filter_options = openravepy.IkFilterOptions.CheckEnvCollisions #or 0 for no collision checks
+filter_options = openravepy.IkFilterOptions.CheckEnvCollisions # or 0 for no collision checks
 config = robot.right_arm.FindIKSolution(pose_in_world, filter_options) # will return None if no config can be found
 robot.right_arm.PlanToConfiguration(config, execute=True)
 ```
@@ -222,7 +222,7 @@ robot.base.Forward(distanceInMeters)
 
 To rotate 90 degres,
 ```
-robot.base.rotate(pi/2)
+robot.base.Rotate(math.pi/2)
 ```
 
 You can also plan with the base
