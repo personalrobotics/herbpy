@@ -56,4 +56,6 @@
   <test_depend>python-nose</test_depend>
   <test_depend>pr_ordata</test_depend>
   <!--<test_depend>or_pushing</test_depend>--> <!-- in randomized_rearrangement_planning -->
+
+  <doc_depend>doxypy</doc_depend>
 </package>

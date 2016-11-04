@@ -1,6 +1,5 @@
 /**
 \mainpage
-\htmlinclude manifest.html
 
 HerbPy is a Python library for interacting with HERB through OpenRAVE. HERB is
 a bimanual mobile manipulator designed and built by the <a
