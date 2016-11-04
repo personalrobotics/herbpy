@@ -30,7 +30,6 @@
   <exec_depend>python-numpy</exec_depend>
   <exec_depend>python-yaml</exec_depend>
   <exec_depend>or_urdf</exec_depend>
-  <exec_depend>or_cdchomp</exec_depend>
   <exec_depend>or_ompl</exec_depend>
   <exec_depend>or_sbpl</exec_depend>
   <exec_depend>openrave</exec_depend>
@@ -49,7 +48,6 @@
   <test_depend>python-numpy</test_depend>
   <test_depend>python-yaml</test_depend>
   <test_depend>or_urdf</test_depend>
-  <test_depend>or_cdchomp</test_depend>
   <test_depend>or_ompl</test_depend>
   <test_depend>or_sbpl</test_depend>
   <test_depend>openrave</test_depend>
@@ -58,4 +56,6 @@
   <test_depend>python-nose</test_depend>
   <test_depend>pr_ordata</test_depend>
   <!--<test_depend>or_pushing</test_depend>--> <!-- in randomized_rearrangement_planning -->
+
+  <doc_depend>doxypy</doc_depend>
 </package>

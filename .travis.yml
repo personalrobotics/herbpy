@@ -3,19 +3,26 @@ sudo: required
 language: generic
 cache:
 - apt
-# Install test fixture dependencies.
 before_install:
 - mkdir -p "${HOME}/workspace/src"
 - cd "${HOME}/workspace"
 - curl -sSo distribution.yml "${DISTRIBUTION}"
 - git clone https://github.com/personalrobotics/pr-cleanroom.git scripts
-- ./scripts/internal-setup.sh
+- "./scripts/internal-setup.sh"
 - export PACKAGE_NAMES="$(./scripts/internal-get-packages.py distribution.yml ${REPOSITORY})"
 install:
 - mv "${TRAVIS_BUILD_DIR}" src
 - ./scripts/internal-distro.py --workspace=src distribution.yml --repository "${REPOSITORY}"
 script:
-- ./scripts/internal-build.sh ${PACKAGE_NAMES}
+- "./scripts/internal-build.sh ${PACKAGE_NAMES}"
 - travis_wait 40 ./scripts/internal-test.sh ${PACKAGE_NAMES}
 after_script:
-- ./scripts/view-all-results.sh test_results
+- "./scripts/view-all-results.sh test_results"
+notifications:
+  email:
+    on_success: never
+    on_failure: change
+  slack:
+    on_success: always
+    on_failure: always
+    secure: hJxBjqF/7HjRcOn5fu7wHiD+xFfGps3i8VfOBvHyJlO3kw4hjy5PDY5fpv3erZgs962YYhrLK4ezfJba8uFsqC6zxh0OtZkS1MLgBUVWqgfNNnHe9pm/q/v6F/Nv/F5hSdiidUb4ux1CPWmcVSGw27MyIF03apcuMRToS52l+qk=
