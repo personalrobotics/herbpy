@@ -1,7 +1,7 @@
 import numpy, openravepy
 import prpy.tsr
-from prpy.tsr.tsrlibrary import TSRFactory
-from prpy.tsr.tsr import TSR, TSRChain
+from tsr.tsrlibrary import TSRFactory
+from tsr.tsr import TSR, TSRChain
       
 @TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'push_grasp')
 def pitcher_grasp(robot, pitcher, push_distance=0.1, manip=None, **kw_args):

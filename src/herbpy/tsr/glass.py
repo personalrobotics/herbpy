@@ -1,6 +1,6 @@
 import numpy
-from prpy.tsr.tsrlibrary import TSRFactory
-from prpy.tsr.tsr import TSR, TSRChain
+from tsr.tsrlibrary import TSRFactory
+from tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'plastic_glass', 'grasp')
 def glass_grasp(robot, glass, manip=None, yaw_range=None, **kw_args):

@@ -1,6 +1,6 @@
 import numpy
-from prpy.tsr.tsrlibrary import TSRFactory
-from prpy.tsr.tsr import TSR, TSRChain
+from tsr.tsrlibrary import TSRFactory
+from tsr.tsr import TSR, TSRChain
 from prpy.util import GetManipulatorIndex
 
 @TSRFactory('herb', None, 'point')

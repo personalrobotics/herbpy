@@ -1,5 +1,5 @@
 import numpy
-import prpy.tsr
+import tsr
 
 @prpy.tsr.tsrlibrary.TSRFactory('herb', 'box', 'stamp')
 def box_stamp(robot, box, manip=None):

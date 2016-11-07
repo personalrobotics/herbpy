@@ -1,6 +1,6 @@
 import numpy
-from prpy.tsr.tsrlibrary import TSRFactory
-from prpy.tsr.tsr import TSR, TSRChain
+from tsr.tsrlibrary import TSRFactory
+from tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'fuze_bottle', 'grasp')
 def fuze_grasp(robot, fuze, manip=None, **kw_args):

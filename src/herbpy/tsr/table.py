@@ -1,6 +1,6 @@
 import numpy
-from prpy.tsr.tsrlibrary import TSRFactory
-from prpy.tsr.tsr import TSR, TSRChain
+from tsr.tsrlibrary import TSRFactory
+from tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'table', 'point_on')
 def point_on(robot, table, manip=None, padding=0, **kwargs):

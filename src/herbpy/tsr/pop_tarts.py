@@ -1,6 +1,6 @@
 import numpy
-from prpy.tsr.tsrlibrary import TSRFactory
-from prpy.tsr.tsr import TSR, TSRChain
+from tsr.tsrlibrary import TSRFactory
+from tsr.tsr import TSR, TSRChain
 
 @TSRFactory('herb', 'pop_tarts', 'grasp')
 def poptarts_grasp(robot, pop_tarts, manip=None, **kw_args):

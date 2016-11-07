@@ -32,6 +32,7 @@
   <exec_depend>or_urdf</exec_depend>
   <exec_depend>or_ompl</exec_depend>
   <exec_depend>or_sbpl</exec_depend>
+  <exec_depend>tsr</exec_depend>
   <exec_depend>openrave</exec_depend>
   <exec_depend>python-yaml</exec_depend>
 
@@ -50,6 +51,7 @@
   <test_depend>or_urdf</test_depend>
   <test_depend>or_ompl</test_depend>
   <test_depend>or_sbpl</test_depend>
+  <test_depend>tsr</test_depend>
   <test_depend>openrave</test_depend>
   <test_depend>python-yaml</test_depend>
 
