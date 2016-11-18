@@ -91,7 +91,6 @@ def GraspFridge(robot, fridge):
     manip.SetVelocityLimits(2.0*slow_velocity_limits, min_accel_time=0.2)
     manip.hand.MoveHand(0.65, 0.65, 0.65, 0)
 
-    print 'PLANNING TO POSE'
     #pose_path = planner.PlanToEndEffectorPose(robot, graspPose)
     pose_path = robot.PlanToEndEffectorPose(graspPose)
     robot.ExecutePath(pose_path)
@@ -142,7 +141,7 @@ def OpenHandle(robot, fridge, manip=None, minopen=0, maxopen=None, render=True):
     goal_tsr = open_tsr[0]
     robot_goal = robot.right_arm.FindIKSolution(goal_tsr.sample(), openravepy.IkFilterOptions.CheckEnvCollisions)
 
-    #FIXME need to extract proper fridge goal from sample
+    # Shoud extract proper fridge goal from sample
     fridge_goal = [0.5]
     robot_goal = numpy.append(robot_goal, fridge_goal)
 
@@ -164,10 +163,10 @@ def OpenHandle(robot, fridge, manip=None, minopen=0, maxopen=None, render=True):
                 robot.Release(fridge)
                 # Force to use cbirrt to get fridge plan as well
                 path = cbirrt_planner.PlanToTSR(robot, [open_tsr[1]],
-                                                jointgoals=[robot_goal], save_mimic_trajectories=True)
-                traj = robot.PostProcessPath(path)
+                                                jointgoals=[robot_goal], save_mimic_trajectories=True, execute=True)
+                #traj = robot.PostProcessPath(path)
                 fridge.Enable(True)
-        robot.ExecuteTrajectory(traj)
+        #robot.ExecuteTrajectory(traj)
 
         fpath = cbirrt_planner.GetMimicPath(fridge.GetName(), fridge.GetEnv())
         if fpath is not None:
