@@ -13,3 +13,8 @@ configurations:
         hand: [0.684, 0.684, 0.684, 0.0]
     plate_grasp:
         hand: [0.976, 0.976, 0.976, 0.0]
+    block_grasp_preshape:
+        hand: [1.7, 1.7, 0.2, 2.45]
+    block_grasp:
+        hand: [1.7, 1.7, 1.7, 2.45]
+    
