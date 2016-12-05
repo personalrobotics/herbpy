@@ -40,7 +40,7 @@ def block_grasp(robot, block, manip=None, **kw_args):
                               TSRs = [pose_tsr])
     return [pose_tsr_chain]
             
-@TSRFactory('herb', 'block', 'place')
+@TSRFactory('herb', 'block', 'place_at')
 def block_at_pose(robot, block, position, manip=None):
     '''
     Generates end-effector poses for placing the block on another object
@@ -82,7 +82,7 @@ def block_at_pose(robot, block, position, manip=None):
                                TSRs = [place_tsr, ee_tsr])
     return [place_tsr_chain]
 
-@TSRFactory('herb', 'block', 'place_on')        
+@TSRFactory('herb', 'block', 'place')        
 def block_on_surface(robot, block, pose_tsr_chain, manip=None):
     '''
     Generates end-effector poses for placing the block on a surface.
