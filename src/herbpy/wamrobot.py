@@ -33,6 +33,7 @@ import prpy.rave
 from prpy import exceptions, util
 from prpy.robot import Robot
 
+
 class WAMRobot(Robot):
     def __init__(self, robot_name=None):
         Robot.__init__(self, robot_name=robot_name)

@@ -28,16 +28,14 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import numpy, openravepy, time
+import numpy, openravepy
 from prpy import util
 from prpy.base.endeffector import EndEffector
-from prpy.controllers import (
-    PositionCommandController, TriggerController)
+from prpy.controllers import (PositionCommandController, TriggerController)
 from geometry_msgs.msg import WrenchStamped
 
 
 class BarrettHand(EndEffector):
-
     def __init__(self, sim, manipulator, bhd_namespace, ft_sim=True):
         """End-effector wrapper for the BarrettHand.
         This class wraps a BarrettHand end-effector that is controlled by BHD
@@ -47,7 +45,8 @@ class BarrettHand(EndEffector):
         reading breakaway status) are not supported on the BH-262.
         @param sim whether the hand is simulated
         @param manipulator manipulator the hand is attached to
-        @param bhd_namespace ROS namespace that the BarrettHand driver is running in
+        @param bhd_namespace ROS namespace that the BarrettHand driver is
+                             running in
         @param ft_sim whether the force/torque sensor is simulated
         """
         EndEffector.__init__(self, manipulator)
@@ -67,25 +66,24 @@ class BarrettHand(EndEffector):
         manipulator.SetChuckingDirection(closing_direction)
 
         robot = self.manipulator.GetRobot()
-        env = robot.GetEnv()
 
         # Controller setup
         self.bhd_namespace = bhd_namespace
         self.hand_side = bhd_namespace[1:]  # TODO hand name hack
         if not sim:
-            self.controller = PositionCommandController('', self.hand_side +
-                                                        '_hand_controller')
+            self.controller = PositionCommandController(
+                '', self.hand_side + '_hand_controller')
         else:
-            self.controller = robot.AttachController(name=self.GetName(),
-                                                     args='IdealController',
-                                                     dof_indices=self.GetIndices(),
-                                                     affine_dofs=0,
-                                                     simulated=sim)
+            self.controller = robot.AttachController(
+                name=self.GetName(),
+                args='IdealController',
+                dof_indices=self.GetIndices(),
+                affine_dofs=0,
+                simulated=sim)
 
         self.ft_simulated = ft_sim
-        self.ft_tare_controller = TriggerController('', self.hand_side +
-                                                    '_tare_controller',
-                                                    ft_sim)
+        self.ft_tare_controller = TriggerController(
+            '', self.hand_side + '_tare_controller', ft_sim)
 
         # TODO tactile sensors
 
@@ -100,8 +98,8 @@ class BarrettHand(EndEffector):
         These are returned in the order: [ finger 0, finger 1, and finger 2 ].
         @return DOF indices of the fingers
         """
-        names = [ 'j01', 'j11', 'j21' ]
-        return [ self._GetJointFromName(name).GetDOFIndex() for name in names ]
+        names = ['j01', 'j11', 'j21']
+        return [self._GetJointFromName(name).GetDOFIndex() for name in names]
 
     def GetIndices(self):
         """ Gets the DOF indices of this hand.
@@ -126,7 +124,7 @@ class BarrettHand(EndEffector):
         @param timeout blocking execution timeout, in seconds
         """
         curr_pos = self.GetDOFValues()
-        preshape = [None]*4
+        preshape = [None] * 4
         # Set control command and
         # default any None's to the current DOF values.
         preshape[0] = f1 if f1 is not None else curr_pos[0]
@@ -135,7 +133,7 @@ class BarrettHand(EndEffector):
         preshape[3] = spread if spread is not None else curr_pos[3]
 
         self.controller.SetDesired(preshape)
-        util.WaitForControllers([ self.controller ], timeout=timeout)
+        util.WaitForControllers([self.controller], timeout=timeout)
 
     def OpenHand(hand, spread=None, timeout=None):
         """Open the hand with a fixed spread.
@@ -151,13 +149,15 @@ class BarrettHand(EndEffector):
             robot = hand.manipulator.GetRobot()
             p = openravepy.KinBody.SaveParameters
 
-            with robot.CreateRobotStateSaver(p.ActiveDOF | p.ActiveManipulator):
+            with robot.CreateRobotStateSaver(p.ActiveDOF |
+                                             p.ActiveManipulator):
                 hand.manipulator.SetActive()
                 robot.task_manipulation.ReleaseFingers()
 
-            util.WaitForControllers([ hand.controller ], timeout=timeout)
+            util.WaitForControllers([hand.controller], timeout=timeout)
         else:
-            hand.MoveHand(f1=0.0, f2=0.0, f3=0.0, spread=spread, timeout=timeout)
+            hand.MoveHand(
+                f1=0.0, f2=0.0, f3=0.0, spread=spread, timeout=timeout)
 
     def CloseHand(hand, spread=None, timeout=None):
         """Close the hand with a fixed spread.
@@ -173,13 +173,15 @@ class BarrettHand(EndEffector):
             robot = hand.manipulator.GetRobot()
             p = openravepy.KinBody.SaveParameters
 
-            with robot.CreateRobotStateSaver(p.ActiveDOF | p.ActiveManipulator):
+            with robot.CreateRobotStateSaver(p.ActiveDOF |
+                                             p.ActiveManipulator):
                 hand.manipulator.SetActive()
                 robot.task_manipulation.CloseFingers()
 
-            util.WaitForControllers([ hand.controller ], timeout=timeout)
+            util.WaitForControllers([hand.controller], timeout=timeout)
         else:
-            hand.MoveHand(f1=3.2, f2=3.2, f3=3.2, spread=spread, timeout=timeout)
+            hand.MoveHand(
+                f1=3.2, f2=3.2, f3=3.2, spread=spread, timeout=timeout)
 
     def ResetHand(hand):
         """Reset the hand.
@@ -188,7 +190,8 @@ class BarrettHand(EndEffector):
         clear the fingers' breakaway state. This function blocks until the
         reset is complete.
         """
-        raise NotImplementedError('ResetHand not yet implemented under ros_control.')
+        raise NotImplementedError(
+            'ResetHand not yet implemented under ros_control.')
 
     def GetState(hand):
         """Gets the current state of the hand
@@ -198,7 +201,8 @@ class BarrettHand(EndEffector):
         else:
             # TODO: We're missing documentation here. What is the "current
             # state" of the hand? How do we interpret the return value?
-            raise NotImplementedError("Hand.GetState() not yet implemented under ros_control.")
+            raise NotImplementedError(
+                "Hand.GetState() not yet implemented under ros_control.")
 
     def GetStrain(hand):
         """ Gets the most recent strain sensor readings.
@@ -207,7 +211,8 @@ class BarrettHand(EndEffector):
         if not hand.simulated:
             # This is because we are overriding the force/torque sensor datatype
             # sensor_data = hand.handstate_sensor.GetSensorData()
-            raise NotImplementedError("Strain gauge not yet implemented in Python under ros_control")
+            raise NotImplementedError(
+                "Strain gauge not yet implemented in Python under ros_control")
         else:
             return numpy.zeros(3)
 
@@ -216,10 +221,12 @@ class BarrettHand(EndEffector):
         @return a list of breakaway flags for each finger
         """
         if not hand.simulated:
-            # This is because we are overriding the force/torque sensor datatype.
-            raise NotImplementedError('GetBreakaway not yet implemented under ros_control.')
+            # This is because we are overriding the force/torque sensor
+            # datatype.
+            raise NotImplementedError(
+                'GetBreakaway not yet implemented under ros_control.')
         else:
-            return [ False, False, False ]
+            return [False, False, False]
 
     def GetForceTorque(hand):
         """ Gets the most recent force/torque sensor reading in the hand frame.
@@ -230,9 +237,8 @@ class BarrettHand(EndEffector):
         """
         if not hand.ft_simulated:
             import rospy
-            sensor_data = rospy.wait_for_message(hand.bhd_namespace +
-                                                 '/ft_wrench',
-                                                 WrenchStamped)
+            sensor_data = rospy.wait_for_message(
+                hand.bhd_namespace + '/ft_wrench', WrenchStamped)
             return sensor_data.wrench.force, sensor_data.wrench.torque
         else:
             return numpy.zeros(3), numpy.zeros(3)

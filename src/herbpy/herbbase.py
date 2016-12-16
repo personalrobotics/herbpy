@@ -30,18 +30,21 @@
 
 from prpy.base import MobileBase
 import prpy
-import numpy, logging, openravepy
+import numpy, logging, openravepy, time, numpy
 logger = logging.getLogger('herbpy')
+
 
 class HerbBase(MobileBase):
     def __init__(self, sim, robot):
         MobileBase.__init__(self, sim=sim, robot=robot)
-        self.controller = robot.AttachController(name=robot.GetName(),
-#                                                 args='SegwayController {0:s}'.format('herbpy'),
-                                                 args='NavigationController {0:s} {1:s}'.format('herbpy', '/navcontroller'),
-                                                 dof_indices=[],
-                                                 affine_dofs=openravepy.DOFAffine.Transform,
-                                                 simulated=sim)
+        self.controller = robot.AttachController(
+            name=robot.GetName(),
+            #                                                 args='SegwayController {0:s}'.format('herbpy'),
+            args='NavigationController {0:s} {1:s}'.format('herbpy',
+                                                           '/navcontroller'),
+            dof_indices=[],
+            affine_dofs=openravepy.DOFAffine.Transform,
+            simulated=sim)
 
     def CloneBindings(self, parent):
         MobileBase.CloneBindings(self, parent)
@@ -53,11 +56,13 @@ class HerbBase(MobileBase):
         @return base trajectory
         """
         if self.simulated or not execute:
-            return MobileBase.Forward(self, meters, execute=execute, timeout=timeout,  **kwargs)
+            return MobileBase.Forward(
+                self, meters, execute=execute, timeout=timeout, **kwargs)
         else:
             with prpy.util.Timer("Drive segway"):
                 self.controller.SendCommand("Drive " + str(meters))
-                is_done = prpy.util.WaitForControllers([ self.controller ], timeout=timeout)
+                is_done = prpy.util.WaitForControllers(
+                    [self.controller], timeout=timeout)
 
     def Rotate(self, angle_rad, execute=True, timeout=None, **kwargs):
         """Rotate in place by a desired angle
@@ -66,15 +71,23 @@ class HerbBase(MobileBase):
         @return base trajectory
         """
         if self.simulated or not execute:
-            return MobileBase.Rotate(self, angle_rad, execute=execute, timeout=timeout, **kwargs)
+            return MobileBase.Rotate(
+                self, angle_rad, execute=execute, timeout=timeout, **kwargs)
         else:
             with prpy.util.Timer("Rotate segway"):
                 self.controller.SendCommand("Rotate " + str(angle_rad))
-                running_controllers = [ self.controller ]
-                is_done = prpy.util.WaitForControllers(running_controllers, timeout=timeout)
+                running_controllers = [self.controller]
+                is_done = prpy.util.WaitForControllers(
+                    running_controllers, timeout=timeout)
 
-    def DriveStraightUntilForce(self, direction, velocity=0.1, force_threshold=3.0,
-                                max_distance=None, timeout=None, left_arm=True, right_arm=True):
+    def DriveStraightUntilForce(self,
+                                direction,
+                                velocity=0.1,
+                                force_threshold=3.0,
+                                max_distance=None,
+                                timeout=None,
+                                left_arm=True,
+                                right_arm=True):
         """
         Drive the base in a direction until a force/torque sensor feels a force. The
         base first turns to face the desired direction, then drives forward at the
@@ -91,15 +104,19 @@ class HerbBase(MobileBase):
         @return flag indicating whether the action felt a force
         """
         if self.simulated:
-            raise NotImplementedError('DriveStraightUntilForce does not work in simulation.')
+            raise NotImplementedError(
+                'DriveStraightUntilForce does not work in simulation.')
         else:
-            if (self.robot.left_ft_sim and left_arm) or (self.robot.right_ft_sim and right_arm):
-                raise Exception('DriveStraightUntilForce does not work with simulated force/torque sensors.')
+            if (self.robot.left_ft_sim and left_arm) or (
+                    self.robot.right_ft_sim and right_arm):
+                raise Exception(
+                    'DriveStraightUntilForce does not work with simulated force/torque sensors.'
+                )
 
             with prpy.util.Timer("Drive segway until force"):
                 env = self.robot.GetEnv()
                 direction = numpy.array(direction, dtype='float')
-                direction /= numpy.linalg.norm(direction) 
+                direction /= numpy.linalg.norm(direction)
                 manipulators = list()
                 if left_arm:
                     manipulators.append(self.robot.left_arm)
@@ -107,7 +124,9 @@ class HerbBase(MobileBase):
                     manipulators.append(self.robot.right_arm)
 
                 if not manipulators:
-                    logger.warning('Executing DriveStraightUntilForce with no force/torque sensor for feedback.')
+                    logger.warning(
+                        'Executing DriveStraightUntilForce with no force/torque sensor for feedback.'
+                    )
 
                 # Rotate to face the right direction.
                 with env:
@@ -116,28 +135,28 @@ class HerbBase(MobileBase):
                 desired_angle = numpy.arctan2(direction[1], direction[0])
                 self.Rotate(desired_angle - robot_angle)
 
-
                 # Soft-tare the force/torque sensors. Tare is too slow.
                 initial_force = dict()
                 for manipulator in manipulators:
-                    force, torque = manipulator.hand.GetForceTorque()
+                    force, _ = manipulator.hand.GetForceTorque()
                     initial_force[manipulator] = force
-                
-                try:
-                    felt_force = False
+
+                try: 
                     start_time = time.time()
                     start_pos = robot_pose[0:3, 3]
                     while True:
                         # Check if we felt a force on any of the force/torque sensors.
                         for manipulator in manipulators:
                             force, torque = manipulator.hand.GetForceTorque()
-                            if numpy.linalg.norm(initial_force[manipulator] - force) > force_threshold:
+                            if numpy.linalg.norm(initial_force[manipulator] -
+                                                 force) > force_threshold:
                                 return True
 
                         # Check if we've exceeded the maximum distance.
                         with env:
                             current_pos = self.robot.GetTransform()[0:3, 3]
-                        distance = numpy.dot(current_pos - start_pos, direction)
+                        distance = numpy.dot(current_pos - start_pos,
+                                             direction)
                         if max_distance is not None and distance >= max_distance:
                             return False
 
@@ -147,7 +166,8 @@ class HerbBase(MobileBase):
                             return False
 
                         # Continuously stream forward velocities.
-                        self.controller.SendCommand('DriveInstantaneous {0:f} 0 0'.format(velocity))
+                        self.controller.SendCommand(
+                            'DriveInstantaneous {0:f} 0 0'.format(velocity))
                 finally:
                     # Stop the Segway before returning.
                     self.controller.SendCommand('DriveInstantaneous 0 0 0')
@@ -158,10 +178,11 @@ class HerbBase(MobileBase):
         @param direction A 2 or 3-element direction vector
         @param goal_pos A 2 or 3-element position vector (world frame)
         """
-        import numpy
-        direction = numpy.array(direction[:2]) / numpy.linalg.norm(direction[:2])
+        direction = numpy.array(direction[:2]) / numpy.linalg.norm(
+            direction[:2])
         robot_pose = self.robot.GetTransform()
-        distance = numpy.dot(numpy.array(goal_pos[:2]) - robot_pose[:2, 3], direction)
+        distance = numpy.dot(
+            numpy.array(goal_pos[:2]) - robot_pose[:2, 3], direction)
         cur_angle = numpy.arctan2(robot_pose[1, 0], robot_pose[0, 0])
         des_angle = numpy.arctan2(direction[1], direction[0])
         self.Rotate(des_angle - cur_angle)

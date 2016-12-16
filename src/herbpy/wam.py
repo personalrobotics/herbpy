@@ -6,7 +6,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # - Redistributions of source code must retain the above copyright notice, this
 #   list of conditions and the following disclaimer.
 # - Redistributions in binary form must reproduce the above copyright notice,
@@ -40,8 +40,11 @@ from prpy.clone import Clone
 
 logger = logging.getLogger('wam')
 
+
 class WAM(Manipulator):
-    def __init__(self, sim, namespace='',
+    def __init__(self,
+                 sim,
+                 namespace='',
                  iktype=openravepy.IkParameterization.Type.Transform6D):
         Manipulator.__init__(self)
 
@@ -61,8 +64,10 @@ class WAM(Manipulator):
         return self.simulated
 
     def GetJointNames(self):
-        return [self.namespace + '/' + j for j in
-                ['j1', 'j2', 'j3', 'j4', 'j5', 'j6', 'j7']]
+        return [
+            self.namespace + '/' + j
+            for j in ['j1', 'j2', 'j3', 'j4', 'j5', 'j6', 'j7']
+        ]
 
     def CloneBindings(self, parent):
         Manipulator.CloneBindings(self, parent)
@@ -77,11 +82,11 @@ class WAM(Manipulator):
         from openravepy.databases.inversekinematics import InverseKinematicsModel
 
         robot = self.GetRobot()
-        self.ikmodel = InverseKinematicsModel(robot=robot, manip=self,
-                                              iktype=iktype)
+        self.ikmodel = InverseKinematicsModel(
+            robot=robot, manip=self, iktype=iktype)
         if not self.ikmodel.load():
-            self.ikmodel.generate(iktype=iktype, precision=4,
-                                  freeindices=[ self.GetIndices()[2] ])
+            self.ikmodel.generate(
+                iktype=iktype, precision=4, freeindices=[self.GetIndices()[2]])
             self.ikmodel.save()
 
     def SetStiffness(self, stiffness):
@@ -92,10 +97,13 @@ class WAM(Manipulator):
         """
         self.GetRobot().SetStiffness(stiffness, manip=self)
 
-
-    def SetTrajectoryExecutionOptions(self, traj, stop_on_stall=False,
-            stop_on_ft=False, force_magnitude=None, force_direction=None,
-            torque=None):
+    def SetTrajectoryExecutionOptions(self,
+                                      traj,
+                                      stop_on_stall=False,
+                                      stop_on_ft=False,
+                                      force_magnitude=None,
+                                      force_direction=None,
+                                      torque=None):
         """Set OWD's trajectory execution options on trajectory.
         @param stop_on_stall aborts the trajectory if the arm stalls
         @param stop_on_ft aborts the trajectory if the force/torque
@@ -108,7 +116,8 @@ class WAM(Manipulator):
                                hand frame.
         @param torque vector of the three torques
         """
-        raise NotImplementedError('OWD execution options not supported under ros_control')
+        raise NotImplementedError(
+            'OWD execution options not supported under ros_control')
 
     def Servo(self, velocities):
         """Servo with a vector of instantaneous joint velocities.
@@ -118,7 +127,7 @@ class WAM(Manipulator):
         if len(velocities) != num_dof:
             raise ValueError('Incorrect number of joint velocities. '
                              'Expected {0:d}; got {0:d}.'.format(
-                             num_dof, len(velocities)))
+                                 num_dof, len(velocities)))
 
         if not self.simulated:
             raise NotImplementedError('Servoing and velocity control not yet'
@@ -140,16 +149,17 @@ class WAM(Manipulator):
         @param collisionchecking check collisions in the simulation environment
         @return whether the servo was successful
         """
-        steps = int(math.ceil(duration/timeStep))
+        steps = int(math.ceil(duration / timeStep))
         original_dofs = self.GetRobot().GetDOFValues(self.GetArmIndices())
-        velocity = numpy.array(target - self.GetRobot().GetDOFValues(self.GetArmIndices()))
-        velocities = [v/steps for v in velocity]
-        inCollision = False 
+        velocity = numpy.array(target - self.GetRobot().GetDOFValues(
+            self.GetArmIndices()))
+        velocities = [v / steps for v in velocity]
+        inCollision = False
         if collisionChecking:
             inCollision = self.CollisionCheck(target)
 
         if not inCollision:
-            for i in range(1,steps):
+            for i in range(1, steps):
                 import time
                 self.Servo(velocities)
                 time.sleep(timeStep)
@@ -175,9 +185,12 @@ class WAM(Manipulator):
                 DeprecationWarning)
 
         return Manipulator.GetVelocityLimits(self)
-        
-    def SetVelocityLimits(self, velocity_limits, min_accel_time,
-                          openrave=True, owd=None):
+
+    def SetVelocityLimits(self,
+                          velocity_limits,
+                          min_accel_time,
+                          openrave=True,
+                          owd=None):
         """Change the OpenRAVE and OWD joint velocity limits.
         Joint velocities that exceed these limits will trigger a velocity fault.
         @param velocity_limits vector of joint velocity limits in radians per second
@@ -194,24 +207,33 @@ class WAM(Manipulator):
 
         # Update the OpenRAVE limits.
         if openrave:
-            Manipulator.SetVelocityLimits(self, velocity_limits, min_accel_time)
+            Manipulator.SetVelocityLimits(self, velocity_limits,
+                                          min_accel_time)
 
     def GetTrajectoryStatus(manipulator):
         """Gets the status of the current (or previous) trajectory executed by OWD.
         @return status of the current (or previous) trajectory executed
         """
-        raise NotImplementedError('GetTrajectoryStatus not supported on manipulator.'
-                                  ' Use returned TrajectoryFuture instead.') 
+        raise NotImplementedError(
+            'GetTrajectoryStatus not supported on manipulator.'
+            ' Use returned TrajectoryFuture instead.')
 
     def ClearTrajectoryStatus(manipulator):
         """Clears the current trajectory execution status.
         This resets the output of \ref GetTrajectoryStatus.
         """
-        raise NotImplementedError('ClearTrajectoryStatus not supported on manipulator.')
+        raise NotImplementedError(
+            'ClearTrajectoryStatus not supported on manipulator.')
 
-    def MoveUntilTouch(manipulator, direction, distance, max_distance=None,
-                       max_force=5.0, max_torque=None, ignore_collisions=None,
-                       velocity_limit_scale=0.25, **kw_args):
+    def MoveUntilTouch(manipulator,
+                       direction,
+                       distance,
+                       max_distance=None,
+                       max_force=5.0,
+                       max_torque=None,
+                       ignore_collisions=None,
+                       velocity_limit_scale=0.25,
+                       **kw_args):
         """Execute a straight move-until-touch action.
         This action stops when a sufficient force is is felt or the manipulator
         moves the maximum distance. The motion is considered successful if the
@@ -247,8 +269,7 @@ class WAM(Manipulator):
             max_distance = 1.
             warnings.warn(
                 'MoveUntilTouch now requires the "max_distance" argument.'
-                ' This will be an error in the future.',
-                DeprecationWarning)
+                ' This will be an error in the future.', DeprecationWarning)
 
         if max_torque is None:
             max_torque = numpy.array([100.0, 100.0, 100.0])
@@ -264,11 +285,11 @@ class WAM(Manipulator):
             # Disable the KinBodies listed in ignore_collisions. We backup the
             # "enabled" state of all KinBodies so we can restore them later.
             body_savers = [
-                body.CreateKinBodyStateSaver() for body in ignore_collisions]
+                body.CreateKinBodyStateSaver() for body in ignore_collisions
+            ]
             robot_saver = robot.CreateRobotStateSaver(
-                  Robot.SaveParameters.ActiveDOF
-                | Robot.SaveParameters.ActiveManipulator
-                | Robot.SaveParameters.LinkTransformation)
+                Robot.SaveParameters.ActiveDOF | Robot.SaveParameters.
+                ActiveManipulator | Robot.SaveParameters.LinkTransformation)
 
             with robot_saver, nested(*body_savers) as f:
                 manipulator.SetActive()
@@ -277,13 +298,17 @@ class WAM(Manipulator):
                 for body in ignore_collisions:
                     body.Enable(False)
 
-                path = robot.PlanToEndEffectorOffset(direction=direction,
-                    distance=distance, max_distance=max_distance, **kw_args)
+                path = robot.PlanToEndEffectorOffset(
+                    direction=direction,
+                    distance=distance,
+                    max_distance=max_distance,
+                    **kw_args)
 
         # Execute on the real robot by tagging the trajectory with options that
         # tell the controller to stop on force/torque input.
         if not manipulator.simulated:
-            raise NotImplementedError('MoveUntilTouch not yet implemented under ros_control.')
+            raise NotImplementedError(
+                'MoveUntilTouch not yet implemented under ros_control.')
         # Forward-simulate the motion until it hits an object.
         else:
             traj = robot.PostProcessPath(path)
@@ -295,7 +320,7 @@ class WAM(Manipulator):
 
             robot_saver = robot.CreateRobotStateSaver(
                 Robot.SaveParameters.LinkTransformation)
-            
+
             with env, robot_saver:
                 for t in numpy.arange(0, traj.GetDuration(), delta_t):
                     waypoint = traj.Sample(t)
@@ -307,12 +332,14 @@ class WAM(Manipulator):
                     # Terminate if we detect collision with the environment.
                     report = CollisionReport()
                     if env.CheckCollision(robot, report=report):
-                        logger.info('Terminated from collision: %s',
+                        logger.info(
+                            'Terminated from collision: %s',
                             str(CollisionPlanningError.FromReport(report)))
                         is_collision = True
                         break
                     elif robot.CheckSelfCollision(report=report):
-                        logger.info('Terminated from self-collision: %s',
+                        logger.info(
+                            'Terminated from self-collision: %s',
                             str(CollisionPlanningError.FromReport(report)))
                         is_collision = True
                         break
@@ -322,7 +349,7 @@ class WAM(Manipulator):
                         traj_cspec.InsertDeltaTime(waypoint, 0.)
                     else:
                         traj_cspec.InsertDeltaTime(waypoint, delta_t)
-                    
+
                     new_traj.Insert(new_traj.GetNumWaypoints(), waypoint)
 
             if new_traj.GetNumWaypoints() > 0:
