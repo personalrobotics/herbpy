@@ -2,6 +2,7 @@ import numpy
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
 
+
 @TSRFactory('herb', 'block_bin', 'point_on')
 def point_on(robot, block_bin, manip=None, padding=0.04):
     '''
@@ -28,21 +29,24 @@ def point_on(robot, block_bin, manip=None, padding=0.04):
         manip.SetActive()
         manip_idx = manip.GetRobot().GetActiveManipulatorIndex()
 
-    T0_w = block_bin.GetTransform() # Coordinate system on bottom of bin
+    T0_w = block_bin.GetTransform()  # Coordinate system on bottom of bin
 
     Tw_e = numpy.eye(4)
-    Tw_e[2, 3] = 0.17 # set the object on top of the bin - bin is 13cm high
+    Tw_e[2, 3] = 0.17  # set the object on top of the bin - bin is 13cm high
 
     Bw = numpy.zeros((6, 2))
 
     xdim = max(0.085 - padding, 0.0)
     ydim = max(0.135 - padding, 0.0)
-    Bw[0, :] = [-xdim, xdim] # move along x, y directions to get any point on tray
+    Bw[0, :] = [-xdim,
+                xdim]  # move along x, y directions to get any point on tray
     Bw[1, :] = [-ydim, ydim]
-    Bw[2, :] = [-0.02, 0.04] # verticle movement
-    Bw[5, :] = [-numpy.pi, numpy.pi] # allow any rotation around z - which is the axis normal to the tray top
+    Bw[2, :] = [-0.02, 0.04]  # verticle movement
+    Bw[5, :] = [
+        -numpy.pi, numpy.pi
+    ]  # allow any rotation around z - which is the axis normal to the tray top
 
-    manip_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    tsr_chain = TSRChain(sample_start = False, sample_goal = True, constrain=False,
-                         TSR = manip_tsr)
+    manip_tsr = TSR(T0_w=T0_w, Tw_e=Tw_e, Bw=Bw, manip=manip_idx)
+    tsr_chain = TSRChain(
+        sample_start=False, sample_goal=True, constrain=False, TSR=manip_tsr)
     return [tsr_chain]

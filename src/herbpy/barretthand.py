@@ -254,6 +254,9 @@ class BarrettHand(EndEffector):
         hand.ft_tare_controller.Trigger(timeout=10)
 
     def _GetJointFromName(self, name):
+        """ Given the name, return the robot's joint
+        @return joint
+        """
         robot = self.manipulator.GetRobot()
         full_name = '/{:s}/{:s}'.format(self.manipulator.GetName(), name)
         return robot.GetJoint(full_name)

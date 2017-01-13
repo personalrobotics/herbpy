@@ -141,7 +141,7 @@ class HerbBase(MobileBase):
                     force, _ = manipulator.hand.GetForceTorque()
                     initial_force[manipulator] = force
 
-                try: 
+                try:
                     start_time = time.time()
                     start_pos = robot_pose[0:3, 3]
                     while True:

@@ -30,13 +30,11 @@
 
 import math
 import logging
-import numbers
 import numpy
 import openravepy
 import warnings
-from prpy import exceptions
 from prpy.base.manipulator import Manipulator
-from prpy.clone import Clone
+from openravepy.databases.inversekinematics import InverseKinematicsModel
 
 logger = logging.getLogger('wam')
 
@@ -79,7 +77,6 @@ class WAM(Manipulator):
             self._SetupIK(self._iktype)
 
     def _SetupIK(self, iktype):
-        from openravepy.databases.inversekinematics import InverseKinematicsModel
 
         robot = self.GetRobot()
         self.ikmodel = InverseKinematicsModel(
@@ -91,8 +88,8 @@ class WAM(Manipulator):
 
     def SetStiffness(self, stiffness):
         """Set the WAM's stiffness.
-        Stiffness False/0 is gravity compensation and stiffness True/1 is position
-        control. Values between 0 and 1 are experimental.
+        Stiffness False/0 is gravity compensation and stiffness True/1 is
+        position control. Values between 0 and 1 are experimental.
         @param stiffness boolean or decimal value between 0.0 and 1.0
         """
         self.GetRobot().SetStiffness(stiffness, manip=self)
@@ -193,8 +190,10 @@ class WAM(Manipulator):
                           owd=None):
         """Change the OpenRAVE and OWD joint velocity limits.
         Joint velocities that exceed these limits will trigger a velocity fault.
-        @param velocity_limits vector of joint velocity limits in radians per second
-        @param min_accel_time minimum acceleration time used to compute acceleration limits
+        @param velocity_limits vector of joint velocity limits in
+                               radians per second
+        @param min_accel_time minimum acceleration time used to compute
+                              acceleration limits
         @param openrave flag to set the OpenRAVE velocity limits
         @param owd flag to set the OWD velocity limits
         """
@@ -211,7 +210,8 @@ class WAM(Manipulator):
                                           min_accel_time)
 
     def GetTrajectoryStatus(manipulator):
-        """Gets the status of the current (or previous) trajectory executed by OWD.
+        """Gets the status of the current (or previous) trajectory
+        executed by OWD.
         @return status of the current (or previous) trajectory executed
         """
         raise NotImplementedError(
@@ -240,7 +240,8 @@ class WAM(Manipulator):
         end-effector moves at least distance. In simulation, a move-until-touch
         action proceeds until the end-effector collids with the environment.
 
-        @param direction unit vector for the direction of motion in the world frame
+        @param direction unit vector for the direction of motion in
+                         the world frame
         @param distance minimum distance in meters
         @param max_distance maximum distance in meters
         @param max_force maximum force in Newtons

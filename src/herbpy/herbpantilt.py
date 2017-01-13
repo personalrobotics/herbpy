@@ -34,7 +34,7 @@ class HERBPantilt(WAM):
         # may be no IK solution at some waypoints.
         head_path = list()
         head_path.append(robot.GetDOFValues(head_indices))
-        last_ik_index = 0
+        # last_ik_index = 0
 
         with robot.GetEnv():
             with robot:
@@ -57,11 +57,11 @@ class HERBPantilt(WAM):
         for i in xrange(final_ik_index + 1, traj.GetNumWaypoints()):
             head_path[i] = head_path[final_ik_index]
 
-        # Interpolate to fill in IK failures. This is guaranteed to succeed because
-        # the first and last waypoints are always valid.
+        # Interpolate to fill in IK failures. This is guaranteed to succeed
+        # because the first and last waypoints are always valid.
         for i in xrange(1, traj.GetNumWaypoints()):
-            # TODO: Fix timestamps on waypoints in MacTrajectory so we can properly
-            # interpolate between waypoints.
+            # TODO: Fix timestamps on waypoints in MacTrajectory so we can
+            # properly interpolate between waypoints.
             if head_path[i] is None:
                 head_path[i] = head_path[i - 1]
 

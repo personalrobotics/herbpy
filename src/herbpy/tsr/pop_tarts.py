@@ -1,6 +1,5 @@
-import numpy
 from prpy.tsr.tsrlibrary import TSRFactory
-from prpy.tsr.tsr import TSR, TSRChain
+
 
 @TSRFactory('herb', 'pop_tarts', 'grasp')
 def poptarts_grasp(robot, pop_tarts, manip=None, **kw_args):
@@ -10,10 +9,11 @@ def poptarts_grasp(robot, pop_tarts, manip=None, **kw_args):
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
     """
-    return _poptarts_grasp(robot, pop_tarts, manip = manip)
+    return _poptarts_grasp(robot, pop_tarts, manip=manip, **kw_args)
+
 
 @TSRFactory('herb', 'pop_tarts', 'push_grasp')
-def poptarts_grasp(robot, pop_tarts, push_distance = 0.1, manip=None, **kw_args):
+def poptarts_grasp(robot, pop_tarts, push_distance=0.1, manip=None, **kw_args):
     """
     @param robot The robot performing the grasp
     @param pop_tarts The pop_tarts to grasp
@@ -21,9 +21,12 @@ def poptarts_grasp(robot, pop_tarts, push_distance = 0.1, manip=None, **kw_args)
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
     """
-    return _poptarts_grasp(robot, pop_tarts, push_distance = push_distance, manip = manip)
+    return _poptarts_grasp(
+        robot, pop_tarts, push_distance=push_distance, manip=manip, **kw_args)
 
-def _poptarts_grasp(robot, pop_tarts, push_distance = 0.0, manip = None, **kw_args):
+
+def _poptarts_grasp(robot, pop_tarts, push_distance=0.0, manip=None,
+                    **kw_args):
     """
     @param robot The robot performing the grasp
     @param pop_tarts The pop tarts box to grasp
@@ -33,9 +36,12 @@ def _poptarts_grasp(robot, pop_tarts, push_distance = 0.0, manip = None, **kw_ar
     """
     from prpy.tsr.generic import box_grasp
     ee_to_palm_distance = 0.18
-    return box_grasp(robot, pop_tarts, 
-                     length=0.08,
-                     width=0.08,
-                     height=0.16,
-                     lateral_offset = ee_to_palm_distance + push_distance,
-                     manip=manip, **kw_args)
+    return box_grasp(
+        robot,
+        pop_tarts,
+        length=0.08,
+        width=0.08,
+        height=0.16,
+        lateral_offset=ee_to_palm_distance + push_distance,
+        manip=manip,
+        **kw_args)
