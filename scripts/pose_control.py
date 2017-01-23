@@ -13,10 +13,10 @@ if __name__ == '__main__':
                Press 0 to reset to relaxed home.\n \
                Press 1 to wave.\n \
                Press 2 to say something.\n \
-               Press 3 for the 'Rock On' pose.\n \
-               Press 4 for the 'Right Arm Hug' pose.\n \
-               Press 5 for the 'Huzzah' pose.\n \
-               Press 6 for the 'Samba' pose.\n \ 
+               Press 3 for the Rock On pose.\n \
+               Press 4 for the Right Arm Hug pose.\n \
+               Press 5 for the Huzzah pose.\n \
+               Press 6 for the Samba pose.\n \ 
                Press 9 to quit.\n"
         user_input = int(raw_input("Gesture? "))
 
@@ -62,13 +62,13 @@ if __name__ == '__main__':
             print 'Huzzah'
             robot.right_arm.SetActive()
             robot.right_arm.SetStiffness(1)
-            right_huzzah = numpy.array([ 4.18, -1.57, 1.44, 1.55, -2.21, -0.16, -1.20])
+            right_huzzah = numpy.array([4.18, -1.57, 1.44, 1.55, -2.21, -0.16, -1.20])
             robot.right_arm.PlanToConfiguration(right_huzzah, execute=True)
             robot.right_hand.MoveHand(f1=3, f2=3, f3=3, spread=3.14)
 
             robot.left_arm.SetActive()
             robot.left_arm.SetStiffness(1)
-            left_huzzah = numpy.array([ 2.11, -1.57, -1.44, 1.55, -0.74, -0.16, 2.96])
+            left_huzzah = numpy.array([2.11, -1.57, -1.44, 1.55, -0.74, -0.16, 2.96])
             robot.left_arm.PlanToConfiguration(left_huzzah, execute=True)
             robot.left_hand.MoveHand(f1=3, f2=3, f3=3, spread=3.14)
 
@@ -76,13 +76,13 @@ if __name__ == '__main__':
             print 'Samba!'
             robot.right_arm.SetActive()
             robot.right_arm.SetStiffness(1)
-            right_samba = numpy.array([ 3.86, -1.51, 1.67, 1.95, -2.69, 0.04, 2.61])
+            right_samba = numpy.array([3.86, -1.51, 1.67, 1.95, -2.69, 0.04, 2.61])
             robot.right_arm.PlanToConfiguration(right_samba, execute=True)
             robot.right_hand.MoveHand(f1=0, f2=0, f3=0, spread=3.14)
 
             robot.left_arm.SetActive()
             robot.left_arm.SetStiffness(1)
-            left_samba = numpy.array([ 1.05, -0.72,  0.59, 2.36, 1.19, -0.41,  2.96])
+            left_samba = numpy.array([1.05, -0.72, 0.59, 2.36, 1.19, -0.41, 2.96])
             robot.left_arm.PlanToConfiguration(left_samba, execute=True)
             robot.left_hand.MoveHand(f1=0, f2=0, f3=0, spread=3.14)
 
