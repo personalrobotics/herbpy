@@ -3,7 +3,7 @@
 import herbpy
 import os
 import numpy
-import sys  # exit()
+import sys # exit()
 
 # get the location of some objects (you'll need the pr_ordata package)
 from catkin.find_in_workspaces import find_in_workspaces
@@ -15,11 +15,14 @@ objects_path = find_in_workspaces(
     path=directory,
     first_match_only=True)
 if len(objects_path) == 0:
-    print 'Can\'t find directory {}{}'.format(package_name, directory)
+    print 'Can\'t find directory {}/{}'.format(package_name, directory)
     sys.exit()
 else:
-    print objects_path  # for me this is '/home/USERNAME/catkin_workspaces/herb_ws/src/pr-ordata/data/objects'
+    print objects_path
+    # for me this is:
+    #'/home/USERNAME/catkin_workspaces/herb_ws/src/pr-ordata/data/objects'
     objects_path = objects_path[0]
+
 
 # ===========================
 #   ENVIRONMENT SETUP
@@ -34,8 +37,10 @@ if table == None:
     print 'Failed to load table kinbody'
     sys.exit()
 env.AddKinBody(table)
-table_pose = numpy.array([[1., 0., 0., 2], [0., 0., -1., 2], [0., 1., 0., 0.0],
-                          [0., 0., 0., 1.]])
+table_pose = numpy.array([[1., 0.,  0., 2],
+                          [0., 0., -1., 2],
+                          [0., 1.,  0., 0.0],
+                          [0., 0.,  0., 1.]])
 table.SetTransform(table_pose)
 
 # add a fuze bottle on top of the table
@@ -45,11 +50,15 @@ if fuze == None:
     print 'Failed to load fuze bottle kinbody'
     sys.exit()
 table_aabb = table.ComputeAABB()
-x = table_aabb.pos()[0] + table_aabb.extents()[0] * 0  # middle of table in x
-y = table_aabb.pos()[1] + table_aabb.extents()[1] * .6  # closer to one side of table in y
-z = table_aabb.pos()[2] + table_aabb.extents()[2] + .01  # slightly above table in z (so its not in collision
+# middle of table in x
+x = table_aabb.pos()[0] + table_aabb.extents()[0]*0
+# closer to one side of table in y
+y = table_aabb.pos()[1] + table_aabb.extents()[1]*.6
+# slightly above table in z (so its not in collision
+z = table_aabb.pos()[2] + table_aabb.extents()[2] + .01
+
 fuze_pose = fuze.GetTransform()
-fuze_pose[:3, 3] = numpy.transpose([x, y, z])
+fuze_pose[:3,3] = numpy.transpose([x, y, z])
 fuze.SetTransform(fuze_pose)
 env.AddKinBody(fuze)
 
@@ -60,22 +69,24 @@ env.AddKinBody(fuze)
 raw_input('press enter to begin planning')
 
 # move to a good start position
-robot.PlanToNamedConfiguration(
-    'relaxed_home')  # move the arms to the 'relaxed_home' position
-#indices, values = robot.configurations.get_configuration('relaxed_home') # Faster for testing
+# move the arms to the 'relaxed_home' position
+robot.PlanToNamedConfiguration('relaxed_home')
+# (Faster way for testing)
+#indices, values = robot.configurations.get_configuration('relaxed_home')
 #robot.SetDOFValues(values=values, dofindices=indices)
 
 # drive to the table
-robot_in_table = numpy.array([[0., 1., 0., 0.], [0., 0., 1., 0.],
-                              [1., 0., 0., -1.025], [0., 0., 0., 1.]])
+robot_in_table = numpy.array([[0., 1., 0.,  0.],
+                              [0., 0., 1.,  0.],
+                              [1., 0., 0., -1.025],
+                              [0., 0., 0.,  1.]])
 base_pose = numpy.dot(table.GetTransform(), robot_in_table)
 base_pose[2, 3] = 0
 robot.base.PlanToBasePose(base_pose)
 #robot.SetTransform(base_pose) # way faster for testing
 
 # Grasp the bottle
-grasp_dofs, grasp_vals = robot.right_hand.configurations.get_configuration(
-    'glass_grasp')
+grasp_dofs, grasp_vals = robot.right_hand.configurations.get_configuration('glass_grasp')
 robot.right_arm.PushGrasp(fuze, push_required=False, preshape=grasp_vals)
 robot.right_arm.PlanToNamedConfiguration('home', execute=True)
 

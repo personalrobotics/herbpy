@@ -21,8 +21,8 @@ class BarrettHandTest(unittest.TestCase):
     def test_GetDOFValues_SetsValues(self):
         expected_values = numpy.array([0.1, 0.2, 0.3, 0.4])
         self._robot.SetDOFValues(expected_values, self._hand.GetIndices())
-        numpy.testing.assert_array_almost_equal(self._hand.GetDOFValues(),
-                                                expected_values)
+        numpy.testing.assert_array_almost_equal(
+            self._hand.GetDOFValues(), expected_values)
 
     def test_SetDOFValues_SetsValues(self):
         expected_values = numpy.array([0.1, 0.2, 0.3, 0.4])
@@ -31,10 +31,8 @@ class BarrettHandTest(unittest.TestCase):
             self._robot.GetDOFValues(self._hand.GetIndices()), expected_values)
 
     def test_SetDOFValues_IncorrectSizeThrows(self):
-        self.assertRaises(Exception, self._hand.SetDOFValues,
-                          ([0.1, 0.2, 0.3], ))
-        self.assertRaises(Exception, self._hand.SetDOFValues,
-                          ([0.1, 0.2, 0.3, 0.4, 0.5], ))
+        self.assertRaises(Exception, self._hand.SetDOFValues, ([0.1, 0.2, 0.3],))
+        self.assertRaises(Exception, self._hand.SetDOFValues, ([0.1, 0.2, 0.3, 0.4, 0.5],))
 
     def test_MoveHand_NoTimeoutWaitsForController(self):
         before = numpy.zeros(4)

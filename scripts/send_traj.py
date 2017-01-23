@@ -8,24 +8,28 @@ from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 rospy.init_node("trajectory_test")
 
-client = ros_control_client_py.FollowJointTrajectoryClient(
-    "/right_trajectory_controller/follow_joint_trajectory")
+
+client = ros_control_client_py.FollowJointTrajectoryClient("/right_trajectory_controller/follow_joint_trajectory")
 
 raw_input("Press enter to execute trajectory...")
 
 joint_state = rospy.wait_for_message("/joint_states", JointState, timeout=1.0)
 
 names = [
-    '/right/j1', '/right/j2', '/right/j3', '/right/j4', '/right/j5',
-    '/right/j6', '/right/j7'
+  '/right/j1', 
+  '/right/j2', 
+  '/right/j3', 
+  '/right/j4', 
+  '/right/j5', 
+  '/right/j6', 
+  '/right/j7'
 ]
 
-cur_state = filter(lambda t: t[0] in names,
-                   zip(joint_state.name, joint_state.position))
+cur_state = filter(lambda t: t[0] in names, zip(joint_state.name, joint_state.position))
 
 assert len(cur_state) is len(names)
 
-cur_names, cur_pos = zip(*cur_state)  # unzip
+cur_names, cur_pos = zip(*cur_state) # unzip
 end_pos = []
 
 for p in cur_pos:
@@ -54,3 +58,4 @@ print traj_msg
 
 traj_f = client.execute(traj_msg)
 print traj_f.result()
+

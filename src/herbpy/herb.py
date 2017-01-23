@@ -4,24 +4,22 @@ import prpy
 import prpy.dependency_manager
 from prpy.collision import (
     BakedRobotCollisionCheckerFactory,
-    SimpleRobotCollisionCheckerFactory, )
+    SimpleRobotCollisionCheckerFactory,
+)
 from openravepy import (
     Environment,
     RaveCreateModule,
     RaveCreateCollisionChecker,
     RaveInitialize,
-    openrave_exception, )
+    openrave_exception,
+)
 from .herbbase import HerbBase
 from .herbrobot import HERBRobot
 
 logger = logging.getLogger('herbpy')
 
-
-def initialize(robot_xml=None,
-               env_path=None,
-               attach_viewer=False,
-               sim=True,
-               **kw_args):
+def initialize(robot_xml=None, env_path=None, attach_viewer=False,
+               sim=True, **kw_args):
     prpy.logger.initialize_logging()
 
     # Hide TrajOpt logging.
@@ -55,7 +53,7 @@ def initialize(robot_xml=None,
     robot = env.GetRobot(herb_name)
     if robot is None:
         raise ValueError('Unable to find robot with name "{:s}".'.format(
-            herb_name))
+                         herb_name))
 
     # Default to FCL.
     collision_checker = RaveCreateCollisionChecker(env, 'fcl')
@@ -83,20 +81,15 @@ def initialize(robot_xml=None,
             ' the slower SimpleRobotCollisionCheckerFactory.')
 
     # Default arguments.
-    keys = [
-        'left_arm_sim', 'left_hand_sim', 'left_ft_sim', 'right_arm_sim',
-        'right_hand_sim', 'right_ft_sim', 'head_sim', 'talker_sim',
-        'segway_sim', 'perception_sim'
-    ]
+    keys = ['left_arm_sim', 'left_hand_sim', 'left_ft_sim',
+            'right_arm_sim', 'right_hand_sim', 'right_ft_sim',
+            'head_sim', 'talker_sim', 'segway_sim', 'perception_sim']
     for key in keys:
         if key not in kw_args:
             kw_args[key] = sim
 
-    prpy.bind_subclass(
-        robot,
-        HERBRobot,
-        robot_checker_factory=robot_checker_factory,
-        **kw_args)
+    prpy.bind_subclass(robot, HERBRobot,
+        robot_checker_factory=robot_checker_factory, **kw_args)
 
     if sim:
         dof_indices, dof_values \
@@ -119,7 +112,7 @@ def initialize(robot_xml=None,
         env.SetViewer(attach_viewer)
         if env.GetViewer() is None:
             raise Exception('Failed creating viewer of type "{0:s}".'.format(
-                attach_viewer))
+                            attach_viewer))
 
     # Remove the ROS logging handler again. It might have been added when we
     # loaded or_rviz.

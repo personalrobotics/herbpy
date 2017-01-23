@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import herbpy
-import numpy
 
 if __name__ == '__main__':
 
@@ -18,7 +17,6 @@ if __name__ == '__main__':
                Press S to present an object.\n \
                Press R to reset the robot.\n \
                Press Q to quit.\n"
-
         user_input = raw_input("Gesture? ")
 
         if user_input == 'Q':
@@ -37,10 +35,8 @@ if __name__ == '__main__':
             print 'High Fiving!\n'
             robot.HighFive()
         elif user_input == 'R':
-            robot.right_arm.PlanToNamedConfiguration(
-                'relaxed_home', execute=True)
-            robot.left_arm.PlanToNamedConfiguration(
-                'relaxed_home', execute=True)
+            robot.right_arm.PlanToNamedConfiguration('relaxed_home', execute=True)
+            robot.left_arm.PlanToNamedConfiguration('relaxed_home', execute=True)
             robot.right_hand.OpenHand()
             robot.left_hand.OpenHand()
         elif user_input == 'S':
@@ -49,7 +45,7 @@ if __name__ == '__main__':
         elif user_input == 'P':
             items = [x.GetName() for x in env.GetBodies()]
             print "HERB can see these things:"
-            print items[1:]  #Don't show the robot as an option
+            print items[1:] #Don't show the robot as an option
             point_at = raw_input('I want to point at item number: ')
             robot.Point(env.GetBodies()[int(point_at)])
         elif user_input == 'S':

@@ -3,7 +3,6 @@ from wam import WAM
 
 logger = logging.getLogger('HERBPantilt')
 
-
 class HERBPantilt(WAM):
     def __init__(self, sim, owd_namespace):
         # FIXME: We don't build the IK database because ikfast fails with a
@@ -34,14 +33,13 @@ class HERBPantilt(WAM):
         # may be no IK solution at some waypoints.
         head_path = list()
         head_path.append(robot.GetDOFValues(head_indices))
-        # last_ik_index = 0
+        last_ik_index = 0
 
         with robot.GetEnv():
             with robot:
                 for i in xrange(1, traj.GetNumWaypoints()):
                     traj_waypoint = traj.GetWaypoint(i)
-                    arm_dof_values = traj_config_spec.ExtractJointValues(
-                        traj_waypoint, robot, arm_indices)
+                    arm_dof_values = traj_config_spec.ExtractJointValues(traj_waypoint, robot, arm_indices)
                     # Compute the position of the right arm through the FK.
                     manipulator.SetDOFValues(arm_dof_values)
                     hand_pose = manipulator.GetEndEffectorTransform()
@@ -60,20 +58,19 @@ class HERBPantilt(WAM):
         # Interpolate to fill in IK failures. This is guaranteed to succeed
         # because the first and last waypoints are always valid.
         for i in xrange(1, traj.GetNumWaypoints()):
-            # TODO: Fix timestamps on waypoints in MacTrajectory so we can
-            # properly interpolate between waypoints.
+            # TODO: Fix timestamps on waypoints in MacTrajectory so we
+            # can properly interpolate between waypoints.
             if head_path[i] is None:
                 head_path[i] = head_path[i - 1]
 
         # Append the head DOFs to the input trajectory.
         merged_config_spec = traj_config_spec + head_config_spec
-        openravepy.planningutils.ConvertTrajectorySpecification(
-            traj, merged_config_spec)
+        openravepy.planningutils.ConvertTrajectorySpecification(traj, merged_config_spec)
 
         for i in xrange(0, traj.GetNumWaypoints()):
             waypoint = traj.GetWaypoint(i)
-            merged_config_spec.InsertJointValues(waypoint, head_path[i], robot,
-                                                 head_indices, 0)
+            merged_config_spec.InsertJointValues(waypoint, head_path[i],
+                          robot, head_indices, 0)
             traj.Insert(i, waypoint, True)
 
     def LookAt(self, target, **kw_args):
@@ -89,8 +86,7 @@ class HERBPantilt(WAM):
         if dof_values is not None:
             return self.MoveTo(dof_values, **kw_args)
         else:
-            raise openravepy.openrave_exception(
-                'There is no IK solution available.')
+            raise openravepy.openrave_exception('There is no IK solution available.')
 
     def MoveTo(self, target_dof_values, execute=True, **kw_args):
         """Move to a target configuration.
@@ -101,8 +97,7 @@ class HERBPantilt(WAM):
         @param **kw_args keyword arguments passed to \p robot.ExecuteTrajectory
         @return pantilt trajectory
         """
-        raise NotImplementedError(
-            'The head is currently disabled under ros_control.')
+        raise NotImplementedError('The head is currently disabled under ros_control.')
         # Update the controllers to get new joint values.
         robot = self.GetRobot()
         with robot.GetEnv():
@@ -110,8 +105,7 @@ class HERBPantilt(WAM):
             current_dof_values = self.GetDOFValues()
 
         config_spec = self.GetArmConfigurationSpecification()
-        traj = openravepy.RaveCreateTrajectory(robot.GetEnv(),
-                                               'GenericTrajectory')
+        traj = openravepy.RaveCreateTrajectory(robot.GetEnv(), 'GenericTrajectory')
         traj.Init(config_spec)
         traj.Insert(0, current_dof_values, config_spec)
         traj.Insert(1, target_dof_values, config_spec)
@@ -127,8 +121,8 @@ class HERBPantilt(WAM):
         @param target target position
         @return IK solution
         """
-        ik_params = openravepy.IkParameterization(
-            target, openravepy.IkParameterization.Type.Lookat3D)
+        ik_params = openravepy.IkParameterization(target,
+                      openravepy.IkParameterization.Type.Lookat3D)
         return self.ikmodel.manip.FindIKSolution(ik_params, 0)
 
     def GetDofValues(self):
