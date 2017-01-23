@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Provides a simple console that sets up basic functionality for 
+Provides a simple console that sets up basic functionality for
 using herbpy and openravepy.
 """
 
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
     if args.sim and not args.segway_sim:
         herbpy_args['segway_sim'] = args.sim
- 
+
     env, robot = herbpy.initialize(**herbpy_args)
 
     import IPython

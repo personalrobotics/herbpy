@@ -131,9 +131,9 @@ class X3Inclinometer(object):
 def get_gravity_vector(vals):
     # compose a 3x3 matrix
     A = numpy.zeros((3, 3))
-   
+
     for i, val in enumerate(vals):
-     
+
         # expresses atan2 relationships
         if i == 0:
             arg1 = (-1., 1)
@@ -144,7 +144,7 @@ def get_gravity_vector(vals):
         else: # i == 2
             arg1 = (-1., 1)
             arg2 = (-1., 0)
-     
+
         # compute tangents
         tval = math.tan(val)
         cval = 1.0/math.tan(val) # better version?
@@ -155,11 +155,11 @@ def get_gravity_vector(vals):
             # use cotangent
             tval = cval
             arg1, arg2 = arg2, arg1
-     
+
         # fill matrix
         A[i, arg2[1]] = arg2[0] * tval
         A[i, arg1[1]] = -arg1[0]
-   
+
     _, _, VT = numpy.linalg.svd(A)
     return tuple(VT[2, :])
 
@@ -299,7 +299,7 @@ if __name__ == '__main__':
             angles, _ = sensor.get_all_angles()
             print('{: 1.7f} {: 1.7f} {: 1.7f}'.format(*angles))
 
-        raise Exception() 
+        raise Exception()
         """
 
         # Sequentially calibrate each joint.
@@ -331,7 +331,7 @@ if __name__ == '__main__':
                 print('J{:d}: Transmission Ratio: {: 1.7f} -> {: 1.7f}'.format(
                     ijoint + 1, old_transmission_ratio, new_transmission_ratio))
 
-    # TODO: What about the differentials? These correspond to parameters: 
+    # TODO: What about the differentials? These correspond to parameters:
     #   - <namespace>/owd/differential3_ratio
     #   - <namespace>/owd/differential6_ratio
 

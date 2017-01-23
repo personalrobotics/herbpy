@@ -35,13 +35,13 @@ def _fuze_grasp(robot, fuze, push_distance=0.0, manip=None, **kw_args):
                           obj_height=0.216,
                           lateral_offset=ee_to_palm_distance + push_distance,
                           manip=manip)
-                
+
 @TSRFactory('herb', 'fuze_bottle', 'place')
 def fuze_on_table(robot, fuze, pose_tsr_chain, manip=None):
     """
     Generates end-effector poses for placing the fuze
     This factory assumes the fuze is grasped at the time it is called.
-    
+
     @param robot The robot grasping the fuze
     @param fuze The grasped object
     @param pose_tsr_chain The tsr chain for sampling placement poses
@@ -51,8 +51,8 @@ def fuze_on_table(robot, fuze, pose_tsr_chain, manip=None):
     """
     from prpy.tsr.generic import place_object
     return place_object(robot, fuze, pose_tsr_chain, manip=manip)
-                            
-    
+
+
 @TSRFactory('herb', 'fuze_bottle', 'transport')
 def fuze_transport(robot, fuze, manip=None, roll_epsilon=0.2, pitch_epsilon=0.2, yaw_epsilon=0.2):
     """

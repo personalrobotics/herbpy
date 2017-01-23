@@ -7,10 +7,10 @@ def MoveCupAndPour(robot, table, manip_pitcher, manip_cup, cup, pitcher):
     @param robot The robot performing the pouring
     @param table The table the objects are on
     @param manip_pitcher The arm that is manipulating the pitcher
-    @param manip_cup The arm that is manipulating the cup 
+    @param manip_cup The arm that is manipulating the cup
     @param cup The cup to pour into
     @param pitcher The pitcher to pour
-    """	
+    """
 
     env = robot.GetEnv()
     with env:
@@ -39,7 +39,7 @@ def MoveCupAndPour(robot, table, manip_pitcher, manip_cup, cup, pitcher):
 
     from prpy.rave import Disabled
     with Disabled(table):
-        manip_cup.PlanToEndEffectorOffset(direction=[move_x, move_y, 0], 
+        manip_cup.PlanToEndEffectorOffset(direction=[move_x, move_y, 0],
                    distance=move_cup, position_tolerance=0.1,
                    execute=True, timelimit=10)
         manip_cup.PlanToEndEffectorOffset(direction=[0, 0, -1],
@@ -58,7 +58,7 @@ def MoveCupAndPour(robot, table, manip_pitcher, manip_cup, cup, pitcher):
     v = numpy.array([0.75, 0.75, 2., 2., 2.5, 2.5, 2.5])
     with robot.CreateRobotStateSaver(openravepy.KinBody.SaveParameters.JointMaxVelocityAndAcceleration):
         manip_pitcher.SetVelocityLimits(0.5*v, 0.3)
-        
+
         #Gets position of the pitcher and pours
         traj = robot.PostProcessPath(traj)
         robot.ExecuteTrajectory(traj)
@@ -66,6 +66,6 @@ def MoveCupAndPour(robot, table, manip_pitcher, manip_cup, cup, pitcher):
 
     # Tilts pitcher back to original position
     robot.ExecuteTrajectory(openravepy.planningutils.ReverseTrajectory(traj))
-    
+
     manip_pitcher.PlanToEndEffectorOffset(direction=-1*manip_pitcher_pose[:3, 0],
                distance=0.1, position_tolerance=0.1, execute=True)

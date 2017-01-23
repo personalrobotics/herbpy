@@ -16,7 +16,7 @@ if __name__ == '__main__':
                Press 3 for the Rock On pose.\n \
                Press 4 for the Right Arm Hug pose.\n \
                Press 5 for the Huzzah pose.\n \
-               Press 6 for the Samba pose.\n \ 
+               Press 6 for the Samba pose.\n \
                Press 9 to quit.\n"
         user_input = int(raw_input("Gesture? "))
 

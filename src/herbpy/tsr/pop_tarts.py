@@ -32,7 +32,7 @@ def _poptarts_grasp(robot, pop_tarts, push_distance=0.0, manip=None, **kw_args):
     """
     from prpy.tsr.generic import box_grasp
     ee_to_palm_distance = 0.18
-    return box_grasp(robot, pop_tarts, 
+    return box_grasp(robot, pop_tarts,
                      length=0.08,
                      width=0.08,
                      height=0.16,

@@ -28,7 +28,7 @@ def _GrabBlock(robot, blocks, table, manip=None, preshape=None,
     if manip is None:
         with env:
             manip = robot.GetActiveManipulator()
-    
+
     if preshape is None:
         preshape = [1.7, 1.7, 0.2, 2.45]
 
@@ -41,7 +41,7 @@ def _GrabBlock(robot, blocks, table, manip=None, preshape=None,
             # Get a TSR to move near the block.
             tsr_list = robot.tsrlibrary(b, 'grasp', manip=manip)
             block_tsr_list += tsr_list
-    
+
     # Plan to a pose above the block
     with RenderTSRList(block_tsr_list, robot.GetEnv()):
         with Disabled(table, padding_only=True):
@@ -49,13 +49,13 @@ def _GrabBlock(robot, blocks, table, manip=None, preshape=None,
 
     with manip.GetRobot().GetEnv():
         ee_pose = manip.GetEndEffectorTransform()
-    
+
     block_idxs = [idx for idx, tsr_chain in enumerate(block_tsr_list)
                   if tsr_chain.contains(ee_pose)]
     if len(block_idxs) == 0:
         raise NoTSRException("Failed to find the TSR PlanToTSR planned to")
     block = blocks[block_idxs[0]]
-    
+
     try:
         with AllDisabled(env, [table] + blocks, padding_only=True):
             # Move down until touching the table
@@ -86,12 +86,12 @@ def _GrabBlock(robot, blocks, table, manip=None, preshape=None,
                 with RenderVector(start_point, funnel_direction, 0.1, env):
                     manip.PlanToEndEffectorOffset(direction=funnel_direction,
                                                   distance=0.08,
-                                                  max_distance=0.12, 
+                                                  max_distance=0.12,
                                                   timelimit=5., execute=True)
-        
+
         # Close the finger to grab the block
         manip.hand.MoveHand(f3=1.7)
-            
+
         # Compute the pose of the block in the hand frame
         with env:
             local_p = [0.01, 0, 0.24, 1.0]
@@ -100,12 +100,12 @@ def _GrabBlock(robot, blocks, table, manip=None, preshape=None,
             block_pose = block.GetTransform()
             block_pose[:, 3] = world_p
             block_relative = numpy.dot(numpy.linalg.inv(hand_pose), block_pose)
-        
+
         # Now lift the block up off the table
         with AllDisabled(env, blocks + [table]):
-            manip.PlanToEndEffectorOffset(direction=[0, 0, 1], distance=0.05, 
+            manip.PlanToEndEffectorOffset(direction=[0, 0, 1], distance=0.05,
                                           timelimit=5, execute=True)
-            
+
         # OpenRAVE trick to hallucinate the block into the correct
         # pose relative to the hand
         with env:
@@ -157,8 +157,8 @@ def PlaceBlock(robot, block, on_obj, manip=None, **kw_args):
     # Get a tsr for this position
     with env:
         object_place_list = robot.tsrlibrary(on_obj, 'point_on', manip=manip)
-        place_tsr_list = robot.tsrlibrary(block, 'place_on', 
-                                          pose_tsr_chain=object_place_list[0], 
+        place_tsr_list = robot.tsrlibrary(block, 'place_on',
+                                          pose_tsr_chain=object_place_list[0],
                                           manip=manip)
 
     # Plan there

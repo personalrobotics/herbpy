@@ -6,7 +6,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # - Redistributions of source code must retain the above copyright notice, this
 #   list of conditions and the following disclaimer.
 # - Redistributions in binary form must reproduce the above copyright notice,
@@ -15,7 +15,7 @@
 # - Neither the name of Carnegie Mellon University nor the names of its
 #   contributors may be used to endorse or promote products derived from this
 #   software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -48,7 +48,7 @@ class HerbBase(MobileBase):
     def Forward(self, meters, execute=True, timeout=None, **kwargs):
         """Drive forward for the desired distance.
         @param distance distance to drive, in meters
-        @param timeout time in seconds; pass \p None to block until complete 
+        @param timeout time in seconds; pass \p None to block until complete
         @return base trajectory
         """
         if self.simulated or not execute:
@@ -62,7 +62,7 @@ class HerbBase(MobileBase):
     def Rotate(self, angle_rad, execute=True, timeout=None, **kwargs):
         """Rotate in place by a desired angle
         @param angle angle to turn, in radians
-        @param timeout time in seconds; pass \p None to block until complete 
+        @param timeout time in seconds; pass \p None to block until complete
         @return base trajectory
         """
         if self.simulated or not execute:
@@ -100,7 +100,7 @@ class HerbBase(MobileBase):
             with prpy.util.Timer("Drive segway until force"):
                 env = self.robot.GetEnv()
                 direction = numpy.array(direction, dtype='float')
-                direction /= numpy.linalg.norm(direction) 
+                direction /= numpy.linalg.norm(direction)
                 manipulators = list()
                 if left_arm:
                     manipulators.append(self.robot.left_arm)
@@ -123,7 +123,7 @@ class HerbBase(MobileBase):
                 for manipulator in manipulators:
                     force, torque = manipulator.hand.GetForceTorque()
                     initial_force[manipulator] = force
-                
+
                 try:
                     felt_force = False
                     start_time = time.time()

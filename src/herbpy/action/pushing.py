@@ -5,8 +5,8 @@ from prpy.planning.base import PlanningError
 logger = logging.getLogger('herbpy')
 
 @ActionMethod
-def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius, 
-                      manip=None, max_plan_duration=30.0, 
+def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
+                      manip=None, max_plan_duration=30.0,
                       shortcut_time=3., render=True, search=True, tracker=None,
                       **kw_args):
     """
@@ -60,7 +60,7 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
                'low': [table_pos[0] - table_extents[0],
                        table_pos[1] - table_extents[1],
                        0]}
-    
+
     # Assume we want to keep the current orientation and height of the
     # manipulator throughout the push
     ee_pushing_transform[:2, 3] = [0., 0.] #ignore x,y pose
@@ -97,14 +97,14 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
                 else:
                     # Execute the trajectory
                     robot.ExecuteTrajectory(traj)
-                    
-                    # During execution, object pushes won't be simulated. 
+
+                    # During execution, object pushes won't be simulated.
                     # In the OpenRAVE world, the robot will instead move
-                    # through the objects and probably be in collision at 
+                    # through the objects and probably be in collision at
                     # the end. This call sets all the objects to their
                     # expected poses at the end of the trajectory.
-                    # If execution was successful, this should resolve 
-                    # collisions. 
+                    # If execution was successful, this should resolve
+                    # collisions.
                     planner.SetFinalObjectPoses()
             finally:
                 if tracker is not None:

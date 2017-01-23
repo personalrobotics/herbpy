@@ -9,36 +9,36 @@ from owd_msgs.msg import WAMState
 state = {}
 
 def update_tf(msg):
-    
+
     encoders = list(msg.positions)
-    
+
     # Pan
     r_1 = numpy.matrix([[math.cos(encoders[0]),-math.sin(encoders[0]), 0, 0],
                         [math.sin(encoders[0]), math.cos(encoders[0]), 0, 0],
                         [0, 0, 1, 0],
                         [0, 0, 0, 1]])
     pan_orientation = tf.transformations.quaternion_from_matrix(r_1)
-    
+
     # Offset between Pan and Tilt
     r_o = numpy.matrix([[1, 0,  0, 0],
                         [0, 0, -1, 0],
                         [0, 1,  0, 0],
                         [0, 0,  0, 1]])
-    
+
     # Tilt
     r_2 = numpy.matrix([[math.cos(encoders[1]),-math.sin(encoders[1]), 0, 0],
                         [math.sin(encoders[1]), math.cos(encoders[1]), 0, 0],
                         [0, 0, 1, 0],
                         [0, 0, 0, 1]])
     tilt_orientation = tf.transformations.quaternion_from_matrix(r_o * r_2)
-    
+
     # Broadcast Pan
     state['broadcaster'].sendTransform((0., 0., 0.),
                                        pan_orientation,
                                        rospy.Time.now(),
                                        state['tf_parent'],
                                        state['tf_pan'])
-    
+
     # Broadcast Tilt
     state['broadcaster'].sendTransform((0., 0., 0.),
                                        tilt_orientation,

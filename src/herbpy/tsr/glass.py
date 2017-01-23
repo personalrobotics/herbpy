@@ -11,14 +11,14 @@ def glass_grasp(robot, glass, manip=None, yaw_range=None, **kw_args):
     '''
     return _glass_grasp(robot, glass, manip=manip,
                         yaw_range=yaw_range, **kw_args)
-    
+
 @TSRFactory('herb', 'plastic_glass', 'push_grasp')
 def glass_push_grasp(robot, glass, manip=None, yaw_range=None, push_distance=0.1, **kw_args):
     '''
-    This factory differes from glass_grasp in that it places the manipulator 
+    This factory differes from glass_grasp in that it places the manipulator
     further away and assumes the manip will perform a push after
     moving to this TSR.  This allows for dealing with uncertainty in pose
-    estimation of the object. 
+    estimation of the object.
     After using this code to move the end-effector into place, the robot
     should push in the direction of the z-axis of the manipulator:
       direction = manip.GetEndEffectorTransform()[:3,2]
@@ -44,19 +44,19 @@ def _glass_grasp(robot, glass, manip=None, yaw_range=None, push_distance=0.0, **
     """
     from prpy.tsr.generic import cylinder_grasp
     ee_to_palm = 0.18
-    return cylinder_grasp(robot, glass, 
+    return cylinder_grasp(robot, glass,
                           obj_radius=0.045,
                           obj_height=0.16,
                           lateral_offset=push_distance + ee_to_palm,
                           yaw_range=yaw_range,
                           manip=manip, **kw_args)
-                
+
 @TSRFactory('herb', 'plastic_glass', 'place')
 def place_grasp(robot, glass, pose_tsr_chain, manip=None):
     '''
     Generates end-effector poses for placing the glass at a sampled pose
     This factory assumes the glass is grasped at the time it is called.
-    
+
     @param robot The robot grasping the glass
     @param glass The grasped object
     @param pose_tsr_chain The tsr chain for sampling placement poses
@@ -66,8 +66,8 @@ def place_grasp(robot, glass, pose_tsr_chain, manip=None):
     '''
     from prpy.tsr.generic import place_object
     return place_object(robot, glass, pose_tsr_chain, manip=manip)
-                            
-    
+
+
 @TSRFactory('herb', 'plastic_glass', 'transport')
 def glass_transport(robot, glass, manip=None, roll_epsilon=0.2, pitch_epsilon=0.2, yaw_epsilon=0.2):
     '''

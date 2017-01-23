@@ -2,7 +2,7 @@ import numpy, openravepy
 import prpy.tsr
 from prpy.tsr.tsrlibrary import TSRFactory
 from prpy.tsr.tsr import TSR, TSRChain
- 
+
 @TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'push_grasp')
 def pitcher_grasp(robot, pitcher, push_distance=0.1, manip=None, **kw_args):
 
@@ -12,7 +12,7 @@ def pitcher_grasp(robot, pitcher, push_distance=0.1, manip=None, **kw_args):
     @param manip The manipulator to perform the grasp, if None
        the active manipulator on the robot is used
     '''
-    
+
     if manip is None:
         manip_idx = robot.GetActiveManipulatorIndex()
     else:
@@ -22,7 +22,7 @@ def pitcher_grasp(robot, pitcher, push_distance=0.1, manip=None, **kw_args):
     T0_w = pitcher.GetTransform()
     spout_in_pitcher = numpy.array([[-0.7956,  0.6057, 0., -0.0662],
                                     [-0.6057, -0.7956, 0., -0.0504],
-                                    [ 0.,      0.,     1.,  0.2376], 
+                                    [ 0.,      0.,     1.,  0.2376],
                                     [ 0.,      0.,     0.,  1.]])
 
     # we want a hand pose orthogonal to the direction of the spout
@@ -35,24 +35,24 @@ def pitcher_grasp(robot, pitcher, push_distance=0.1, manip=None, **kw_args):
                                          [ 0., -1., 0.]])
     ee_in_pitcher[:3, :3] = numpy.dot(ee_in_pitcher[:3, :3],
                                          openravepy.rotationMatrixFromAxisAngle([0, palm_direction, 0]))
-                                         
-    
+
+
     pitcher_extents = [0.07877473, 0.06568845, 0.11882638]
-    # pitcher radius + ee_offset 
+    # pitcher radius + ee_offset
     offset = pitcher_extents[0] + 0.18 + push_distance
     ee_in_pitcher[:2, 3] = -offset*ee_in_pitcher[:2, 2]
     ee_in_pitcher[2, 3] = 0.45*pitcher_extents[2]
 
     Bw = numpy.zeros((6, 2))
     Bw[2, :] = [-0.01, 0.01]  # Allow a little vertical movement
-    
+
     grasp_tsr = prpy.tsr.TSR(T0_w=T0_w, Tw_e=ee_in_pitcher,
                              Bw=Bw, manip=manip_idx)
-    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal=True, 
+    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal=True,
                                     constrain=False, TSR=grasp_tsr)
 
     return [grasp_chain]
-        
+
 @TSRFactory('herb', 'rubbermaid_ice_guard_pitcher', 'pour')
 def pitcher_pour(robot, pitcher, min_tilt=1.4, max_tilt=1.57, manip=None,
                  grasp_transform=None, pitcher_pose=None, **kw_args):
@@ -81,11 +81,11 @@ def pitcher_pour(robot, pitcher, min_tilt=1.4, max_tilt=1.57, manip=None,
     # spout in pitcher
     spout_in_pitcher = numpy.array([[-0.7956,  0.6057, 0., 0.],
                                     [-0.6057, -0.7956, 0., 0.],
-                                    [ 0.,      0.,     1., 0.0599], 
+                                    [ 0.,      0.,     1., 0.0599],
                                     [ 0.,      0.,     0., 1.]])
     spout_offset = 0.113
     spout_in_pitcher[:2, 3] = spout_offset*spout_in_pitcher[:2, 0]
-    
+
     # end-effector relative to spout
     ee_in_world = manip.GetEndEffectorTransform()
     ee_in_pitcher = numpy.dot(numpy.linalg.inv(pitcher_in_world), ee_in_world)
@@ -93,7 +93,7 @@ def pitcher_pour(robot, pitcher, min_tilt=1.4, max_tilt=1.57, manip=None,
     Bw_pour = numpy.zeros((6, 2))
     Bw_pour[4, :] = [0, 2*numpy.pi]
     Bw_pour[3, :] = [-10*numpy.pi/180, 10*numpy.pi/180]
-        
+
     tsr_0 = TSR(T0_w=pitcher_pose,
                 Tw_e=spout_in_pitcher,
                 Bw=numpy.zeros((6, 2)),

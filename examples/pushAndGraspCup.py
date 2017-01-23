@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
-    
+
     import argparse
     parser = argparse.ArgumentParser(description="Demonstrate using push planner to make object graspable")
     parser.add_argument("-v", "--viewer", dest="viewer", default=None,
@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     # Put the hand in a preshape for pushing
     push_arm.hand.MoveHand(spread=0, f1=0.75, f2=0.75, f3=0.75)
-    
+
     # Table
     import os
     table_path = os.path.join('objects', 'table.kinbody.xml')
@@ -50,8 +50,8 @@ if __name__ == '__main__':
     goal_in_table = [0.15, 0., -0.03, 1.]
     goal_in_world = numpy.dot(table.GetTransform(), goal_in_table)
     goal_pose = goal_in_world[:2]
-    goal_radius = 0.1    
-        
+    goal_radius = 0.1
+
     from prpy.rave import Disabled
     from prpy.util import ComputeEnabledAABB
     with Disabled(table, padding_only=True):
@@ -65,15 +65,15 @@ if __name__ == '__main__':
                     table_height])
     h = env.drawlinestrip(points=numpy.array(pts), linewidth=5.0,
                           colors=numpy.array([0.0, 1., 0.]))
-        
+
     # Plan to the start configuration
     try:
         push_arm.SetActive()
         start_pose = [4.49119545, -1.59899798, -0.6, 1.65274406, -1.7742985, -0.63854765, -1.23051631]
         push_arm.PlanToConfiguration(start_pose, execute=True)
-        
+
         # Plan to push the object
-        traj = robot.PushToPoseOnTable(obj=glass, 
+        traj = robot.PushToPoseOnTable(obj=glass,
                                        table=table,
                                        goal_position=goal_pose,
                                        goal_radius=goal_radius,
@@ -84,16 +84,16 @@ if __name__ == '__main__':
                                        render=True if args.viewer is not None else False)
         # Plan the arm home
         push_arm.PlanToNamedConfiguration('home', execute=True)
-        
-        
+
+
         # Plan to grasp with the other arm
         grasp_arm.SetActive()
         robot.PushGrasp(glass, manip=grasp_arm)
-        
+
         # Plan that arm home with the object
         robot.Lift(glass)
         grasp_arm.PlanToNamedConfiguration('home', execute=True)
-    
+
     except PlanningError as e:
         logger.error('Failed to complete task.')
 
