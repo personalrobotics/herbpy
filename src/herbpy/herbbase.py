@@ -37,7 +37,6 @@ class HerbBase(MobileBase):
     def __init__(self, sim, robot):
         MobileBase.__init__(self, sim=sim, robot=robot)
         self.controller = robot.AttachController(name=robot.GetName(),
-#                             args='SegwayController {0:s}'.format('herbpy'),
                               args='NavigationController {0:s} {1:s}'.format('herbpy', '/navcontroller'),
                               dof_indices=[],
                               affine_dofs=openravepy.DOFAffine.Transform,
