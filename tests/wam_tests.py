@@ -52,10 +52,10 @@ class WamTest(unittest.TestCase):
         self.assertRaises(Exception, self._wam.MoveUntilTouch, (numpy.zeros(3), 0.1))
 
     def test_MoveUntilTouch_ZeroDistanceThrows(self):
-        self.assertRaises(Exception, self._wam.MoveUntilTouch, (numpy.array([ 1., 0., 0. ]), 0.0))
+        self.assertRaises(Exception, self._wam.MoveUntilTouch, (numpy.array([1., 0., 0.]), 0.0))
 
     def test_MoveUntilTouch_NonPositiveForceThrows(self):
-        self.assertRaises(Exception, self._wam.MoveUntilTouch, (numpy.array([ 1., 0., 0. ]), 0.1, 0.))
+        self.assertRaises(Exception, self._wam.MoveUntilTouch, (numpy.array([1., 0., 0.]), 0.1, 0.))
 
 if __name__ == '__main__':
     import rosunit

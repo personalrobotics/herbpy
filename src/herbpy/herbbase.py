@@ -6,7 +6,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # - Redistributions of source code must retain the above copyright notice, this
 #   list of conditions and the following disclaimer.
 # - Redistributions in binary form must reproduce the above copyright notice,
@@ -15,7 +15,7 @@
 # - Neither the name of Carnegie Mellon University nor the names of its
 #   contributors may be used to endorse or promote products derived from this
 #   software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,7 +29,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from prpy.base import MobileBase
-import prpy
+import prpy, time
 import numpy, logging, openravepy
 logger = logging.getLogger('herbpy')
 
@@ -37,11 +37,10 @@ class HerbBase(MobileBase):
     def __init__(self, sim, robot):
         MobileBase.__init__(self, sim=sim, robot=robot)
         self.controller = robot.AttachController(name=robot.GetName(),
-#                                                 args='SegwayController {0:s}'.format('herbpy'),
-                                                 args='NavigationController {0:s} {1:s}'.format('herbpy', '/navcontroller'),
-                                                 dof_indices=[],
-                                                 affine_dofs=openravepy.DOFAffine.Transform,
-                                                 simulated=sim)
+                              args='NavigationController {0:s} {1:s}'.format('herbpy', '/navcontroller'),
+                              dof_indices=[],
+                              affine_dofs=openravepy.DOFAffine.Transform,
+                              simulated=sim)
 
     def CloneBindings(self, parent):
         MobileBase.CloneBindings(self, parent)
@@ -49,28 +48,30 @@ class HerbBase(MobileBase):
     def Forward(self, meters, execute=True, timeout=None, **kwargs):
         """Drive forward for the desired distance.
         @param distance distance to drive, in meters
-        @param timeout time in seconds; pass \p None to block until complete 
+        @param timeout time in seconds; pass \p None to block until complete
         @return base trajectory
         """
         if self.simulated or not execute:
-            return MobileBase.Forward(self, meters, execute=execute, timeout=timeout,  **kwargs)
+            return MobileBase.Forward(self, meters, execute=execute,
+                     timeout=timeout, **kwargs)
         else:
             with prpy.util.Timer("Drive segway"):
                 self.controller.SendCommand("Drive " + str(meters))
-                is_done = prpy.util.WaitForControllers([ self.controller ], timeout=timeout)
+                is_done = prpy.util.WaitForControllers([self.controller], timeout=timeout)
 
     def Rotate(self, angle_rad, execute=True, timeout=None, **kwargs):
         """Rotate in place by a desired angle
         @param angle angle to turn, in radians
-        @param timeout time in seconds; pass \p None to block until complete 
+        @param timeout time in seconds; pass \p None to block until complete
         @return base trajectory
         """
         if self.simulated or not execute:
-            return MobileBase.Rotate(self, angle_rad, execute=execute, timeout=timeout, **kwargs)
+            return MobileBase.Rotate(self, angle_rad, execute=execute,
+                     timeout=timeout, **kwargs)
         else:
             with prpy.util.Timer("Rotate segway"):
                 self.controller.SendCommand("Rotate " + str(angle_rad))
-                running_controllers = [ self.controller ]
+                running_controllers = [self.controller]
                 is_done = prpy.util.WaitForControllers(running_controllers, timeout=timeout)
 
     def DriveStraightUntilForce(self, direction, velocity=0.1, force_threshold=3.0,
@@ -99,7 +100,7 @@ class HerbBase(MobileBase):
             with prpy.util.Timer("Drive segway until force"):
                 env = self.robot.GetEnv()
                 direction = numpy.array(direction, dtype='float')
-                direction /= numpy.linalg.norm(direction) 
+                direction /= numpy.linalg.norm(direction)
                 manipulators = list()
                 if left_arm:
                     manipulators.append(self.robot.left_arm)
@@ -122,7 +123,7 @@ class HerbBase(MobileBase):
                 for manipulator in manipulators:
                     force, torque = manipulator.hand.GetForceTorque()
                     initial_force[manipulator] = force
-                
+
                 try:
                     felt_force = False
                     start_time = time.time()
@@ -143,7 +144,7 @@ class HerbBase(MobileBase):
 
                         # Check for a timeout.
                         time_now = time.time()
-                        if timeout is not None and time_now - star_time > timeout:
+                        if timeout is not None and time_now - start_time > timeout:
                             return False
 
                         # Continuously stream forward velocities.
@@ -158,7 +159,6 @@ class HerbBase(MobileBase):
         @param direction A 2 or 3-element direction vector
         @param goal_pos A 2 or 3-element position vector (world frame)
         """
-        import numpy
         direction = numpy.array(direction[:2]) / numpy.linalg.norm(direction[:2])
         robot_pose = self.robot.GetTransform()
         distance = numpy.dot(numpy.array(goal_pos[:2]) - robot_pose[:2, 3], direction)

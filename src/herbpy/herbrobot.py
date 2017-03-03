@@ -1,8 +1,6 @@
 PACKAGE = 'herbpy'
 import logging
 import numbers
-import numpy
-import openravepy
 import prpy
 import prpy.rave
 import prpy.util
@@ -16,7 +14,7 @@ from prpy import Cloned
 from prpy.action import ActionLibrary
 from prpy.base.robot import Robot
 from prpy.controllers import RewdOrTrajectoryController
-from prpy.exceptions import PrPyException, TrajectoryNotExecutable
+from prpy.exceptions import TrajectoryNotExecutable
 from prpy.named_config import ConfigurationLibrary
 from prpy.planning import (
     CBiRRTPlanner,
@@ -30,7 +28,6 @@ from prpy.planning import (
     VectorFieldPlanner,
 )
 from or_trajopt import TrajoptPlanner
-from prpy.planning.base import UnsupportedPlanningError
 from prpy.planning.retimer import HauserParabolicSmoother
 from prpy.util import FindCatkinResource
 
@@ -103,9 +100,9 @@ class HERBRobot(Robot):
 
         # Set HERB's acceleration limits. These are not specified in URDF.
         accel_limits = self.GetDOFAccelerationLimits()
-        accel_limits[self.head.GetArmIndices()] = [ 2. ] * self.head.GetArmDOF()
-        accel_limits[self.left_arm.GetArmIndices()] = [ 2. ] * self.left_arm.GetArmDOF()
-        accel_limits[self.right_arm.GetArmIndices()] = [ 2. ] * self.right_arm.GetArmDOF()
+        accel_limits[self.head.GetArmIndices()] = [2.] * self.head.GetArmDOF()
+        accel_limits[self.left_arm.GetArmIndices()] = [2.] * self.left_arm.GetArmDOF()
+        accel_limits[self.right_arm.GetArmIndices()] = [2.] * self.right_arm.GetArmDOF()
         self.SetDOFAccelerationLimits(accel_limits)
 
 
@@ -166,7 +163,7 @@ class HERBRobot(Robot):
                 configurations_path))
 
         # Hand configurations
-        for hand in [ self.left_hand, self.right_hand ]:
+        for hand in [self.left_hand, self.right_hand]:
             hand.configurations = ConfigurationLibrary()
             hand.configurations.add_group('hand', hand.GetIndices())
 
@@ -240,13 +237,12 @@ class HERBRobot(Robot):
         import herbpy.action
         import herbpy.tsr
 
-
         # Setting necessary sim flags
         self.talker_simulated = talker_sim
         self.segway_sim = segway_sim
 
         # Set up perception
-        self.detector=None
+        self.detector = None
         if perception_sim:
             from prpy.perception import SimulatedPerceptionModule
             self.detector = SimulatedPerceptionModule()
@@ -289,7 +285,7 @@ class HERBRobot(Robot):
         self.right_arm.hand = Cloned(parent.right_arm.GetEndEffector())
         self.left_hand = self.left_arm.hand
         self.right_hand = self.right_arm.hand
-        self.manipulators = [ self.left_arm, self.right_arm, self.head ]
+        self.manipulators = [self.left_arm, self.right_arm, self.head]
         self.planner = parent.planner
         self.base_planner = parent.base_planner
 

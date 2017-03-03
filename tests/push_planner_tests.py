@@ -32,7 +32,7 @@ class PushPlannerTest(unittest.TestCase):
         goal_in_table = [0.15, 0., -0.03, 1.]
         goal_in_world = numpy.dot(self.table.GetTransform(), goal_in_table)
         self.goal_pose = goal_in_world[:2]
-        self.goal_radius = 0.1    
+        self.goal_radius = 0.1
 
         # Manipulators and hand shape
         self.push_arm = self.robot.right_arm
@@ -45,10 +45,10 @@ class PushPlannerTest(unittest.TestCase):
         self.push_arm.SetActive()
         start_pose = [ 4.49119545, -1.59899798, -0.6,  1.65274406, -1.7742985,  -0.63854765, -1.23051631]
         self.push_arm.PlanToConfiguration(start_pose, execute=True)
-        
+
         # Plan to push the object
         from herbpy.action.pushing import PushToPoseOnTable
-        traj = self.robot.PushToPoseOnTable(obj=self.glass, 
+        traj = self.robot.PushToPoseOnTable(obj=self.glass,
                                             table=self.table,
                                             goal_position=self.goal_pose,
                                             goal_radius=self.goal_radius,

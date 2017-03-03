@@ -37,12 +37,14 @@ def point_on(robot, block_bin, manip=None, padding=0.04):
 
     xdim = max(0.085 - padding, 0.0)
     ydim = max(0.135 - padding, 0.0)
-    Bw[0, :] = [-xdim, xdim] # move along x, y directions to get any point on tray
+    # move along x, y directions to get any point on tray
+    Bw[0, :] = [-xdim, xdim]
     Bw[1, :] = [-ydim, ydim]
     Bw[2, :] = [-0.02, 0.04] # verticle movement
-    Bw[5, :] = [-numpy.pi, numpy.pi] # allow any rotation around z - which is the axis normal to the tray top
+    # allow any rotation around z - which is the axis normal to the tray top
+    Bw[5, :] = [-numpy.pi, numpy.pi]
 
-    manip_tsr = TSR(T0_w = T0_w, Tw_e = Tw_e, Bw = Bw, manip = manip_idx)
-    tsr_chain = TSRChain(sample_start = False, sample_goal = True, constrain=False,
-                         TSR = manip_tsr)
+    manip_tsr = TSR(T0_w=T0_w, Tw_e=Tw_e, Bw=Bw, manip=manip_idx)
+    tsr_chain = TSRChain(sample_start=False, sample_goal=True, constrain=False,
+                         TSR=manip_tsr)
     return [tsr_chain]

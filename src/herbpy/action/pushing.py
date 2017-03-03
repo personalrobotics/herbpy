@@ -5,22 +5,26 @@ from prpy.planning.base import PlanningError
 logger = logging.getLogger('herbpy')
 
 @ActionMethod
-def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius, 
-                      manip=None, max_plan_duration=30.0, 
+def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
+                      manip=None, max_plan_duration=30.0,
                       shortcut_time=3., render=True, search=True, tracker=None,
                       **kw_args):
     """
     @param robot The robot performing the push
     @param obj The object to push
     @param table The table kinbody the object is resting on
-    @param goal_position The desired (x,y) position of the object in world coordinates
-    @param goal_radius The max distance from goal_position for the object to be to 
-      still consider the goal achieved
-    @param manip The manipulator to use for the push - if None the active manipulator is used
+    @param goal_position The desired (x,y) position of the object in
+                          world coordinates
+    @param goal_radius The max distance from goal_position for the object
+                       to be to still consider the goal achieved
+    @param manip The manipulator to use for the push - if None the active
+                 manipulator is used
     @param max_plan_duration The max time to run the planner
-    @param shortcut_time The amount of time to spend shortcutting, if 0. no shortcutting is performed
+    @param shortcut_time The amount of time to spend shortcutting,
+                         if 0. no shortcutting is performed
     @param render If true, render the trajectory while executing
-    @param tracker The perception module to use to track the object during pushing
+    @param tracker The perception module to use to track the object
+                    during pushing
     """
     # Get a push planner
     try:
@@ -56,22 +60,22 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
                'low': [table_pos[0] - table_extents[0],
                        table_pos[1] - table_extents[1],
                        0]}
-    
-    # Assume we want to keep the current orientation and height of the manipulator
-    #  throughout the push
-    ee_pushing_transform[:2,3] = [0., 0.] #ignore x,y pose
+
+    # Assume we want to keep the current orientation and height of the
+    # manipulator throughout the push
+    ee_pushing_transform[:2, 3] = [0., 0.] #ignore x,y pose
 
     # Compute the goal pose
-    table_height = table_pos[2] + table_extents[2]
+    #table_height = table_pos[2] + table_extents[2]
     goal_pose = [goal_position[0],
                        goal_position[1]]
 
     with robot.CreateRobotStateSaver():
         traj = planner.PushToPose(robot, obj, goal_pose,
-                                  state_bounds = sbounds,
-                                  pushing_manifold = ee_pushing_transform.flatten().tolist(),
-                                  max_plan_duration = max_plan_duration,
-                                  goal_radius = goal_radius,
+                                  state_bounds=sbounds,
+                                  pushing_manifold=ee_pushing_transform.flatten().tolist(),
+                                  max_plan_duration=max_plan_duration,
+                                  goal_radius=goal_radius,
                                   **kw_args)
     if traj is None:
         raise PlanningError('Failed to find pushing plan')
@@ -93,13 +97,14 @@ def PushToPoseOnTable(robot, obj, table, goal_position, goal_radius,
                 else:
                     # Execute the trajectory
                     robot.ExecuteTrajectory(traj)
-                    
-                    # During execution, object pushes won't be simulated. 
-                    # In the OpenRAVE world, the robot will instead move through the objects
-                    # and probably be in collision at the end.
-                    # This call sets all the objects to their expected poses
-                    # at the end of the trajectory. If execution was successful, this should resolve 
-                    # collisions. 
+
+                    # During execution, object pushes won't be simulated.
+                    # In the OpenRAVE world, the robot will instead move
+                    # through the objects and probably be in collision at
+                    # the end. This call sets all the objects to their
+                    # expected poses at the end of the trajectory.
+                    # If execution was successful, this should resolve
+                    # collisions.
                     planner.SetFinalObjectPoses()
             finally:
                 if tracker is not None:

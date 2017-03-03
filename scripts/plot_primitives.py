@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import argparse, copy, numpy, random, yaml
+import argparse, yaml
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
@@ -19,13 +19,13 @@ if __name__ == '__main__':
         xvals = []
         yvals = []
         tvals = []
-	for primitive in primitives:
+        for primitive in primitives:
             poses = primitive['poses']
             for coord in poses:
                 xvals.append(coord[0])
                 yvals.append(coord[1])
                 tvals.append(coord[2])
-                
+
         plt.plot(xvals, yvals, '.b')
         title_str = 'Angle %d' % ang
         plt.title(title_str)

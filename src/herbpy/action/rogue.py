@@ -1,9 +1,7 @@
-import logging, openravepy, prpy 
+import logging, openravepy, prpy
 from prpy.action import ActionMethod
-from prpy.planning.base import PlanningError
-from contextlib import contextmanager 
 from prpy.util import FindCatkinResource, GetPointFrom
-import numpy, cPickle, time, os.path
+import numpy, time
 
 logger = logging.getLogger('herbpy')
 
@@ -11,9 +9,9 @@ logger = logging.getLogger('herbpy')
 def PointAt(robot, focus, manip=None, render=False):
     """
     @param robot The robot performing the point
-    @param focus The 3-D coordinate in space or object 
+    @param focus The 3-D coordinate in space or object
                  that is being pointed at
-    @param manip The manipulator to perform the point with. 
+    @param manip The manipulator to perform the point with.
                  This must be the right arm
     @param render Render tsr samples during planning
     """
@@ -24,9 +22,9 @@ def PointAt(robot, focus, manip=None, render=False):
 def PresentAt(robot, focus, manip=None, render=True):
     """
     @param robot The robot performing the presentation
-    @param focus The 3-D coordinate in space or object that 
+    @param focus The 3-D coordinate in space or object that
                  is being presented
-    @param manip The manipulator to perform the presentation with. 
+    @param manip The manipulator to perform the presentation with.
                  This must be the right arm.
     @param render Render tsr samples during planning
     """
@@ -41,7 +39,7 @@ def SweepAt(robot, start, end, manip=None, margin=0.3, render=True):
     @param end The object of 3-d position that marks the end
     @param manip The manipulator to perform the sweep
     @param margin The distance between the start object and the hand,
-                  so the vertical space between the hand and objects. 
+                  so the vertical space between the hand and objects.
                   This must be enough to clear the objects themselves.
     @param render Render tsr samples during planning
     """
@@ -53,7 +51,7 @@ def Point(robot, coord, manip=None, render=False):
     """
     @param robot The robot performing the point
     @param focus The 3-D coordinate in space that is being pointed at
-    @param manip The manipulator to perform the point with. 
+    @param manip The manipulator to perform the point with.
                  This must be the right arm
     @param render Render tsr samples during planning
     """
@@ -81,9 +79,9 @@ def Point(robot, coord, manip=None, render=False):
 def Present(robot, coord, manip=None, render=True):
     """
     @param robot The robot performing the presentation
-    @param focus The 3-D coordinate in space or object that 
+    @param focus The 3-D coordinate in space or object that
                  is being presented
-    @param manip The manipulator to perform the presentation with. 
+    @param manip The manipulator to perform the presentation with.
                  This must be the right arm.
     @param render Render tsr samples during planning
     """
@@ -99,7 +97,7 @@ def Present(robot, coord, manip=None, render=True):
 
     with robot.GetEnv():
         present_tsr = robot.tsrlibrary(None, 'present', focus_trans, manip)
-    
+
     p = openravepy.KinBody.SaveParameters
     with robot.CreateRobotStateSaver(p.ActiveManipulator | p.ActiveDOF):
         robot.SetActiveManipulator(manip)
@@ -116,7 +114,7 @@ def Sweep(robot, start_coords, end_coords, manip=None, margin=0.3, render=True):
     @param end The object of 3-d position that marks the end
     @param manip The manipulator to perform the sweep
     @param margin The distance between the start object and the hand,
-                  so the vertical space between the hand and objects. 
+                  so the vertical space between the hand and objects.
                   This must be enough to clear the objects themselves.
     @param render Render tsr samples during planning
     """
@@ -136,11 +134,11 @@ def Sweep(robot, start_coords, end_coords, manip=None, margin=0.3, render=True):
     elif manip.GetName() == 'left':
         hand = robot.left_hand
         ee_offset = 0.2
-        hand_pose = numpy.array([[ 0,  1, 0, start_coords[0]],
-                                 [ 0,  0, -1, (start_coords[1]+ee_offset)],
-                                 [-1,  0, 0, (start_coords[2]+margin)],
-                                 [ 0,  0, 0, 1]], dtype='float')
-  
+        hand_pose = numpy.array([[ 0, 1, 0, start_coords[0]],
+                                 [ 0, 0, -1, (start_coords[1]+ee_offset)],
+                                 [-1, 0, 0, (start_coords[2]+margin)],
+                                 [ 0, 0, 0, 1]], dtype='float')
+
     else:
         raise prpy.exceptions.PrPyException('Manipulator does not have an'
                  ' associated hand')
@@ -164,7 +162,7 @@ def Sweep(robot, start_coords, end_coords, manip=None, margin=0.3, render=True):
         robot.SetActiveManipulator(manip)
         robot.SetActiveDOFs(manip.GetArmIndices())
         with prpy.viz.RenderTSRList(sweep_tsr, robot.GetEnv(), render=render):
-             robot.PlanToTSR(sweep_tsr, execute=True)
+            robot.PlanToTSR(sweep_tsr, execute=True)
 
 @ActionMethod
 def Exhibit(robot, obj, manip=None, distance=0.1, wait=2, release=True, render=True):
@@ -186,8 +184,8 @@ def Exhibit(robot, obj, manip=None, distance=0.1, wait=2, release=True, render=T
     p = openravepy.KinBody.SaveParameters
     with robot.CreateRobotStateSaver(p.ActiveManipulator | p.ActiveDOF):
         robot.SetActiveManipulator(manip)
-        robot.SetActiveDOFs(manip.GetArmIndices())    
-        
+        robot.SetActiveDOFs(manip.GetArmIndices())
+
         #Lift the object
         lift_tsr = robot.tsrlibrary(obj, 'lift', manip, distance=distance)
         with prpy.viz.RenderTSRList(lift_tsr, robot.GetEnv(), render=render):
@@ -212,18 +210,17 @@ def NodYes(robot):
     """
     @param robot The robot being used to nod
     """
-    import time
     pause = 0.15
     inc = 4
 
     for i in xrange(inc):
-        robot.head.Servo([ 0,  1])
+        robot.head.Servo([0, 1])
         time.sleep(pause)
     for i in xrange((inc*3)):
-        robot.head.Servo([ 0, -1])
+        robot.head.Servo([0, -1])
         time.sleep(pause)
     for i in xrange((inc*2)):
-        robot.head.Servo([ 0,  1])
+        robot.head.Servo([0, 1])
         time.sleep(pause)
 
 @ActionMethod
@@ -231,18 +228,17 @@ def NodNo(robot):
     """
     @param robot The robot being used to nod
     """
-    import time
     pause = 0.15
     inc = 4
 
     for i in xrange(inc):
-        robot.head.Servo([ 1, 0])
+        robot.head.Servo([1, 0])
         time.sleep(pause)
     for i in xrange((inc*3)):
         robot.head.Servo([-1, 0])
         time.sleep(pause)
     for i in xrange((inc*2)):
-        robot.head.Servo([ 1, 0])
+        robot.head.Servo([1, 0])
         time.sleep(pause)
 
 @ActionMethod
@@ -259,7 +255,7 @@ def HaltHand(robot, manip=None):
         pose = numpy.array([5.03348748, -1.57569674,  1.68788069,
                             2.06769058, -1.66834313,
                             1.53679821,  0.21175342], dtype='float')
-        
+
         manip.PlanToConfiguration(pose, execute=True)
         robot.right_hand.MoveHand(f1=0, f2=0, f3=0, spread=3.14)
     elif manip.GetName() == 'left':
@@ -269,7 +265,7 @@ def HaltHand(robot, manip=None):
 
         manip.PlanToConfiguration(pose, execute=True)
         robot.left_hand.MoveHand(f1=0, f2=0, f3=0, spread=3.14)
-    else: 
+    else:
         raise prpy.exceptions.PrPyException(
             'HaltHand is only defined for the left and right arm.')
 
@@ -284,21 +280,21 @@ def MiddleFinger(robot, manip=None):
         manip = robot.GetActiveManipulator()
 
     if manip.GetName() == 'right':
-        right_dof = numpy.array([ 5.03348748, -1.57569674,  1.68788069,  
+        right_dof = numpy.array([ 5.03348748, -1.57569674,  1.68788069,
                                   2.06769058, -1.66834313,
                                   1.53679821,  0.21175342], dtype='float')
-         
+
         manip.PlanToConfiguration(right_dof, execute=True)
         robot.right_hand.MoveHand(f1=2, f2=2, f3=0, spread=3.14)
 
     elif manip.GetName() == 'left':
-        left_dof = numpy.array([ 1.30614268, -1.76      , -1.57063853,  
+        left_dof = numpy.array([ 1.30614268, -1.76      , -1.57063853,
                                  2.07228362,  1.23918377,
                                  1.46215605, -0.12918424], dtype='float')
 
         manip.PlanToConfiguration(left_dof, execute=True)
         robot.left_hand.MoveHand(f1=2, f2=2, f3=0, spread=3.14)
-    else: 
+    else:
         raise prpy.exceptions.PrPyException('The middle finger is only defined'
                                 ' for the left and right arm.')
 
@@ -310,7 +306,6 @@ def Wave(robot):
     """
 
     from prpy.rave import load_trajectory
-    from prpy.util import FindCatkinResource
     from os.path import join
     env = robot.GetEnv()
 

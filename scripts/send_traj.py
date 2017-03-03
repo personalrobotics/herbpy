@@ -16,12 +16,12 @@ raw_input("Press enter to execute trajectory...")
 joint_state = rospy.wait_for_message("/joint_states", JointState, timeout=1.0)
 
 names = [
-  '/right/j1', 
-  '/right/j2', 
-  '/right/j3', 
-  '/right/j4', 
-  '/right/j5', 
-  '/right/j6', 
+  '/right/j1',
+  '/right/j2',
+  '/right/j3',
+  '/right/j4',
+  '/right/j5',
+  '/right/j6',
   '/right/j7'
 ]
 
@@ -33,7 +33,7 @@ cur_names, cur_pos = zip(*cur_state) # unzip
 end_pos = []
 
 for p in cur_pos:
-  end_pos.append(p + 0.2)
+    end_pos.append(p + 0.2)
 
 traj_msg = JointTrajectory()
 traj_msg.header.stamp = rospy.Time.now() + rospy.Duration.from_sec(2.0)

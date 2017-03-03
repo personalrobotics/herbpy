@@ -28,7 +28,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import numpy, openravepy, time
+import numpy, openravepy
 from prpy import util
 from prpy.base.endeffector import EndEffector
 from prpy.controllers import (
@@ -47,7 +47,8 @@ class BarrettHand(EndEffector):
         reading breakaway status) are not supported on the BH-262.
         @param sim whether the hand is simulated
         @param manipulator manipulator the hand is attached to
-        @param bhd_namespace ROS namespace that the BarrettHand driver is running in
+        @param bhd_namespace ROS namespace that the BarrettHand driver
+                             is running in
         @param ft_sim whether the force/torque sensor is simulated
         """
         EndEffector.__init__(self, manipulator)
@@ -100,8 +101,8 @@ class BarrettHand(EndEffector):
         These are returned in the order: [ finger 0, finger 1, and finger 2 ].
         @return DOF indices of the fingers
         """
-        names = [ 'j01', 'j11', 'j21' ]
-        return [ self._GetJointFromName(name).GetDOFIndex() for name in names ]
+        names = ['j01', 'j11', 'j21']
+        return [self._GetJointFromName(name).GetDOFIndex() for name in names]
 
     def GetIndices(self):
         """ Gets the DOF indices of this hand.
@@ -135,7 +136,7 @@ class BarrettHand(EndEffector):
         preshape[3] = spread if spread is not None else curr_pos[3]
 
         self.controller.SetDesired(preshape)
-        util.WaitForControllers([ self.controller ], timeout=timeout)
+        util.WaitForControllers([self.controller], timeout=timeout)
 
     def OpenHand(hand, spread=None, timeout=None):
         """Open the hand with a fixed spread.
@@ -155,7 +156,7 @@ class BarrettHand(EndEffector):
                 hand.manipulator.SetActive()
                 robot.task_manipulation.ReleaseFingers()
 
-            util.WaitForControllers([ hand.controller ], timeout=timeout)
+            util.WaitForControllers([hand.controller], timeout=timeout)
         else:
             hand.MoveHand(f1=0.0, f2=0.0, f3=0.0, spread=spread, timeout=timeout)
 
@@ -177,7 +178,7 @@ class BarrettHand(EndEffector):
                 hand.manipulator.SetActive()
                 robot.task_manipulation.CloseFingers()
 
-            util.WaitForControllers([ hand.controller ], timeout=timeout)
+            util.WaitForControllers([hand.controller], timeout=timeout)
         else:
             hand.MoveHand(f1=3.2, f2=3.2, f3=3.2, spread=spread, timeout=timeout)
 
@@ -219,13 +220,13 @@ class BarrettHand(EndEffector):
             # This is because we are overriding the force/torque sensor datatype.
             raise NotImplementedError('GetBreakaway not yet implemented under ros_control.')
         else:
-            return [ False, False, False ]
+            return [False, False, False]
 
     def GetForceTorque(hand):
         """ Gets the most recent force/torque sensor reading in the hand frame.
         Forces are specified in Newtons and torques are specified in
-        Newton-meters. All readings are relative to the last time the sensor was
-        tared using \ref TareForceTorqueSensor.
+        Newton-meters. All readings are relative to the last time the sensor
+        was tared using \ref TareForceTorqueSensor.
         @return force,torque force/torque in the hand frame
         """
         if not hand.ft_simulated:

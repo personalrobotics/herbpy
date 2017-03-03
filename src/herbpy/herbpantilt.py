@@ -1,5 +1,4 @@
-import logging, numpy, openravepy, rospy
-import prpy
+import logging, openravepy
 from wam import WAM
 
 logger = logging.getLogger('HERBPantilt')
@@ -56,11 +55,11 @@ class HERBPantilt(WAM):
         for i in xrange(final_ik_index + 1, traj.GetNumWaypoints()):
             head_path[i] = head_path[final_ik_index]
 
-        # Interpolate to fill in IK failures. This is guaranteed to succeed because
-        # the first and last waypoints are always valid.
+        # Interpolate to fill in IK failures. This is guaranteed to succeed
+        # because the first and last waypoints are always valid.
         for i in xrange(1, traj.GetNumWaypoints()):
-            # TODO: Fix timestamps on waypoints in MacTrajectory so we can properly
-            # interpolate between waypoints.
+            # TODO: Fix timestamps on waypoints in MacTrajectory so we
+            # can properly interpolate between waypoints.
             if head_path[i] is None:
                 head_path[i] = head_path[i - 1]
 
@@ -70,7 +69,8 @@ class HERBPantilt(WAM):
 
         for i in xrange(0, traj.GetNumWaypoints()):
             waypoint = traj.GetWaypoint(i)
-            merged_config_spec.InsertJointValues(waypoint, head_path[i], robot, head_indices, 0)
+            merged_config_spec.InsertJointValues(waypoint, head_path[i],
+                          robot, head_indices, 0)
             traj.Insert(i, waypoint, True)
 
     def LookAt(self, target, **kw_args):
@@ -121,7 +121,8 @@ class HERBPantilt(WAM):
         @param target target position
         @return IK solution
         """
-        ik_params = openravepy.IkParameterization(target, openravepy.IkParameterization.Type.Lookat3D)
+        ik_params = openravepy.IkParameterization(target,
+                      openravepy.IkParameterization.Type.Lookat3D)
         return self.ikmodel.manip.FindIKSolution(ik_params, 0)
 
     def GetDofValues(self):

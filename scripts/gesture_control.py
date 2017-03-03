@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import herbpy
-import numpy
 
 if __name__ == '__main__':
 

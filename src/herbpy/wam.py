@@ -6,7 +6,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # - Redistributions of source code must retain the above copyright notice, this
 #   list of conditions and the following disclaimer.
 # - Redistributions in binary form must reproduce the above copyright notice,
@@ -15,7 +15,7 @@
 # - Neither the name of Carnegie Mellon University nor the names of its
 #   contributors may be used to endorse or promote products derived from this
 #   software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,13 +30,10 @@
 
 import math
 import logging
-import numbers
 import numpy
 import openravepy
 import warnings
-from prpy import exceptions
 from prpy.base.manipulator import Manipulator
-from prpy.clone import Clone
 
 logger = logging.getLogger('wam')
 
@@ -81,13 +78,13 @@ class WAM(Manipulator):
                                               iktype=iktype)
         if not self.ikmodel.load():
             self.ikmodel.generate(iktype=iktype, precision=4,
-                                  freeindices=[ self.GetIndices()[2] ])
+                                  freeindices=[self.GetIndices()[2]])
             self.ikmodel.save()
 
     def SetStiffness(self, stiffness):
         """Set the WAM's stiffness.
-        Stiffness False/0 is gravity compensation and stiffness True/1 is position
-        control. Values between 0 and 1 are experimental.
+        Stiffness False/0 is gravity compensation and stiffness True/1 is
+        position control. Values between 0 and 1 are experimental.
         @param stiffness boolean or decimal value between 0.0 and 1.0
         """
         self.GetRobot().SetStiffness(stiffness, manip=self)
@@ -144,12 +141,12 @@ class WAM(Manipulator):
         original_dofs = self.GetRobot().GetDOFValues(self.GetArmIndices())
         velocity = numpy.array(target - self.GetRobot().GetDOFValues(self.GetArmIndices()))
         velocities = [v/steps for v in velocity]
-        inCollision = False 
+        inCollision = False
         if collisionChecking:
             inCollision = self.CollisionCheck(target)
 
         if not inCollision:
-            for i in range(1,steps):
+            for i in range(1, steps):
                 import time
                 self.Servo(velocities)
                 time.sleep(timeStep)
@@ -175,7 +172,7 @@ class WAM(Manipulator):
                 DeprecationWarning)
 
         return Manipulator.GetVelocityLimits(self)
-        
+
     def SetVelocityLimits(self, velocity_limits, min_accel_time,
                           openrave=True, owd=None):
         """Change the OpenRAVE and OWD joint velocity limits.
@@ -201,7 +198,7 @@ class WAM(Manipulator):
         @return status of the current (or previous) trajectory executed
         """
         raise NotImplementedError('GetTrajectoryStatus not supported on manipulator.'
-                                  ' Use returned TrajectoryFuture instead.') 
+                                  ' Use returned TrajectoryFuture instead.')
 
     def ClearTrajectoryStatus(manipulator):
         """Clears the current trajectory execution status.
@@ -223,10 +220,10 @@ class WAM(Manipulator):
         @param max_distance maximum distance in meters
         @param max_force maximum force in Newtons
         @param max_torque maximum torque in Newton-Meters
-        @param ignore_collisions collisions with these objects are ignored when 
+        @param ignore_collisions collisions with these objects are ignored when
         planning the path, e.g. the object you think you will touch
-        @param velocity_limit_scale A multiplier to use to scale velocity limits 
-        when executing MoveUntilTouch ( < 1 in most cases).           
+        @param velocity_limit_scale A multiplier to use to scale velocity limits
+        when executing MoveUntilTouch ( < 1 in most cases).
         @param **kw_args planner parameters
         @return felt_force flag indicating whether we felt a force.
         """
@@ -295,7 +292,7 @@ class WAM(Manipulator):
 
             robot_saver = robot.CreateRobotStateSaver(
                 Robot.SaveParameters.LinkTransformation)
-            
+
             with env, robot_saver:
                 for t in numpy.arange(0, traj.GetDuration(), delta_t):
                     waypoint = traj.Sample(t)
@@ -322,7 +319,7 @@ class WAM(Manipulator):
                         traj_cspec.InsertDeltaTime(waypoint, 0.)
                     else:
                         traj_cspec.InsertDeltaTime(waypoint, delta_t)
-                    
+
                     new_traj.Insert(new_traj.GetNumWaypoints(), waypoint)
 
             if new_traj.GetNumWaypoints() > 0:

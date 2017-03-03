@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import argparse, copy, numpy, random, yaml
+import argparse, numpy, yaml
 import IPython
 
 def generate_primitives_list():
@@ -13,14 +13,14 @@ def generate_primitives_list():
     primitives[0] = []
 
     # Generate primitives for moving forward and backward
-    primitives[0].append((1, 0, 0, 1.)) 
+    primitives[0].append((1, 0, 0, 1.))
     primitives[0].append((8, 0, 0, 1.))
     primitives[0].append((-1, 0, 0, 100.))
 
     # 1/16 theta change
     primitives[0].append((8, 1, 1, 1.))
     primitives[0].append((8, -1, -1, 1.))
-    
+
     # Turn in place
     primitives[0].append((0, 0, 1, 3.))
     primitives[0].append((0, 0, -1, 3.))
@@ -36,54 +36,55 @@ def generate_primitives_list():
     primitives[45].append((-1, -1, 0, 100.))
 
     # 1/16 theta change
-    primitives[45].append((5,7,1, 1.))
-    primitives[45].append((7,5,-1, 1.))
+    primitives[45].append((5, 7, 1, 1.))
+    primitives[45].append((7, 5, -1, 1.))
 
     # turn in place
-    primitives[45].append((0,0,1,3.))
-    primitives[45].append((0,0,-1,3.))
+    primitives[45].append((0, 0, 1, 3.))
+    primitives[45].append((0, 0, -1, 3.))
 
     ##############################
     # Heading 22.5
     ##############################
     primitives[22.5] = []
-    
+
     # Straight
-    primitives[22.5].append((2,1,0,1.))
-    primitives[22.5].append((6,3,0,1.))
-    primitives[22.5].append((-2,-1,0,100.))
+    primitives[22.5].append((2, 1, 0, 1.))
+    primitives[22.5].append((6, 3, 0, 1.))
+    primitives[22.5].append((-2, -1, 0, 100.))
 
     # 1/16 theta change
-    primitives[22.5].append((5,4,1,1.))
-    primitives[22.5].append((7,2,-1,1.))
-    
+    primitives[22.5].append((5, 4, 1, 1.))
+    primitives[22.5].append((7, 2, -1, 1.))
+
     # turn in place
-    primitives[22.5].append((0,0,1,3.))
-    primitives[22.5].append((0,0,-1,3.))
+    primitives[22.5].append((0, 0, 1, 3.))
+    primitives[22.5].append((0, 0, -1, 3.))
 
     ##############################
-    # Heading 67.5 - same as 22.5 but with x and y reversed and heading flipped sign
+    # Heading 67.5 - same as 22.5 but with
+    # x and y reversed and heading flipped sign
     ##############################
     primitives[67.5] = []
 
     # Straight
-    primitives[67.5].append((1,2,0,1.))
-    primitives[67.5].append((3,6,0,1.))
-    primitives[67.5].append((-1,-2,0,100.))
+    primitives[67.5].append((1, 2, 0, 1.))
+    primitives[67.5].append((3, 6, 0, 1.))
+    primitives[67.5].append((-1, -2, 0, 100.))
 
     # 1/16 theta change
-    primitives[67.5].append((4,5,-1,1.))
-    primitives[67.5].append((2,7,1,1.))
-    
+    primitives[67.5].append((4, 5, -1, 1.))
+    primitives[67.5].append((2, 7, 1, 1.))
+
     # turn in place
-    primitives[67.5].append((0,0,-1,3.))
-    primitives[67.5].append((0,0,1,3.))
-    
+    primitives[67.5].append((0, 0, -1, 3.))
+    primitives[67.5].append((0, 0, 1, 3.))
+
     return primitives
-    
+
 
 if __name__ == '__main__':
-    
+
     parser = argparse.ArgumentParser(description="Generate a primitives for the herb robot")
     parser.add_argument('--resolution', type=float, default=0.1,
                         help="The resolution in xy")
@@ -125,11 +126,11 @@ if __name__ == '__main__':
         # First pull the appropriate list of primitives for this particular angle
         start_angle = angleind*angular_resolution
         start_degrees = round(start_angle*180.*100/numpy.pi)
-            
-        if (start_degrees % 9000) < 0.001 :
+
+        if (start_degrees % 9000) < 0.001:
             prims = primitives[0]
             angle = start_angle
-        elif (start_degrees % 4500) < 0.001 :
+        elif (start_degrees % 4500) < 0.001:
             prims = primitives[45]
             angle = start_angle - numpy.pi/4.
         elif ((start_degrees - 6750) % 9000) < 0.001:
@@ -153,30 +154,30 @@ if __name__ == '__main__':
             # Grab the current primitive
             prim = prims[primind]
 
-            # Figure out the final coordinate by applying the rotation of the angle to the 
+            # Figure out the final coordinate by applying the rotation of the angle to the
             #  offset defined in the primitive
             final_x = round(prim[0]*numpy.cos(angle) - prim[1]*numpy.sin(angle))
             final_y = round(prim[0]*numpy.sin(angle) + prim[1]*numpy.cos(angle))
             final_theta = (angleind + prim[2]) % num_angles
-            
+
             # This will be the final pose, in grid coordinates, of the action
             endcoord = numpy.array([final_x, final_y, final_theta])
-            
+
             # Set the start and end points of the action - in world coordinates
             startpt = numpy.array([0., 0., start_angle])
             endpt = numpy.array([endcoord[0]*resolution, endcoord[1]*resolution, endcoord[2]*angular_resolution])
 
             # A list of intermediate poses visited during the action
             intermediates = []
-            
-            if (final_x == 0. and final_y == 0.) or prim[2] == 0. : 
-                # Figure out how many samples based on the collision resolution 
+
+            if (final_x == 0. and final_y == 0.) or prim[2] == 0.:
+                # Figure out how many samples based on the collision resolution
                 #  and the type of action
                 if(final_x == 0. and final_y == 0.): # Turn in place
                     num_samples = int(numpy.ceil(abs(prim[2]*angular_resolution/args.angular_collision_resolution)) + 0.5)
                 else:
                     num_samples = int(numpy.ceil(numpy.linalg.norm(endpt[:2])/args.linear_collision_resolution) + 0.5)
-        
+
                 # Turn in place or move forward or backward
                 for sampleidx in range(num_samples+1):
 
@@ -192,7 +193,7 @@ if __name__ == '__main__':
                 # Invert the vehicle model
                 R = numpy.array([[numpy.cos(startpt[2]), numpy.sin(endpt[2]) - numpy.sin(startpt[2])],
                                  [numpy.sin(startpt[2]), -numpy.cos(endpt[2]) + numpy.cos(startpt[2])]])
-                S = numpy.dot(numpy.linalg.pinv(R),(endpt[:2] - startpt[:2]))
+                S = numpy.dot(numpy.linalg.pinv(R), (endpt[:2] - startpt[:2]))
 
                 rv = prim[2]*angular_resolution + S[0]/S[1]
                 tv = S[1]*rv
@@ -201,14 +202,14 @@ if __name__ == '__main__':
                     print 'Warning: l = %d < 0 -> bad action start/end points' % S[0]
 #                    IPython.embed()
 
-                # Figure out how many samples based on the collision resolution 
+                # Figure out how many samples based on the collision resolution
                 #  and the type of action
                 num_samples = max(int(0.5 + numpy.ceil(abs(prim[2]*angular_resolution/args.angular_collision_resolution))),
                                   int(0.5 + numpy.ceil(numpy.linalg.norm(endpt[:2])/args.linear_collision_resolution)))
-                
+
                 for sampleidx in range(num_samples+1):
                     dt = sampleidx / float(num_samples)
-                    
+
                     if dt*tv < S[0]:
                         pt = numpy.array([startpt[0] + dt*tv*numpy.cos(startpt[2]),
                                           startpt[1] + dt*tv*numpy.sin(startpt[2]),
@@ -219,13 +220,13 @@ if __name__ == '__main__':
                                           startpt[1] + S[0]*numpy.sin(startpt[2]) - S[1]*(numpy.cos(dtheta) - numpy.cos(startpt[2])),
                                           dtheta])
                     intermediates.append(pt)
-                
+
                 # Correct for error
                 error = endpt[:2] - intermediates[-1][:2]
                 if numpy.linalg.norm(error) > 0.0001:
                     for idx in range(len(intermediates)):
                         intermediates[idx][:2] += error*idx*(1./num_samples)
-            
+
             pose_list = []
             for intermediate in intermediates:
                 pose_list.append([float(intermediate[0]), float(intermediate[1]), float(intermediate[2])])

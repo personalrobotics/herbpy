@@ -9,11 +9,10 @@ import numpy
 import serial
 import struct
 import yaml
-import tf.transformations
 import rospy
 from enum import IntEnum
 
-ActiveDOF = openravepy.Robot.SaveParameters.ActiveDOF 
+ActiveDOF = openravepy.Robot.SaveParameters.ActiveDOF
 
 
 class Status(IntEnum):
@@ -81,14 +80,14 @@ class X3Inclinometer(object):
         self._checksum(response_binary)
 
         response = struct.unpack('>iiiHB', response_binary)
-        angles = [ math.radians(angle / 1000) for angle in response[0:3] ]
+        angles = [math.radians(angle / 1000) for angle in response[0:3]]
         temperature = response[3] / 100
 
         return angles, temperature
 
     def set_one_direction(self, axis, direction, address=0):
         assert self.connection
-        assert axis in [ 0, 1, 2 ]
+        assert axis in [0, 1, 2]
 
         request = struct.pack('BBBB', address, Command.SetOneDirection.value, axis, direction.value)
         checksum = 256 - (self._sum_bytes(request) % 256)
@@ -104,7 +103,7 @@ class X3Inclinometer(object):
         assert self.connection
 
         offset_raw = int(offset / 1000 + 0.5)
-        assert axis in [ 0, 1, 2 ]
+        assert axis in [0, 1, 2]
         assert -360000 <= offset_raw <= 359999
 
         request = struct.pack('>BBBi', address, Command.SetOneAngleOffset.value, axis, offset_raw)
@@ -122,7 +121,7 @@ class X3Inclinometer(object):
             raise ValueError('Set failed: {:d}.'.format(response[0]))
 
     def _sum_bytes(self, data):
-        return sum(ord(d) for d in data) 
+        return sum(ord(d) for d in data)
 
     def _checksum(self, data):
         if not self._sum_bytes(data) % 256 == 0:
@@ -130,39 +129,39 @@ class X3Inclinometer(object):
 
 
 def get_gravity_vector(vals):
-   # compose a 3x3 matrix
-   A = numpy.zeros((3,3))
-   
-   for i,val in enumerate(vals):
-     
-      # expresses atan2 relationships
-      if i == 0:
-         arg1 = (-1., 1)
-         arg2 = ( 1., 2)
-      elif i == 1:
-         arg1 = (-1., 0)
-         arg2 = (-1., 2)
-      else: # i == 2
-         arg1 = (-1., 1)
-         arg2 = (-1., 0)
-     
-      # compute tangents
-      tval = math.tan(val)
-      cval = 1.0/math.tan(val) # better version?
-      if abs(tval) < abs(cval):
-         # use tangent
-         pass
-      else:
-         # use cotangent
-         tval = cval
-         arg1, arg2 = arg2, arg1
-     
-      # fill matrix
-      A[i,arg2[1]] = arg2[0] * tval
-      A[i,arg1[1]] = - arg1[0]
-   
-   U, S, VT = numpy.linalg.svd(A)
-   return tuple(VT[2,:])
+    # compose a 3x3 matrix
+    A = numpy.zeros((3, 3))
+
+    for i, val in enumerate(vals):
+
+        # expresses atan2 relationships
+        if i == 0:
+            arg1 = (-1., 1)
+            arg2 = ( 1., 2)
+        elif i == 1:
+            arg1 = (-1., 0)
+            arg2 = (-1., 2)
+        else: # i == 2
+            arg1 = (-1., 1)
+            arg2 = (-1., 0)
+
+        # compute tangents
+        tval = math.tan(val)
+        cval = 1.0/math.tan(val) # better version?
+        if abs(tval) < abs(cval):
+            # use tangent
+            pass
+        else:
+            # use cotangent
+            tval = cval
+            arg1, arg2 = arg2, arg1
+
+        # fill matrix
+        A[i, arg2[1]] = arg2[0] * tval
+        A[i, arg1[1]] = -arg1[0]
+
+    _, _, VT = numpy.linalg.svd(A)
+    return tuple(VT[2, :])
 
 
 # Axes:
@@ -266,7 +265,7 @@ if __name__ == '__main__':
 
     robot.SetDOFLimits(min_limit, max_limit)
 
-    nominal_config = [ math.pi, 0., 0., 0., 0., 0., 0. ]
+    nominal_config = [math.pi, 0., 0., 0., 0., 0., 0.]
 
     # Close the hand for safety.
     manipulator.hand.CloseHand()
@@ -300,7 +299,7 @@ if __name__ == '__main__':
             angles, _ = sensor.get_all_angles()
             print('{: 1.7f} {: 1.7f} {: 1.7f}'.format(*angles))
 
-        raise Exception() 
+        raise Exception()
         """
 
         # Sequentially calibrate each joint.
@@ -332,7 +331,7 @@ if __name__ == '__main__':
                 print('J{:d}: Transmission Ratio: {: 1.7f} -> {: 1.7f}'.format(
                     ijoint + 1, old_transmission_ratio, new_transmission_ratio))
 
-    # TODO: What about the differentials? These correspond to parameters: 
+    # TODO: What about the differentials? These correspond to parameters:
     #   - <namespace>/owd/differential3_ratio
     #   - <namespace>/owd/differential6_ratio
 
