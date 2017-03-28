@@ -1,7 +1,8 @@
 import numpy
-import prpy.tsr
+from tsr.tsrlibrary import TSRFactory
+from tsr.tsr import TSR, TSRChain
 
-@prpy.tsr.tsrlibrary.TSRFactory('herb', 'box', 'stamp')
+@TSRFactory('herb', 'box', 'stamp')
 def box_stamp(robot, box, manip=None):
 
     '''
@@ -35,8 +36,8 @@ def box_stamp(robot, box, manip=None):
     Bw = numpy.zeros((6, 2))
     Bw[5, :] = [-numpy.pi, numpy.pi]  # Allow any orientation
 
-    grasp_tsr = prpy.tsr.TSR(T0_w=T0_w, Tw_e=Tw_e, Bw=Bw, manip=manip_idx)
-    grasp_chain = prpy.tsr.TSRChain(sample_start=False, sample_goal=True,
+    grasp_tsr = TSR(T0_w=T0_w, Tw_e=Tw_e, Bw=Bw, manip=manip_idx)
+    grasp_chain = TSRChain(sample_start=False, sample_goal=True,
                                     constrain=False, TSR=grasp_tsr)
 
     return [grasp_chain]

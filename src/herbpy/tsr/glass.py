@@ -1,4 +1,4 @@
-from prpy.tsr.tsrlibrary import TSRFactory
+from tsr.tsrlibrary import TSRFactory
 
 @TSRFactory('herb', 'plastic_glass', 'grasp')
 def glass_grasp(robot, glass, manip=None, yaw_range=None, **kw_args):

@@ -1,4 +1,4 @@
-from prpy.tsr.tsrlibrary import TSRFactory
+from tsr.tsrlibrary import TSRFactory
 
 @TSRFactory('herb', 'fuze_bottle', 'grasp')
 def fuze_grasp(robot, fuze, manip=None, **kw_args):
@@ -71,7 +71,7 @@ def fuze_transport(robot, fuze, manip=None, roll_epsilon=0.2, pitch_epsilon=0.2,
     @param yaw_epsilon The amount to let the object yaw during
                          transport (object frame)
     """
-    from prpy.tsr.generic import transport_upright_tsr
+    from tsr.generic import transport_upright_tsr
     return transport_upright_tsr(robot, fuze, manip=manip,
                                  roll_epsilon=roll_epsilon,
                                  pitch_epsilon=pitch_epsilon,
