@@ -1,4 +1,4 @@
-from prpy.tsr.tsrlibrary import TSRFactory
+from tsr.tsrlibrary import TSRFactory
 
 @TSRFactory('herb', 'pop_tarts', 'grasp')
 def poptarts_grasp(robot, pop_tarts, manip=None, **kw_args):
